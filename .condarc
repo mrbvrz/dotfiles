@@ -1,0 +1,9 @@
+channels:
+  - defaults
+ssl_verify: true
+
+# disable $PS1, remove "(base)" prefix from active environment.
+changeps1: false
+
+# disable auto activa conda when terminal open.
+auto_activate_base: false
