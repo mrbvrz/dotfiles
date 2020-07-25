@@ -1,0 +1,25 @@
+# Create and change directory
+mkcd (){
+  if [ ! -n "$1" ]; then
+    echo "Enter a directory name"
+  elif [ -d $1 ]; then
+    echo "\`$1' already exists"
+  else
+    mkdir $1 && cd $1
+  fi
+}
+
+# Image rotate, command usage "rotate imagename.jpg 180"
+rotate(){
+   for file in "$1";
+        do convert $1 -rotate $2 turn$2-$1;
+   done
+}
+
+# Git clone and cd (change directory)
+gclonecd(){
+    git clone "$1" && cd "$(basename "$1" .git)"
+}
+
+# Python SimpleHTTPServer
+alias www='python -m SimpleHTTPServer 8000'
