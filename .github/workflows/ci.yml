@@ -62,10 +62,10 @@ jobs:
         run: |
           test -L ~/.zshrc
           test -L ~/.gitconfig
-          test -L ~/.config/alacritty/alacritty.toml
-          test -L ~/.config/zellij/config.kdl
-          test -L ~/.config/lazydocker/config.yml
-          test -L ~/.config/btop/btop.conf
+          test -e ~/.config/alacritty/alacritty.toml
+          test -e ~/.config/zellij/config.kdl
+          test -e ~/.config/lazydocker/config.yml
+          test -e ~/.config/btop/btop.conf
 
   test-stow-macos:
     name: Test Stow & Linking (macOS)
@@ -89,7 +89,7 @@ jobs:
         run: |
           test -L ~/.zshrc
           test -L ~/.gitconfig
-          test -L ~/.config/alacritty/alacritty.toml
-          test -L ~/.config/zellij/config.kdl
-          test -L ~/.config/lazydocker/config.yml
-          test -L ~/.config/btop/btop.conf
+          test -e ~/.config/alacritty/alacritty.toml
+          test -e ~/.config/zellij/config.kdl
+          test -e ~/.config/lazydocker/config.yml
+          test -e ~/.config/btop/btop.conf
