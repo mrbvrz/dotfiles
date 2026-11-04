@@ -198,7 +198,7 @@ command -v "$BAT_BIN" >/dev/null 2>&1 && alias cat="$BAT_BIN --paging=never"
 command -v lazygit >/dev/null 2>&1 && alias lg="lazygit"
 command -v lazydocker >/dev/null 2>&1 && alias ld="lazydocker"
 command -v zellij >/dev/null 2>&1 && alias zj="zellij"
-command -v zellij >/dev/null 2>&1 && alias zja="zellij attach -c main"
+command -v zellij >/dev/null 2>&1 && alias zja="zellij attach -c space"
 
 # System & Disk Monitoring
 command -v btop >/dev/null 2>&1 && alias top="btop"
@@ -298,6 +298,6 @@ done
 # ------------------------------------------------------------------------------
 if [[ -o interactive ]] && [[ -z "$ZELLIJ" ]] && [[ -n "$ALACRITTY_WINDOW_ID" || "$TERM_PROGRAM" == "Alacritty" ]]; then
   if command -v zellij >/dev/null 2>&1; then
-    zellij
+    zellij attach -c space
   fi
 fi
