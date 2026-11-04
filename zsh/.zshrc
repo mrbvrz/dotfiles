@@ -298,6 +298,19 @@ done
 # ------------------------------------------------------------------------------
 if [[ -o interactive ]] && [[ -z "$ZELLIJ" ]] && [[ -n "$ALACRITTY_WINDOW_ID" || "$TERM_PROGRAM" == "Alacritty" ]]; then
   if command -v zellij >/dev/null 2>&1; then
-    zellij attach -c space
+    _zj_sessions="$(zellij list-sessions -n -s 2>/dev/null)"
+    if ! print -r -- "$_zj_sessions" | grep -qx "space"; then
+      _zj_name="space"
+    else
+      typeset -i _zj_idx=2
+      while print -r -- "$_zj_sessions" | grep -qx "space-${_zj_idx}"; do
+        ((_zj_idx++))
+      done
+      _zj_name="space-${_zj_idx}"
+      unset _zj_idx
+    fi
+    unset _zj_sessions
+    zellij -s "$_zj_name"
+    unset _zj_name
   fi
 fi
