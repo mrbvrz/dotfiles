@@ -117,6 +117,31 @@ key = "N"
 mods = "Command"
 action = "CreateNewWindow"
 
+# Window Fullscreen & Maximize Controls
+[[keyboard.bindings]]
+key = "F"
+mods = "Command|Control"
+action = "ToggleFullscreen"
+
+[[keyboard.bindings]]
+key = "Return"
+mods = "Command"
+action = "ToggleFullscreen"
+
+[[keyboard.bindings]]
+key = "F11"
+action = "ToggleFullscreen"
+
+[[keyboard.bindings]]
+key = "M"
+mods = "Command|Alt"
+action = "ToggleMaximized"
+
+[[keyboard.bindings]]
+key = "F"
+mods = "Command|Alt"
+action = "ToggleSimpleFullscreen"
+
 [[keyboard.bindings]]
 key = "K"
 mods = "Command"

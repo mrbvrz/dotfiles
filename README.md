@@ -110,6 +110,9 @@ dotsync
 | `Ctrl + T` | **fzf + fd + bat** | Fuzzy find files in the current directory with syntax-highlighted preview |
 | `Alt + C` | **fzf + eza** | Fuzzy find subdirectories with tree preview |
 | `y` | **yazi** | Terminal file manager (automatically changes working directory when exiting with `q`) |
+| `Cmd + N` | **Alacritty** | Open a new independent Alacritty terminal window (auto `SPACE01..N`) |
+| `Cmd + Enter` / `Cmd + Ctrl + F` | **Alacritty** | Toggle Fullscreen window (or `F11`) |
+| `Cmd + Option + F` / `M` | **Alacritty** | Toggle Simple Fullscreen (borderless on screen) / Maximize window |
 | `Cmd + T` / `Cmd + W` | **Zellij** | Open new tab / Close focused pane or tab (exits window when last tab closes) |
 | `Cmd + D` / `Cmd + Shift + D` | **Zellij** | Split pane Right / Split pane Down |
 | `Cmd + Option + ← / → / ↑ / ↓` | **Zellij** | Navigate focus between split panes (or `Alt + h / j / k / l`) |
