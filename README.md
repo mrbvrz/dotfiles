@@ -57,6 +57,8 @@ This repository contains my personal, cross-platform dotfiles managed with **GNU
 ├── btop/
 │   ├── .config/btop/btop.conf           # -> ~/.config/btop/btop.conf
 │   └── .config/btop/themes/min-dark.theme # -> ~/.config/btop/themes/min-dark.theme
+├── bat/
+│   └── .config/bat/config               # -> ~/.config/bat/config (TwoDark theme & syntax mappings)
 ├── mise/
 │   └── .config/mise/config.toml         # -> ~/.config/mise/config.toml
 ├── spaceship/

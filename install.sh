@@ -156,7 +156,7 @@ done
 
 echo "==> Linking dotfiles with GNU Stow..."
 stow --restow --dir="$DOTFILES_DIR" --target="$HOME" \
-  zsh spaceship git alacritty zellij zed mise bin lazygit yazi btop
+  zsh spaceship git alacritty zellij zed mise bin lazygit yazi btop bat
 
 # Pre-grant Zellij permissions for bundled local plugins (zellij-tabula & monocle)
 if [[ "$OS_TYPE" == "Darwin" ]]; then

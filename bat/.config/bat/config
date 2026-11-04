@@ -1,0 +1,24 @@
+# ==============================================================================
+# Bat Configuration (~/.config/bat/config)
+# Managed via GNU Stow in ~/.dotfiles/bat/.config/bat/config
+# Docs: https://github.com/sharkdp/bat#configuration-file
+# ==============================================================================
+
+# Set the color theme (TwoDark matches Min Dark / One Dark syntax)
+--theme="TwoDark"
+
+# Show line numbers, Git modifications, and file header
+--style="numbers,changes,header"
+
+# Do not wrap lines by default
+--wrap="never"
+
+# Use italic text in syntax highlighting
+--italic-text="always"
+
+# Map file extensions to syntax highlighters
+--map-syntax="*.kdl:YAML"
+--map-syntax=".env*:INI"
+--map-syntax="*.zsh:Bourne Again Shell (bash)"
+--map-syntax="*rc:Bourne Again Shell (bash)"
+--map-syntax="Brewfile:Ruby"

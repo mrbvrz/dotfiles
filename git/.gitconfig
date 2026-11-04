@@ -18,6 +18,21 @@
 	side-by-side = true
 	line-numbers = true
 	hyperlinks = true
+	syntax-theme = TwoDark
+	plus-style = syntax "#1a2d1a"
+	minus-style = syntax "#33181b"
+	plus-emph-style = syntax "#284a28"
+	minus-emph-style = syntax "#542227"
+	line-numbers-left-format = "{nm:>4}┊"
+	line-numbers-right-format = "{np:>4}│"
+	line-numbers-left-style = "#5C5C5C"
+	line-numbers-right-style = "#5C5C5C"
+	line-numbers-minus-style = "#FA7584"
+	line-numbers-plus-style = "#79B8FF"
+	file-style = bold "#B392F1"
+	file-decoration-style = "#B392F1" ul
+	hunk-header-style = file line-number syntax
+	hunk-header-decoration-style = "#FFAB70" box
 
 [merge]
 	conflictstyle = zdiff3

@@ -10,6 +10,7 @@ live_config_reload = true
 
 [env]
 TERM = "xterm-256color"
+TERM_PROGRAM = "Alacritty"
 
 [window]
 dimensions = { columns = 122, lines = 63 }
