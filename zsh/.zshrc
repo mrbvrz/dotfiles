@@ -198,7 +198,7 @@ command -v "$BAT_BIN" >/dev/null 2>&1 && alias cat="$BAT_BIN --paging=never"
 command -v lazygit >/dev/null 2>&1 && alias lg="lazygit"
 command -v lazydocker >/dev/null 2>&1 && alias ld="lazydocker"
 command -v zellij >/dev/null 2>&1 && alias zj="zellij"
-command -v zellij >/dev/null 2>&1 && alias zja="zellij attach -c space01"
+command -v zellij >/dev/null 2>&1 && alias zja="zellij attach -c SPACE01"
 
 # System & Disk Monitoring
 command -v btop >/dev/null 2>&1 && alias top="btop"
@@ -300,11 +300,13 @@ if [[ -o interactive ]] && [[ -z "$ZELLIJ" ]] && [[ -n "$ALACRITTY_WINDOW_ID" ||
   if command -v zellij >/dev/null 2>&1; then
     _zj_sessions="$(zellij list-sessions -n -s 2>/dev/null)"
     typeset -i _zj_idx=1
-    while print -r -- "$_zj_sessions" | grep -qx "$(printf 'space%02d' $_zj_idx)"; do
+    while print -r -- "$_zj_sessions" | grep -qx "$(printf 'SPACE%02d' $_zj_idx)"; do
       ((_zj_idx++))
     done
-    _zj_name="$(printf 'space%02d' $_zj_idx)"
+    _zj_name="$(printf 'SPACE%02d' $_zj_idx)"
     unset _zj_idx _zj_sessions
+    # Keep the Alacritty window title in sync with the Zellij badge (MRBVRZ-SPACE01, ...)
+    print -Pn "\e]0;MRBVRZ-${_zj_name}\a"
     exec zellij -s "$_zj_name"
   fi
 fi

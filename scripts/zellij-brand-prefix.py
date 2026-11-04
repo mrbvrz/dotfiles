@@ -43,6 +43,32 @@ def encode_uleb128(val: int) -> bytes:
     return bytes(out)
 
 
+def read_uleb128(buf: bytes, pos: int) -> tuple[int, int]:
+    result = shift = 0
+    while True:
+        b = buf[pos]
+        pos += 1
+        result |= (b & 0x7F) << shift
+        shift += 7
+        if not b & 0x80:
+            return result, pos
+
+
+def true_wasm_end(data: bytes, start: int, limit: int) -> int:
+    """Walk Wasm sections from `start` and return the file offset where the module truly ends."""
+    pos = start + 8
+    last_id = 0
+    while pos < limit:
+        sec_id = data[pos]
+        length, body = read_uleb128(data, pos + 1)
+        if length == 0 or body + length > limit or (sec_id and sec_id < last_id):
+            break
+        if sec_id:
+            last_id = sec_id
+        pos = body + length
+    return pos
+
+
 def pad_wasm_to_size(wasm_bytes: bytes, target_size: int) -> bytes:
     """Append a valid Wasm Custom Section (id = 0) so the module matches target_size."""
     diff = target_size - len(wasm_bytes)
@@ -91,9 +117,11 @@ def main() -> int:
         print("Warning: embedded Wasm modules not found in zellij binary.")
         return 0
 
-    # The first embedded Wasm module is compact-bar (verified via "+many" & "Tooltip" strings)
+    # The first embedded Wasm module is compact-bar (verified via "+many" & "Tooltip" strings).
+    # The gap up to the next module may contain unrelated bytes, so compute the true module
+    # length by walking the Wasm sections, and only replace exactly that many bytes.
     start = offsets[0]
-    end = offsets[1]
+    end = true_wasm_end(data, start, offsets[1])
     slot_size = end - start
 
     padded_wasm = pad_wasm_to_size(custom_wasm, slot_size)
