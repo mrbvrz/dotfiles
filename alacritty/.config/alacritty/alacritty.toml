@@ -29,7 +29,7 @@ multiplier = 3
 # Typography (CommitMono Nerd Font)
 # ------------------------------------------------------------------------------
 [font]
-size = 11.5
+size = 12.0
 offset = { x = 0, y = 2 }
 
 [font.normal]
