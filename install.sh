@@ -144,7 +144,6 @@ for target_file in \
   "$HOME/.config/zellij/config.kdl" \
   "$HOME/.config/zellij/layouts/compact.kdl" \
   "$HOME/.config/zed/settings.json" \
-  "$HOME/.config/zed/themes" \
   "$HOME/.config/mise/config.toml" \
   "$HOME/.config/lazygit/config.yml" \
   "$HOME/.config/lazydocker/config.yml" \
