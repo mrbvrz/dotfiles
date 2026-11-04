@@ -198,7 +198,7 @@ command -v "$BAT_BIN" >/dev/null 2>&1 && alias cat="$BAT_BIN --paging=never"
 command -v lazygit >/dev/null 2>&1 && alias lg="lazygit"
 command -v lazydocker >/dev/null 2>&1 && alias ld="lazydocker"
 command -v zellij >/dev/null 2>&1 && alias zj="zellij"
-command -v zellij >/dev/null 2>&1 && alias zja="zellij attach -c space"
+command -v zellij >/dev/null 2>&1 && alias zja="zellij attach -c space01"
 
 # System & Disk Monitoring
 command -v btop >/dev/null 2>&1 && alias top="btop"
@@ -299,18 +299,12 @@ done
 if [[ -o interactive ]] && [[ -z "$ZELLIJ" ]] && [[ -n "$ALACRITTY_WINDOW_ID" || "$TERM_PROGRAM" == "Alacritty" ]]; then
   if command -v zellij >/dev/null 2>&1; then
     _zj_sessions="$(zellij list-sessions -n -s 2>/dev/null)"
-    if ! print -r -- "$_zj_sessions" | grep -qx "space"; then
-      _zj_name="space"
-    else
-      typeset -i _zj_idx=2
-      while print -r -- "$_zj_sessions" | grep -qx "space-${_zj_idx}"; do
-        ((_zj_idx++))
-      done
-      _zj_name="space-${_zj_idx}"
-      unset _zj_idx
-    fi
-    unset _zj_sessions
-    zellij -s "$_zj_name"
-    unset _zj_name
+    typeset -i _zj_idx=1
+    while print -r -- "$_zj_sessions" | grep -qx "$(printf 'space%02d' $_zj_idx)"; do
+      ((_zj_idx++))
+    done
+    _zj_name="$(printf 'space%02d' $_zj_idx)"
+    unset _zj_idx _zj_sessions
+    exec zellij -s "$_zj_name"
   fi
 fi
