@@ -1,0 +1,6 @@
+.DS_Store
+*.zwc
+*.swp
+*.bak
+.zshenv.local
+.gitconfig.local

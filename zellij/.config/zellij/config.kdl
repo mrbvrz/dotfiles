@@ -1,0 +1,16 @@
+// =============================================================================
+// Zellij Terminal Multiplexer Configuration (~/.config/zellij/config.kdl)
+// Theme: Tokyo Night
+// Managed via GNU Stow in ~/.dotfiles/zellij/.config/zellij/config.kdl
+// Docs: https://zellij.dev/documentation/configuration
+// =============================================================================
+
+theme "tokyo-night"
+default_layout "compact"
+pane_frames false
+simplified_ui true
+mouse_mode true
+copy_on_select true
+scroll_buffer_size 50000
+on_force_close "detach"
+session_serialization true

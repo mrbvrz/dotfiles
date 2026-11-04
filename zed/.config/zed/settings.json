@@ -1,0 +1,44 @@
+// =============================================================================
+// Zed IDE Configuration (~/.config/zed/settings.json)
+// Managed via GNU Stow in ~/.dotfiles/zed/.config/zed/settings.json
+// Docs: https://zed.dev/docs/configuring-zed
+// =============================================================================
+{
+  "agent": {
+    "default_model": {
+      "provider": "opencode",
+      "model": "zen/deepseek-v4.1-flash",
+      "enable_thinking": true,
+      "effort": "high"
+    },
+    "favorite_models": [],
+    "model_parameters": []
+  },
+  "disable_ai": false,
+  "vim": {
+    "cursor_shape": {
+      "normal": "underline"
+    }
+  },
+  "mouse_wheel_zoom": false,
+  "horizontal_scroll_margin": 5.0,
+  "buffer_font_weight": 200.0,
+  "markdown_preview": {
+    "font_family": "Uncut Sans"
+  },
+  "buffer_line_height": "comfortable",
+  "icon_theme": "Zed (Default)",
+  "ui_font_family": "Uncut Sans",
+  "buffer_font_family": "CommitMono Nerd Font Mono",
+  "ui_font_size": 14.0,
+  "buffer_font_size": 12.0,
+  "terminal": {
+    "font_family": "CommitMono Nerd Font",
+    "font_size": 12.0
+  },
+  "theme": {
+    "mode": "dark",
+    "light": "Gruvbox Light Soft",
+    "dark": "Min Dark (Blurred)"
+  }
+}

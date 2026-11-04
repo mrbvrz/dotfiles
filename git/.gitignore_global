@@ -1,0 +1,34 @@
+# ==============================================================================
+# Global Gitignore (~/.gitignore_global) — macOS, Linux, & Editors
+# Managed via GNU Stow in ~/.dotfiles/git/.gitignore_global
+# ==============================================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Editors & IDEs
+*.swp
+*.swo
+*~
+.idea/
+*.iml
+.vscode/settings.json
+.vscode/launch.json
+
+# Environment & Local Secrets
+.env.local
+.zshenv.local
+.gitconfig.local
+.direnv/

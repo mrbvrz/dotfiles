@@ -1,0 +1,25 @@
+# ==============================================================================
+# Mise Global Runtime & CLI Configuration (~/.config/mise/config.toml)
+# Managed via GNU Stow in ~/.dotfiles/mise/.config/mise/config.toml
+# Docs: https://mise.jdx.dev/configuration.html
+# ==============================================================================
+
+[tools]
+# Primary Node.js runtime (v26 LTS)
+node = "26"
+
+# JavaScript / TypeScript package managers & runtimes
+pnpm = "latest"
+bun = "latest"
+
+# Global NPM CLI packages (automatically synced across macOS & Fedora)
+"npm:vercel" = "latest"
+"npm:eas-cli" = "latest"
+"npm:firebase-tools" = "latest"
+"npm:ts-node" = "latest"
+
+[settings]
+# Automatically read .nvmrc, .node-version, package.json, .python-version, etc.
+idiomatic_version_file_enable_tools = ["node", "python", "ruby", "go"]
+npm.package_manager = "npm"
+experimental = true

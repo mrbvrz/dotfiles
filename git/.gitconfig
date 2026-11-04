@@ -1,0 +1,40 @@
+[user]
+	name = mrbvrz
+	email = 3890123+mrbvrz@users.noreply.github.com
+
+[include]
+	path = ~/.gitconfig.local
+
+[core]
+	editor = zed --wait
+	pager = delta
+	excludesfile = ~/.gitignore_global
+
+[interactive]
+	diffFilter = delta --color-only
+
+[delta]
+	navigate = true
+	side-by-side = true
+	line-numbers = true
+	hyperlinks = true
+
+[merge]
+	conflictstyle = zdiff3
+
+[diff]
+	colorMoved = default
+
+[filter "lfs"]
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
+
+[credential "https://github.com"]
+	helper = 
+	helper = "!f() { /opt/homebrew/bin/gh auth git-credential \"$@\" 2>/dev/null || gh auth git-credential \"$@\"; }; f"
+
+[credential "https://gist.github.com"]
+	helper = 
+	helper = "!f() { /opt/homebrew/bin/gh auth git-credential \"$@\" 2>/dev/null || gh auth git-credential \"$@\"; }; f"
