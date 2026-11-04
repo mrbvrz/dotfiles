@@ -1,8 +1,8 @@
 tap "anomalyco/tap"
-tap "hashicorp/tap", trusted: true
-tap "mongodb/brew", trusted: true
+tap "hashicorp/tap"
+tap "mongodb/brew"
 tap "nanxstats/tap"
-tap "nicoverbruggen/cask", trusted: true
+tap "nicoverbruggen/cask"
 tap "rtk-ai/tap"
 # Official Amazon AWS command-line interface
 brew "awscli"
@@ -126,12 +126,6 @@ brew "zsh"
 brew "zsh-autosuggestions"
 # Fish shell like syntax highlighting for zsh
 brew "zsh-syntax-highlighting"
-# OpenCode V2 - the AI coding agent for the terminal
-brew "anomalyco/tap/opencode-v2", trusted: true
-# Terraform
-brew "hashicorp/tap/terraform"
-# Rust Token Killer - High-performance CLI proxy to minimize LLM token consumption
-brew "rtk-ai/tap/rtk", trusted: true
 # Enable Windows-like alt-tab
 cask "alt-tab"
 # Command-line tools for building and debugging Android apps
@@ -144,8 +138,7 @@ cask "antigravity-cli"
 cask "figma"
 # Web browser
 cask "firefox"
-# Iosevka custom build inspired by Anthropic Mono
-cask "nanxstats/tap/font-anthrosevka-mono", trusted: true
+cask "font-anthrosevka-mono"
 cask "font-commit-mono"
 cask "font-commit-mono-nerd-font"
 cask "font-ioskeley-mono"

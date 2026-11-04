@@ -124,19 +124,28 @@ def main() -> int:
     end = true_wasm_end(data, start, offsets[1])
     slot_size = end - start
 
+    # Find target zellij binary (handling Linux non-root permission fallback)
+    target_bin = bin_path
+    if not os.access(target_bin, os.W_OK):
+        local_bin = Path.home() / ".local/bin/zellij"
+        local_bin.parent.mkdir(parents=True, exist_ok=True)
+        if not local_bin.exists() or local_bin.stat().st_mtime < bin_path.stat().st_mtime:
+            shutil.copy2(bin_path, local_bin)
+        target_bin = local_bin
+
     padded_wasm = pad_wasm_to_size(custom_wasm, slot_size)
     if data[start:end] == padded_wasm:
-        print(f"Zellij ({bin_path}) already has the custom compact-bar Wasm module installed.")
+        print(f"Zellij ({target_bin}) already has the custom compact-bar Wasm module installed.")
     else:
-        os.chmod(bin_path, 0o755)
+        os.chmod(target_bin, 0o755)
         new_data = bytearray(data)
         new_data[start:end] = padded_wasm
-        bin_path.write_bytes(new_data)
+        target_bin.write_bytes(new_data)
         if sys.platform == "darwin":
             subprocess.run(
-                ["codesign", "--force", "--sign", "-", str(bin_path)], check=True
+                ["codesign", "--force", "--sign", "-", str(target_bin)], check=True
             )
-        print(f"Successfully installed custom compact-bar Wasm module into {bin_path}!")
+        print(f"Successfully installed custom compact-bar Wasm module into {target_bin}!")
 
     # Clear cached compiled Wasm bars so Zellij reloads the custom embedded plugin
     cache_dirs = [

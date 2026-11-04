@@ -246,6 +246,8 @@ alias reload="exec zsh"
 alias dotfiles="cd ~/.dotfiles"
 alias dotcheck="dotcheck"
 alias doctor="dotcheck"
+alias check="dotcheck"
+alias lz="lzj"
 
 # Sync dotfiles (update Brewfile on macOS, restow symlinks, re-apply patches, commit & push)
 function dotsync() {

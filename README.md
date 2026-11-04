@@ -124,9 +124,10 @@ dotsync
 | `Cmd + Shift + R` | **Zellij** | Rename active tab manually (`zellij-tabula` auto-names tabs by CWD/Git repo) |
 | `Cmd + F` / `Ctrl + F` | **Zellij** | Live bottom-bar search overlay (`↑`/`↓` jump matches, `Enter` confirm, `Esc` cancel) |
 | `Cmd + P` / `Alt + m` | **Monocle** | Floating fuzzy finder for project filenames & file contents |
-| `lzj` | **lazy-zellij** | Interactive `fzf` Zellij session manager with live tab/pane/screen preview |
+| `lzj` / `lz` | **lazy-zellij** | Interactive `fzf` Zellij session manager with live tab/pane/screen preview |
 | `zj` / `zja` | **zellij** | Open Zellij multiplexer (`zja` attaches/creates persistent `SPACE01` workspace) |
 | `lg` | **lazygit** | Full-featured Terminal UI for Git |
+| `git st` / `git lg` | **Git Aliases** | Compact Git status (`-sb`) and colorful branching commit graph |
 | `ld` | **lazydocker** | Full-featured Terminal UI for Docker & Docker Compose |
 | `ls` / `ll` / `lt` | **eza** | Modern file listing with icons (`lt` for a 2-level tree view) |
 | `cat <file>` | **bat** | Syntax-highlighted file viewer |
