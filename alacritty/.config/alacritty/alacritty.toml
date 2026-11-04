@@ -173,6 +173,16 @@ mods = "Command|Shift"
 chars = "\u001B]"
 
 [[keyboard.bindings]]
+key = "F"
+mods = "Command"
+chars = "\u001B/"
+
+[[keyboard.bindings]]
+key = "F"
+mods = "Control"
+chars = "\u001B/"
+
+[[keyboard.bindings]]
 key = "Key1"
 mods = "Command"
 chars = "\u001B1"
