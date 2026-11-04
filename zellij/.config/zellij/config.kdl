@@ -95,12 +95,20 @@ themes {
             emphasis_3 249 117 131
         }
         frame_selected {
-            base 179 146 241
+            base 179 146 241        // #B392F1 purple accent border for focused pane
             background 0
             emphasis_0 255 171 112
             emphasis_1 121 184 255
             emphasis_2 179 146 241
             emphasis_3 249 117 131
+        }
+        frame_unselected {
+            base 68 68 68           // #444444 subtle dark border for unfocused split panes
+            background 0
+            emphasis_0 80 80 80
+            emphasis_1 80 80 80
+            emphasis_2 80 80 80
+            emphasis_3 80 80 80
         }
         frame_highlight {
             base 121 184 255
@@ -194,6 +202,20 @@ keybinds {
         bind "Alt w" { CloseFocus; SwitchToMode "Normal"; }
         bind "Alt d" { NewPane "Right"; SwitchToMode "Normal"; }
         bind "Alt D" { NewPane "Down"; SwitchToMode "Normal"; }
+        bind "Alt h" { MoveFocus "Left"; }
+        bind "Alt l" { MoveFocus "Right"; }
+        bind "Alt k" { MoveFocus "Up"; }
+        bind "Alt j" { MoveFocus "Down"; }
+        bind "Alt H" { Resize "Increase Left"; }
+        bind "Alt L" { Resize "Increase Right"; }
+        bind "Alt K" { Resize "Increase Up"; }
+        bind "Alt J" { Resize "Increase Down"; }
+        bind "Alt =" "Alt +" { Resize "Increase"; }
+        bind "Alt -" { Resize "Decrease"; }
+        bind "Alt z" { ToggleFocusFullscreen; }
+        bind "Alt f" { ToggleFloatingPanes; }
+        bind "Alt {" { PreviousSwapLayout; }
+        bind "Alt }" { NextSwapLayout; }
         bind "Alt [" { GoToPreviousTab; }
         bind "Alt ]" { GoToNextTab; }
         bind "Alt r" { SwitchToMode "RenameTab"; TabNameInput 0; }

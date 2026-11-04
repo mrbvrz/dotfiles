@@ -112,6 +112,11 @@ dotsync
 | `y` | **yazi** | Terminal file manager (automatically changes working directory when exiting with `q`) |
 | `Cmd + T` / `Cmd + W` | **Zellij** | Open new tab / Close focused pane or tab (exits window when last tab closes) |
 | `Cmd + D` / `Cmd + Shift + D` | **Zellij** | Split pane Right / Split pane Down |
+| `Cmd + Option + ← / → / ↑ / ↓` | **Zellij** | Navigate focus between split panes (or `Alt + h / j / k / l`) |
+| `Cmd + Ctrl + ← / → / ↑ / ↓` | **Zellij** | Resize split pane in direction (or `Cmd + Option + = / -`) |
+| `Cmd + Shift + Enter` | **Zellij** | Toggle Zoom / Maximize focused pane to full-screen |
+| `Cmd + Shift + F` | **Zellij** | Toggle Floating pane mode |
+| `Cmd + Option + [` / `]` | **Zellij** | Swap / rotate split pane layout arrangement |
 | `Cmd + 1..9` | **Zellij** | Switch directly to Tab 1..9 |
 | `Cmd + Shift + R` | **Zellij** | Rename active tab manually (`zellij-tabula` auto-names tabs by CWD/Git repo) |
 | `Cmd + F` / `Ctrl + F` | **Zellij** | Live bottom-bar search overlay (`↑`/`↓` jump matches, `Enter` confirm, `Esc` cancel) |

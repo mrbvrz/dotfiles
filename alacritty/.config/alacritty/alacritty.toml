@@ -158,6 +158,82 @@ key = "D"
 mods = "Command|Shift"
 chars = "\u001BD"
 
+# Split Panes Focus Navigation (Cmd + Option + Arrows)
+[[keyboard.bindings]]
+key = "Left"
+mods = "Command|Alt"
+chars = "\u001Bh"
+
+[[keyboard.bindings]]
+key = "Right"
+mods = "Command|Alt"
+chars = "\u001Bl"
+
+[[keyboard.bindings]]
+key = "Up"
+mods = "Command|Alt"
+chars = "\u001Bk"
+
+[[keyboard.bindings]]
+key = "Down"
+mods = "Command|Alt"
+chars = "\u001Bj"
+
+# Split Panes Directional Resize (Cmd + Ctrl + Arrows)
+[[keyboard.bindings]]
+key = "Left"
+mods = "Command|Control"
+chars = "\u001BH"
+
+[[keyboard.bindings]]
+key = "Right"
+mods = "Command|Control"
+chars = "\u001BL"
+
+[[keyboard.bindings]]
+key = "Up"
+mods = "Command|Control"
+chars = "\u001BK"
+
+[[keyboard.bindings]]
+key = "Down"
+mods = "Command|Control"
+chars = "\u001BJ"
+
+# Split Panes General Resize (Cmd + Option + Equals/Minus)
+[[keyboard.bindings]]
+key = "Equals"
+mods = "Command|Alt"
+chars = "\u001B="
+
+[[keyboard.bindings]]
+key = "Minus"
+mods = "Command|Alt"
+chars = "\u001B-"
+
+# Split Pane Maximize / Zoom Toggle (Cmd + Shift + Enter)
+[[keyboard.bindings]]
+key = "Return"
+mods = "Command|Shift"
+chars = "\u001Bz"
+
+# Floating Pane Toggle (Cmd + Shift + F)
+[[keyboard.bindings]]
+key = "F"
+mods = "Command|Shift"
+chars = "\u001Bf"
+
+# Swap Split Layout / Rotate (Cmd + Option + Left/Right Bracket)
+[[keyboard.bindings]]
+key = "LBracket"
+mods = "Command|Alt"
+chars = "\u001B{"
+
+[[keyboard.bindings]]
+key = "RBracket"
+mods = "Command|Alt"
+chars = "\u001B}"
+
 [[keyboard.bindings]]
 key = "R"
 mods = "Command|Shift"
