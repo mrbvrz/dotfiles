@@ -24,15 +24,15 @@ themes {
     min-dark {
         text_unselected {
             base 179 146 241        // #B392F1 purple accent for mrbvrz-space01 prefix!
-            background 26 26 26     // #1A1A1A seamless terminal background
+            background 0            // 0 = ANSI Black (#1A1A1A) -> Alacritty renders this 100% transparent & blurred!
             emphasis_0 255 171 112  // #FFAB70 orange (other modes like Rename/Search)
             emphasis_1 121 184 255  // #79B8FF blue
-            emphasis_2 26 26 26     // #1A1A1A invisible NORMAL mode indicator (matches background!)
+            emphasis_2 0            // 0 = ANSI Black (#1A1A1A) -> invisible NORMAL mode indicator!
             emphasis_3 249 117 131  // #F97583 red/pink (LOCKED mode indicator)
         }
         text_selected {
             base 248 248 248        // #F8F8F8 bright white
-            background 26 26 26     // #1A1A1A seamless background (no button box)
+            background 0            // 0 = ANSI Black -> transparent
             emphasis_0 255 171 112
             emphasis_1 121 184 255
             emphasis_2 179 146 241
@@ -40,9 +40,9 @@ themes {
         }
         ribbon_unselected {
             base 170 170 170        // #AAAAAA inactive tab text (clearly readable)
-            background 36 36 36     // #242424 subtle dark pill background
+            background 0            // 0 = ANSI Black -> transparent inactive tab background!
             emphasis_0 255 171 112  // #FFAB70 orange
-            emphasis_1 48 48 48     // #303030 alternate/hovered tab background (high contrast vs #AAAAAA!)
+            emphasis_1 0            // 0 = ANSI Black -> transparent alternate tab background!
             emphasis_2 121 184 255  // #79B8FF blue
             emphasis_3 249 117 131  // #F97583 pink/red
         }

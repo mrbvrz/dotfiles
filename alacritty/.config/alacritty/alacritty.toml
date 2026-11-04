@@ -61,6 +61,9 @@ hide_when_typing = true
 # ------------------------------------------------------------------------------
 # Color Scheme: Min Dark (Blurred)
 # ------------------------------------------------------------------------------
+[colors]
+transparent_background_colors = true
+
 [colors.primary]
 background = "#1A1A1A"
 foreground = "#BBBBBB"
