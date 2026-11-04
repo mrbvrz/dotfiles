@@ -17,7 +17,8 @@ UNPATCHED = b"+many \xe2\x86\x92  Zellij "
 OLD_PATCH = b"+many \xe2\x86\x92  mrbvrz "
 PATCHED   = b"+many \xe2\x86\x92  mrbvrz-"
 PAREN_OLD = b"ch either.\x00\x01(\xc0\x01)\x00"
-PAREN_NEW = b"ch either.\x00\x00\xc0\x01 \x00\x00"
+PAREN_BAD = b"ch either.\x00\x00\xc0\x01 \x00\x00"
+PAREN_NEW = b"ch either.\x00\x01 \xc0\x01 \x00"
 
 
 def find_zellij_binary() -> Path | None:
@@ -48,6 +49,8 @@ def main() -> int:
             new_data = new_data.replace(OLD_PATCH, PATCHED, 1)
         if PAREN_OLD in new_data:
             new_data = new_data.replace(PAREN_OLD, PAREN_NEW, 1)
+        elif PAREN_BAD in new_data:
+            new_data = new_data.replace(PAREN_BAD, PAREN_NEW, 1)
         bin_path.write_bytes(new_data)
         if sys.platform == "darwin":
             subprocess.run(

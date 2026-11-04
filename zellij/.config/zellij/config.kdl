@@ -23,12 +23,12 @@ show_startup_tips false
 themes {
     min-dark {
         text_unselected {
-            base 115 115 115        // #737373 muted label
+            base 179 146 241        // #B392F1 purple accent for mrbvrz-space01 prefix!
             background 26 26 26     // #1A1A1A seamless terminal background
-            emphasis_0 255 171 112  // #FFAB70 orange
+            emphasis_0 255 171 112  // #FFAB70 orange (other modes like Rename/Search)
             emphasis_1 121 184 255  // #79B8FF blue
-            emphasis_2 179 146 241  // #B392F1 purple
-            emphasis_3 249 117 131  // #F97583 red/pink
+            emphasis_2 26 26 26     // #1A1A1A invisible NORMAL mode indicator (matches background!)
+            emphasis_3 249 117 131  // #F97583 red/pink (LOCKED mode indicator)
         }
         text_selected {
             base 248 248 248        // #F8F8F8 bright white
