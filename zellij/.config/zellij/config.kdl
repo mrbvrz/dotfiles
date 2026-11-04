@@ -39,20 +39,20 @@ themes {
             emphasis_3 249 117 131
         }
         ribbon_unselected {
-            base 110 110 110        // #6E6E6E inactive tab text
-            background 26 26 26     // #1A1A1A same as terminal bg -> no button shape!
-            emphasis_0 110 110 110
-            emphasis_1 110 110 110
-            emphasis_2 110 110 110
-            emphasis_3 110 110 110
+            base 170 170 170        // #AAAAAA inactive tab text (clearly readable)
+            background 36 36 36     // #242424 subtle dark pill background
+            emphasis_0 255 171 112  // #FFAB70 orange
+            emphasis_1 48 48 48     // #303030 alternate/hovered tab background (high contrast vs #AAAAAA!)
+            emphasis_2 121 184 255  // #79B8FF blue
+            emphasis_3 249 117 131  // #F97583 pink/red
         }
         ribbon_selected {
-            base 248 248 248        // #F8F8F8 active tab text (crisp white)
-            background 26 26 26     // #1A1A1A same as terminal bg -> no button shape!
-            emphasis_0 179 146 241  // #B392F1 accent indicator
-            emphasis_1 121 184 255  // #79B8FF
-            emphasis_2 179 146 241
-            emphasis_3 255 171 112
+            base 26 26 26           // #1A1A1A dark text on purple box
+            background 179 146 241  // #B392F1 main Min Dark purple accent box!
+            emphasis_0 26 26 26
+            emphasis_1 26 26 26
+            emphasis_2 26 26 26
+            emphasis_3 249 117 131
         }
         table_title {
             base 179 146 241
