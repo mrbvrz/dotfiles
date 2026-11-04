@@ -1,0 +1,46 @@
+# ==============================================================================
+# Yazi Theme (~/.config/yazi/theme.toml) — Min Dark Palette
+# Managed via GNU Stow in ~/.dotfiles/yazi/.config/yazi/theme.toml
+# ==============================================================================
+[mgr]
+cwd = { fg = "#B392F1", bold = true }
+hovered         = { fg = "#1A1A1A", bg = "#B392F1", bold = true }
+preview_hovered = { underline = true }
+find_keyword    = { fg = "#FFAB70", bold = true, italic = true, underline = true }
+find_position   = { fg = "#E394DC", bg = "reset", bold = true, italic = true }
+marker_copied   = { fg = "#79B8FF", bg = "#79B8FF" }
+marker_cut      = { fg = "#FA7584", bg = "#FA7584" }
+marker_marked   = { fg = "#B392F1", bg = "#B392F1" }
+marker_selected = { fg = "#FFAB70", bg = "#FFAB70" }
+tab_active      = { fg = "#1A1A1A", bg = "#B392F1", bold = true }
+tab_inactive    = { fg = "#AAAAAA", bg = "#2A2A2A" }
+tab_width       = 1
+border_symbol   = "│"
+border_style    = { fg = "#444444" }
+
+[status]
+separator_open  = ""
+separator_close = ""
+mode_normal = { fg = "#1A1A1A", bg = "#B392F1", bold = true }
+mode_select = { fg = "#1A1A1A", bg = "#FFAB70", bold = true }
+mode_unset  = { fg = "#1A1A1A", bg = "#FA7584", bold = true }
+progress_label  = { fg = "#F8F8F8", bold = true }
+progress_normal = { fg = "#B392F1", bg = "#2A2A2A" }
+progress_error  = { fg = "#FA7584", bg = "#2A2A2A" }
+permissions_t = { fg = "#79B8FF" }
+permissions_r = { fg = "#FFAB70" }
+permissions_w = { fg = "#FA7584" }
+permissions_x = { fg = "#B392F1" }
+permissions_s = { fg = "#5C5C5C" }
+
+[filetype]
+rules = [
+  { mime = "image/*", fg = "#E394DC" },
+  { mime = "{audio,video}/*", fg = "#FFAB70" },
+  { mime = "application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", fg = "#FA7584" },
+  { mime = "application/{pdf,doc,rtf}", fg = "#79B8FF" },
+  { name = "*", is = "orphan", bg = "#FA7584" },
+  { name = "*", is = "exec", fg = "#79B8FF" },
+  { name = "*/", fg = "#B392F1", bold = true },
+  { name = "*", fg = "#BBBBBB" },
+]

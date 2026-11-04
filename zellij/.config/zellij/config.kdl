@@ -160,7 +160,27 @@ themes {
 }
 
 // -----------------------------------------------------------------------------
-// Direct Shortcuts (Mapped from Alacritty Cmd+T, Cmd+W, Cmd+1..9, Cmd+D)
+// Plugins (zellij-tabula auto tab naming, monocle fuzzy finder, grab rust finder)
+// -----------------------------------------------------------------------------
+plugins {
+    tabula location="file:~/.config/zellij/plugins/zellij-tabula.wasm" {
+        worktree_name_display "repo_and_worktree"
+        worktree_name_preview_length "12"
+        rewrites {
+            path "^/(?:Users|home)/[^/]+$" "~"
+            path "^/(?:Users|home)/[^/]+/(.*)$" "~/$1"
+        }
+    }
+    monocle location="file:~/.config/zellij/plugins/monocle.wasm"
+    grab location="file:~/.config/zellij/plugins/grab.wasm"
+}
+
+load_plugins {
+    tabula
+}
+
+// -----------------------------------------------------------------------------
+// Direct Shortcuts (Mapped from Alacritty Cmd+T, Cmd+W, Cmd+1..9, Cmd+D, Cmd+P)
 // -----------------------------------------------------------------------------
 keybinds {
     search {
@@ -178,6 +198,18 @@ keybinds {
         bind "Alt ]" { GoToNextTab; }
         bind "Alt r" { SwitchToMode "RenameTab"; TabNameInput 0; }
         bind "Alt /" { SwitchToMode "EnterSearch"; SearchInput 0; }
+        bind "Alt m" {
+            LaunchOrFocusPlugin "monocle" {
+                floating true
+            }
+            SwitchToMode "Normal"
+        }
+        bind "Alt 0" {
+            LaunchOrFocusPlugin "grab" {
+                floating true
+            }
+            SwitchToMode "Normal"
+        }
         bind "Alt 1" { GoToTab 1; SwitchToMode "Normal"; }
         bind "Alt 2" { GoToTab 2; SwitchToMode "Normal"; }
         bind "Alt 3" { GoToTab 3; SwitchToMode "Normal"; }

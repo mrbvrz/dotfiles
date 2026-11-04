@@ -27,6 +27,7 @@ fi
 # ------------------------------------------------------------------------------
 # 1. Environment Variables & PATH (Cross-Platform)
 # ------------------------------------------------------------------------------
+export XDG_CONFIG_HOME="$HOME/.config"
 export HOMEBREW_NO_INSTALL_CLEANUP=TRUE
 export EDITOR="zed --wait"
 export VISUAL="zed --wait"
@@ -222,7 +223,7 @@ alias code="zed"
 alias reload="exec zsh"
 alias dotfiles="cd ~/.dotfiles"
 
-# Sync dotfiles (update Brewfile on macOS, restow symlinks, commit & push to GitHub)
+# Sync dotfiles (update Brewfile on macOS, restow symlinks, re-apply patches, commit & push)
 function dotsync() {
   local msg="${1:-chore: sync dotfiles and package list}"
   echo "==> Syncing ~/.dotfiles..."
@@ -230,7 +231,14 @@ function dotsync() {
     echo "==> Updating Brewfile..."
     brew bundle dump --file="$HOME/.dotfiles/Brewfile" --force
   fi
-  stow --restow --dir="$HOME/.dotfiles" --target="$HOME" zsh spaceship git alacritty zellij zed mise
+  stow --restow --dir="$HOME/.dotfiles" --target="$HOME" \
+    zsh spaceship git alacritty zellij zed mise bin lazygit yazi btop
+  if $IS_MACOS && [[ -f "$HOME/.dotfiles/scripts/macos-alacritty-shadow.py" ]]; then
+    python3 "$HOME/.dotfiles/scripts/macos-alacritty-shadow.py" >/dev/null 2>&1 || true
+  fi
+  if [[ -f "$HOME/.dotfiles/scripts/zellij-brand-prefix.py" ]]; then
+    python3 "$HOME/.dotfiles/scripts/zellij-brand-prefix.py" >/dev/null 2>&1 || true
+  fi
   git -C "$HOME/.dotfiles" add -A
   if git -C "$HOME/.dotfiles" diff --cached --quiet; then
     echo "==> No changes to commit. Everything is up to date!"

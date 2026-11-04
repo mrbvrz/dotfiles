@@ -22,8 +22,8 @@ This repository contains my personal, cross-platform dotfiles managed with **GNU
 | Category | Provided Tools | Purpose |
 | :--- | :--- | :--- |
 | **Code Editor / IDE** | **Zed** (`zed`) | High-performance Rust-based multiplayer code editor (`EDITOR` & `VISUAL` default) |
-| **Terminal Emulator** | **Alacritty** + **CommitMono Nerd Font** | Cross-platform OpenGL/Metal GPU-accelerated terminal with Min Dark (Blurred) theme & live reload |
-| **Multiplexer** | **Zellij** (`zj` / `zja`) | Modern Rust workspace multiplexer for tabs, split panes, and persistent sessions |
+| **Terminal Emulator** | **Alacritty** + **CommitMono Nerd Font** | Cross-platform OpenGL/Metal GPU-accelerated terminal with Min Dark (Blurred) theme, native macOS shadow & live reload |
+| **Multiplexer** | **Zellij** (`zj` / `zja` / `lzj`) | Modern Rust workspace multiplexer (`MRBVRZ-SPACE01..N`) with custom bottom bar, live search overlay, **zellij-tabula**, **monocle**, and **lazy-zellij** |
 | **Shell & Prompt** | **Zsh**, **Oh My Zsh**, **Spaceship Prompt** | Fast, async 2-line prompt with language runtime detection, Git status, and right-hand clock |
 | **Runtime Manager** | **mise** (`mise-en-place`) | Polyglot runtime manager for Node.js, Bun, pnpm, Go, Python, and Ruby |
 | **Zsh Plugins** | `zsh-autosuggestions`, `zsh-syntax-highlighting` | Real-time fish-like command autosuggestions and syntax validation |
@@ -45,7 +45,18 @@ This repository contains my personal, cross-platform dotfiles managed with **GNU
 │   └── .config/zed/settings.json        # -> ~/.config/zed/settings.json
 ├── zellij/
 │   ├── .config/zellij/config.kdl        # -> ~/.config/zellij/config.kdl
-│   └── .config/zellij/layouts/compact.kdl # -> ~/.config/zellij/layouts/compact.kdl
+│   ├── .config/zellij/layouts/compact.kdl # -> ~/.config/zellij/layouts/compact.kdl
+│   └── .config/zellij/plugins/          # -> compact-bar.wasm, zellij-tabula.wasm, monocle.wasm
+├── bin/
+│   └── .local/bin/                      # -> lzj & lzj-snapshot (lazy-zellij fzf session picker)
+├── lazygit/
+│   └── .config/lazygit/config.yml       # -> ~/.config/lazygit/config.yml (Min Dark theme)
+├── yazi/
+│   ├── .config/yazi/yazi.toml           # -> ~/.config/yazi/yazi.toml
+│   └── .config/yazi/theme.toml          # -> ~/.config/yazi/theme.toml (Min Dark theme)
+├── btop/
+│   ├── .config/btop/btop.conf           # -> ~/.config/btop/btop.conf
+│   └── .config/btop/themes/min-dark.theme # -> ~/.config/btop/themes/min-dark.theme
 ├── mise/
 │   └── .config/mise/config.toml         # -> ~/.config/mise/config.toml
 ├── spaceship/
@@ -59,7 +70,7 @@ This repository contains my personal, cross-platform dotfiles managed with **GNU
 │   └── .gitignore_global                # -> ~/.gitignore_global
 ├── scripts/
 │   ├── macos-alacritty-shadow.py        # Enables native Apple NSWindow drop shadow on blurred Alacritty
-│   └── zellij-brand-prefix.py           # Replaces Zellij bottom-bar prefix with mrbvrz-space01..N
+│   └── zellij-brand-prefix.py           # Installs custom compact-bar.wasm (MRBVRZ-SPACE01..N + search overlay)
 ├── Brewfile                             # Declarative macOS Homebrew bundle
 ├── install.sh                           # Universal bootstrap script (macOS & Fedora)
 └── README.md
@@ -97,7 +108,14 @@ dotsync
 | `Ctrl + T` | **fzf + fd + bat** | Fuzzy find files in the current directory with syntax-highlighted preview |
 | `Alt + C` | **fzf + eza** | Fuzzy find subdirectories with tree preview |
 | `y` | **yazi** | Terminal file manager (automatically changes working directory when exiting with `q`) |
-| `zj` / `zja` | **zellij** | Open Zellij multiplexer (`zja` attaches/creates persistent `main` workspace) |
+| `Cmd + T` / `Cmd + W` | **Zellij** | Open new tab / Close focused pane or tab (exits window when last tab closes) |
+| `Cmd + D` / `Cmd + Shift + D` | **Zellij** | Split pane Right / Split pane Down |
+| `Cmd + 1..9` | **Zellij** | Switch directly to Tab 1..9 |
+| `Cmd + Shift + R` | **Zellij** | Rename active tab manually (`zellij-tabula` auto-names tabs by CWD/Git repo) |
+| `Cmd + F` / `Ctrl + F` | **Zellij** | Live bottom-bar search overlay (`↑`/`↓` jump matches, `Enter` confirm, `Esc` cancel) |
+| `Cmd + P` / `Alt + m` | **Monocle** | Floating fuzzy finder for project filenames & file contents |
+| `lzj` | **lazy-zellij** | Interactive `fzf` Zellij session manager with live tab/pane/screen preview |
+| `zj` / `zja` | **zellij** | Open Zellij multiplexer (`zja` attaches/creates persistent `SPACE01` workspace) |
 | `lg` | **lazygit** | Full-featured Terminal UI for Git |
 | `ld` | **lazydocker** | Full-featured Terminal UI for Docker & Docker Compose |
 | `ls` / `ll` / `lt` | **eza** | Modern file listing with icons (`lt` for a 2-level tree view) |

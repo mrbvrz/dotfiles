@@ -1,0 +1,38 @@
+# ==============================================================================
+# Lazygit Configuration (~/.config/lazygit/config.yml)
+# Theme: Min Dark (#1A1A1A, Purple #B392F1, Orange #FFAB70, Blue #79B8FF)
+# Managed via GNU Stow in ~/.dotfiles/lazygit/.config/lazygit/config.yml
+# ==============================================================================
+gui:
+  nerdFontsVersion: "3"
+  border: rounded
+  showFileTree: true
+  showRandomTip: false
+  showCommandLog: false
+  theme:
+    activeBorderColor:
+      - "#B392F1"
+      - bold
+    inactiveBorderColor:
+      - "#444444"
+    searchingActiveBorderColor:
+      - "#FFAB70"
+      - bold
+    optionsTextColor:
+      - "#79B8FF"
+    selectedLineBgColor:
+      - "#2A2A2A"
+    cherryPickedCommitBgColor:
+      - "#2A2A2A"
+    cherryPickedCommitFgColor:
+      - "#B392F1"
+    unstagedChangesColor:
+      - "#FA7584"
+    defaultFgColor:
+      - "#BBBBBB"
+git:
+  pagers:
+    - colorArg: always
+      pager: delta --dark --paging=never
+os:
+  editPreset: "zed"

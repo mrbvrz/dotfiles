@@ -120,24 +120,80 @@ fi
 # ------------------------------------------------------------------------------
 # 3. Symlink Configurations Using GNU Stow
 # ------------------------------------------------------------------------------
-mkdir -p "$HOME/.config/alacritty" "$HOME/.config/zellij/layouts" "$HOME/.config/zed" "$HOME/.config/mise"
+mkdir -p \
+  "$HOME/.local/bin" \
+  "$HOME/.config/alacritty" \
+  "$HOME/.config/zellij/layouts" \
+  "$HOME/.config/zellij/plugins" \
+  "$HOME/.config/zed" \
+  "$HOME/.config/mise" \
+  "$HOME/.config/lazygit" \
+  "$HOME/.config/yazi" \
+  "$HOME/.config/btop/themes"
 
 # Backup existing non-symlink files before stowing
-for target_file in "$HOME/.zshrc" "$HOME/.zshenv" "$HOME/.zprofile" "$HOME/.gitconfig" "$HOME/.gitignore_global" "$HOME/.config/spaceship.zsh" "$HOME/.config/alacritty/alacritty.toml" "$HOME/.config/zellij/config.kdl" "$HOME/.config/zellij/layouts/compact.kdl" "$HOME/.config/zed/settings.json" "$HOME/.config/mise/config.toml"; do
+for target_file in \
+  "$HOME/.zshrc" \
+  "$HOME/.zshenv" \
+  "$HOME/.zprofile" \
+  "$HOME/.gitconfig" \
+  "$HOME/.gitignore_global" \
+  "$HOME/.config/spaceship.zsh" \
+  "$HOME/.config/alacritty/alacritty.toml" \
+  "$HOME/.config/zellij/config.kdl" \
+  "$HOME/.config/zellij/layouts/compact.kdl" \
+  "$HOME/.config/zed/settings.json" \
+  "$HOME/.config/mise/config.toml" \
+  "$HOME/.config/lazygit/config.yml" \
+  "$HOME/.config/yazi/yazi.toml" \
+  "$HOME/.config/yazi/theme.toml" \
+  "$HOME/.config/btop/btop.conf" \
+  "$HOME/.config/btop/themes/min-dark.theme"; do
   if [[ -f "$target_file" && ! -L "$target_file" ]]; then
     mv "$target_file" "${target_file}.bak"
   fi
 done
 
 echo "==> Linking dotfiles with GNU Stow..."
-stow --restow --dir="$DOTFILES_DIR" --target="$HOME" zsh spaceship git alacritty zellij zed mise
+stow --restow --dir="$DOTFILES_DIR" --target="$HOME" \
+  zsh spaceship git alacritty zellij zed mise bin lazygit yazi btop
 
-# Apply macOS Alacritty native shadow patch & Zellij mrbvrz-space prefix patch
-if [[ "$OS_TYPE" == "Darwin" ]] && [[ -x "$DOTFILES_DIR/scripts/macos-alacritty-shadow.py" ]]; then
-  "$DOTFILES_DIR/scripts/macos-alacritty-shadow.py" || true
+# Pre-grant Zellij permissions for bundled local plugins (zellij-tabula & monocle)
+if [[ "$OS_TYPE" == "Darwin" ]]; then
+  ZJ_CACHE_DIR="$HOME/Library/Caches/org.Zellij-Contributors.Zellij"
+else
+  ZJ_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/zellij"
 fi
-if [[ -x "$DOTFILES_DIR/scripts/zellij-brand-prefix.py" ]]; then
-  "$DOTFILES_DIR/scripts/zellij-brand-prefix.py" || true
+mkdir -p "$ZJ_CACHE_DIR"
+cat > "$ZJ_CACHE_DIR/permissions.kdl" <<EOF
+"$HOME/.config/zellij/plugins/zellij-tabula.wasm" {
+    ChangeApplicationState
+    ReadApplicationState
+    RunCommands
+    ReadCliPipes
+}
+"$HOME/.config/zellij/plugins/monocle.wasm" {
+    ChangeApplicationState
+    ReadApplicationState
+    OpenFiles
+    OpenTerminalsOrPlugins
+    RunCommands
+}
+"$HOME/.config/zellij/plugins/grab.wasm" {
+    ChangeApplicationState
+    ReadApplicationState
+    OpenFiles
+    OpenTerminalsOrPlugins
+    RunCommands
+}
+EOF
+
+# Apply macOS Alacritty native shadow patch & Zellij custom compact-bar patch
+if [[ "$OS_TYPE" == "Darwin" ]] && [[ -f "$DOTFILES_DIR/scripts/macos-alacritty-shadow.py" ]]; then
+  python3 "$DOTFILES_DIR/scripts/macos-alacritty-shadow.py" || true
+fi
+if [[ -f "$DOTFILES_DIR/scripts/zellij-brand-prefix.py" ]]; then
+  python3 "$DOTFILES_DIR/scripts/zellij-brand-prefix.py" || true
 fi
 
 # Install global runtimes configured in ~/.config/mise/config.toml

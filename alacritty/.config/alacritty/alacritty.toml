@@ -183,6 +183,11 @@ mods = "Control"
 chars = "\u001B/"
 
 [[keyboard.bindings]]
+key = "P"
+mods = "Command"
+chars = "\u001Bm"
+
+[[keyboard.bindings]]
 key = "Key1"
 mods = "Command"
 chars = "\u001B1"
