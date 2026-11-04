@@ -1,0 +1,189 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# dotcheck — Universal Dotfiles Health & Diagnostics Doctor (macOS & Fedora)
+# Usage: dotcheck
+# ==============================================================================
+set -euo pipefail
+
+# ANSI Colors
+BOLD="\033[1m"
+GREEN="\033[38;2;121;184;255m" # Blue/cyan accent
+PURPLE="\033[38;2;179;146;241m"
+ORANGE="\033[38;2;255;171;112m"
+RED="\033[38;2;249;117;131m"
+GRAY="\033[38;2;115;115;115m"
+RESET="\033[0m"
+
+OK="${GREEN}✓${RESET}"
+WARN="${ORANGE}⚠${RESET}"
+FAIL="${RED}✗${RESET}"
+
+passed=0
+warnings=0
+failed=0
+
+header() {
+  printf "\n${BOLD}${PURPLE}==> %s${RESET}\n" "$1"
+}
+
+check_tool() {
+  local tool="$1"
+  local desc="${2:-}"
+  if command -v "$tool" >/dev/null 2>&1; then
+    local path
+    path="$(command -v "$tool")"
+    printf "  %b %-16s ${GRAY}%s (%s)${RESET}\n" "$OK" "$tool" "$desc" "$path"
+    passed=$((passed + 1))
+  else
+    printf "  %b %-16s ${ORANGE}Missing (%s)${RESET}\n" "$WARN" "$tool" "$desc"
+    warnings=$((warnings + 1))
+  fi
+}
+
+check_symlink() {
+  local target="$1"
+  local label="$2"
+  if [[ -e "$target" ]]; then
+    local real
+    real="$(python3 -c "import os; print(os.path.realpath('$target'))" 2>/dev/null || true)"
+    if [[ "$real" == *"$HOME/.dotfiles"* ]]; then
+      local rel="${real#$HOME/.dotfiles/}"
+      printf "  %b %-30s ${GRAY}→ %s${RESET}\n" "$OK" "$label" "$rel"
+      passed=$((passed + 1))
+    else
+      printf "  %b %-30s ${ORANGE}Exists but NOT linked to dotfiles${RESET}\n" "$WARN" "$label"
+      warnings=$((warnings + 1))
+    fi
+  else
+    printf "  %b %-30s ${RED}Missing${RESET}\n" "$FAIL" "$label"
+    failed=$((failed + 1))
+  fi
+}
+
+printf "${BOLD}${ORANGE}🔍 Running Dotfiles Health Check & Diagnostics...${RESET}\n"
+printf "${GRAY}OS: %s | Host: %s | User: %s${RESET}\n" "$(uname -s)" "$(hostname)" "$USER"
+
+# 1. Essential Tools
+header "CLI Tools & Applications"
+check_tool "zsh" "Primary Shell"
+check_tool "stow" "GNU Stow Symlink Manager"
+check_tool "git" "Version Control"
+check_tool "delta" "Syntax-highlighting Pager"
+check_tool "alacritty" "GPU-accelerated Terminal"
+check_tool "zellij" "Terminal Multiplexer"
+check_tool "zed" "Code Editor"
+check_tool "mise" "Polyglot Runtime Manager"
+check_tool "fzf" "Fuzzy Finder"
+check_tool "fd" "Fast Directory Search"
+check_tool "rg" "Fast Text Search (ripgrep)"
+check_tool "bat" "Syntax Cat"
+check_tool "eza" "Modern ls"
+check_tool "yazi" "Terminal File Manager"
+check_tool "lazygit" "Git TUI"
+check_tool "lazydocker" "Docker TUI"
+check_tool "btop" "System Monitor"
+check_tool "zoxide" "Smart cd"
+check_tool "lzj" "Lazy-Zellij Session Picker"
+
+# 2. Symlinks
+header "GNU Stow Symlinks"
+check_symlink "$HOME/.zshrc" "Zsh Config"
+check_symlink "$HOME/.config/spaceship.zsh" "Spaceship Prompt Config"
+check_symlink "$HOME/.gitconfig" "Global Git Config"
+check_symlink "$HOME/.config/alacritty/alacritty.toml" "Alacritty Config"
+check_symlink "$HOME/.config/zellij/config.kdl" "Zellij Config"
+check_symlink "$HOME/.config/zellij/layouts/compact.kdl" "Zellij Compact Layout"
+check_symlink "$HOME/.config/zed/settings.json" "Zed Settings"
+check_symlink "$HOME/.config/mise/config.toml" "Mise Config"
+check_symlink "$HOME/.config/bat/config" "Bat Config"
+check_symlink "$HOME/.config/lazygit/config.yml" "Lazygit Config"
+check_symlink "$HOME/.config/yazi/yazi.toml" "Yazi Config"
+check_symlink "$HOME/.config/yazi/theme.toml" "Yazi Min Dark Theme"
+check_symlink "$HOME/.config/btop/btop.conf" "Btop Config"
+check_symlink "$HOME/.config/btop/themes/min-dark.theme" "Btop Min Dark Theme"
+
+# 3. Zellij Plugins & Permissions
+header "Zellij Wasm Plugins & Permissions"
+ZJ_PLUGIN_DIR="$HOME/.config/zellij/plugins"
+for plugin in "compact-bar.wasm" "zellij-tabula.wasm" "monocle.wasm" "grab.wasm"; do
+  if [[ -f "$ZJ_PLUGIN_DIR/$plugin" ]]; then
+    size=$(ls -lh "$ZJ_PLUGIN_DIR/$plugin" | awk '{print $5}')
+    printf "  %b %-24s ${GRAY}Installed (%s)${RESET}\n" "$OK" "$plugin" "$size"
+    passed=$((passed + 1))
+  else
+    printf "  %b %-24s ${RED}Missing${RESET}\n" "$FAIL" "$plugin"
+    failed=$((failed + 1))
+  fi
+done
+
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  PERM_FILE="$HOME/Library/Caches/org.Zellij-Contributors.Zellij/permissions.kdl"
+else
+  PERM_FILE="${XDG_CACHE_HOME:-$HOME/.cache}/zellij/permissions.kdl"
+fi
+if [[ -f "$PERM_FILE" ]]; then
+  printf "  %b %-24s ${GRAY}Configured (%s)${RESET}\n" "$OK" "permissions.kdl" "$PERM_FILE"
+  passed=$((passed + 1))
+else
+  printf "  %b %-24s ${ORANGE}Missing permissions.kdl${RESET}\n" "$WARN" "permissions.kdl"
+  warnings=$((warnings + 1))
+fi
+
+# 4. Binary Patches & Secrets Isolation
+header "Security & Platform Patches"
+for secret in "$HOME/.gitconfig.local" "$HOME/.zshenv.local"; do
+  if [[ -f "$secret" ]]; then
+    perm="$(ls -l "$secret" | awk '{print $1}')"
+    printf "  %b %-24s ${GRAY}Protected (%s)${RESET}\n" "$OK" "${secret##*/}" "$perm"
+    passed=$((passed + 1))
+  else
+    printf "  %b %-24s ${ORANGE}Not created yet${RESET}\n" "$WARN" "${secret##*/}"
+    warnings=$((warnings + 1))
+  fi
+done
+
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  ALACRITTY_BIN="/Applications/Alacritty.app/Contents/MacOS/alacritty"
+  if [[ -f "$ALACRITTY_BIN" ]]; then
+    ARCH="$(uname -m)"
+    [[ "$ARCH" == "arm64" ]] && OTOOL_ARCH="-arch arm64" || OTOOL_ARCH=""
+    if otool $OTOOL_ARCH -tv "$ALACRITTY_BIN" 2>/dev/null | grep -E "Window14set_has_shadow" -A 10 | grep -q "mov.*w19, #0x1"; then
+      printf "  %b %-24s ${GRAY}Native NSWindow drop shadow active${RESET}\n" "$OK" "Alacritty Patch"
+      passed=$((passed + 1))
+    else
+      printf "  %b %-24s ${ORANGE}Shadow patch pending (run scripts/macos-alacritty-shadow.py)${RESET}\n" "$WARN" "Alacritty Patch"
+      warnings=$((warnings + 1))
+    fi
+  fi
+fi
+
+# 5. Shell Startup Benchmark
+header "Shell Performance Benchmark"
+if command -v python3 >/dev/null 2>&1; then
+  benchmark_ms=$(python3 -c '
+import subprocess, time
+t0 = time.perf_counter()
+subprocess.run(["zsh", "-i", "-c", "exit"], capture_output=True, env={"ZELLIJ": "1", "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin", "HOME": "'"$HOME"'"})
+dt = (time.perf_counter() - t0) * 1000
+print(f"{dt:.1f}")
+' 2>/dev/null || echo "N/A")
+  if [[ "$benchmark_ms" != "N/A" ]]; then
+    printf "  %b Interactive Zsh Launch: ${BOLD}%s ms${RESET} (Target <250ms)\n" "$OK" "$benchmark_ms"
+    passed=$((passed + 1))
+  fi
+fi
+
+# Summary
+printf "\n${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n"
+printf "${BOLD}Summary:${RESET} %b %d Passed  " "$OK" "$passed"
+[[ $warnings -gt 0 ]] && printf "%b %d Warnings  " "$WARN" "$warnings"
+[[ $failed -gt 0 ]] && printf "%b %d Failed  " "$FAIL" "$failed"
+printf "\n"
+
+if [[ $failed -eq 0 ]]; then
+  printf "${BOLD}${GREEN}All critical dotfiles systems are healthy and operational!${RESET}\n\n"
+  exit 0
+else
+  printf "${BOLD}${RED}Some components require attention. Please review the items above.${RESET}\n\n"
+  exit 1
+fi

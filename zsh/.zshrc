@@ -244,6 +244,8 @@ fi
 alias code="zed"
 alias reload="exec zsh"
 alias dotfiles="cd ~/.dotfiles"
+alias dotcheck="dotcheck"
+alias doctor="dotcheck"
 
 # Sync dotfiles (update Brewfile on macOS, restow symlinks, re-apply patches, commit & push)
 function dotsync() {

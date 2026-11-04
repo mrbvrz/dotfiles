@@ -129,4 +129,5 @@ dotsync
 | `ports` | **Zsh Function** | List active listening TCP ports (`lsof` on macOS, `ss -tulpn` on Fedora) |
 | `reload` | **Zsh Alias** | Reload Zsh session (`exec zsh`) |
 | `dotfiles` | **Zsh Alias** | Jump directly to `~/.dotfiles` |
+| `dotcheck` / `doctor` | **Diagnostics** | Run universal dotfiles health check (validates tools, symlinks, plugins, and patches) |
 | `dotsync [msg]` | **Zsh Function** | One-command sync: updates `Brewfile`, restows symlinks, commits, and pushes to GitHub |

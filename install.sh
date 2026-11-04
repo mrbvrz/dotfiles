@@ -222,4 +222,11 @@ if [[ "$SHELL" != *"zsh"* ]] && command -v zsh >/dev/null 2>&1; then
   chsh -s "$(command -v zsh)" || true
 fi
 
+# ------------------------------------------------------------------------------
+# 5. Health & Diagnostics Check
+# ------------------------------------------------------------------------------
+if [[ -x "$DOTFILES_DIR/bin/.local/bin/dotcheck" ]]; then
+  "$DOTFILES_DIR/bin/.local/bin/dotcheck" || true
+fi
+
 echo "==> Universal Dotfiles setup complete! Run 'exec zsh' to start."
