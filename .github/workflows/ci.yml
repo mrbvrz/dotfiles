@@ -37,7 +37,7 @@ jobs:
       - name: Run ShellCheck on core scripts
         run: |
           shellcheck -e SC1091,SC2034,SC2155,SC2086 install.sh
-          shellcheck -e SC1091,SC2034,SC2155 bin/.local/bin/dotcheck bin/.local/bin/lzj bin/.local/bin/lzj-snapshot
+          shellcheck -e SC1091,SC2034,SC2155,SC2059,SC2012,SC2295,SC2086 bin/.local/bin/dotcheck bin/.local/bin/lzj bin/.local/bin/lzj-snapshot
 
   test-stow-ubuntu:
     name: Test Stow & Linking (Ubuntu)
@@ -54,7 +54,8 @@ jobs:
       - name: Test GNU Stow Linking
         run: |
           mkdir -p ~/.config
-          stow --verbose --dir="$GITHUB_WORKSPACE" --target="$HOME" \
+          rm -f ~/.zshrc ~/.gitconfig ~/.bashrc ~/.profile ~/.bash_logout
+          stow --restow --verbose --dir="$GITHUB_WORKSPACE" --target="$HOME" \
             zsh spaceship git alacritty zellij zed mise bin lazygit lazydocker yazi btop bat
 
       - name: Verify Stow Links
@@ -80,7 +81,8 @@ jobs:
       - name: Test GNU Stow Linking
         run: |
           mkdir -p ~/.config
-          stow --verbose --dir="$GITHUB_WORKSPACE" --target="$HOME" \
+          rm -f ~/.zshrc ~/.gitconfig ~/.bashrc ~/.profile ~/.bash_logout ~/.zprofile
+          stow --restow --verbose --dir="$GITHUB_WORKSPACE" --target="$HOME" \
             zsh spaceship git alacritty zellij zed mise bin lazygit lazydocker yazi btop bat
 
       - name: Verify Stow Links

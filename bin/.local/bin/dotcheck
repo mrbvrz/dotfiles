@@ -47,7 +47,7 @@ check_symlink() {
     local real
     real="$(python3 -c "import os; print(os.path.realpath('$target'))" 2>/dev/null || true)"
     if [[ "$real" == *"$HOME/.dotfiles"* ]]; then
-      local rel="${real#$HOME/.dotfiles/}"
+      local rel="${real#"$HOME"/.dotfiles/}"
       printf "  %b %-30s ${GRAY}→ %s${RESET}\n" "$OK" "$label" "$rel"
       passed=$((passed + 1))
     else
@@ -147,8 +147,9 @@ if [[ "$(uname -s)" == "Darwin" ]]; then
   ALACRITTY_BIN="/Applications/Alacritty.app/Contents/MacOS/alacritty"
   if [[ -f "$ALACRITTY_BIN" ]]; then
     ARCH="$(uname -m)"
-    [[ "$ARCH" == "arm64" ]] && OTOOL_ARCH="-arch arm64" || OTOOL_ARCH=""
-    if otool $OTOOL_ARCH -tv "$ALACRITTY_BIN" 2>/dev/null | grep -E "Window14set_has_shadow" -A 10 | grep -q "mov.*w19, #0x1"; then
+    otool_cmd=(otool -tv "$ALACRITTY_BIN")
+    [[ "$ARCH" == "arm64" ]] && otool_cmd=(otool -arch arm64 -tv "$ALACRITTY_BIN")
+    if "${otool_cmd[@]}" 2>/dev/null | grep -E "Window14set_has_shadow" -A 10 | grep -q "mov.*w19, #0x1"; then
       printf "  %b %-24s ${GRAY}Native NSWindow drop shadow active${RESET}\n" "$OK" "Alacritty Patch"
       passed=$((passed + 1))
     else
