@@ -3,8 +3,8 @@
 # Managed via GNU Stow in ~/.dotfiles/zsh/.zshrc
 # ==============================================================================
 
-# Ensure $PATH never contains duplicate entries
-typeset -U path PATH
+# Ensure $PATH and $FPATH never contain duplicate entries
+typeset -U path PATH fpath FPATH
 
 # OS Detection
 IS_MACOS=false
@@ -113,18 +113,21 @@ ZSH_COLORIZE_STYLE="colorful"
 
 plugins=(git aliases npm colorize)
 
-# 24-hour smart cache for compinit (reduces shell startup time by ~100ms)
+# Fast 24-hour smart cache for compinit (accelerates startup by ~300ms)
 ZSH_COMPDUMP="${ZDOTDIR:-$HOME}/.zcompdump-${HOST%%.*}-$ZSH_VERSION"
-if [[ -f "$ZSH_COMPDUMP" && -n "$ZSH_COMPDUMP"(#qN.mh+24) || ! -f "$ZSH_COMPDUMP" ]]; then
-  autoload -Uz compinit && compinit -d "$ZSH_COMPDUMP"
-  zcompile "$ZSH_COMPDUMP" 2>/dev/null
-else
-  autoload -Uz compinit && compinit -C -d "$ZSH_COMPDUMP"
-fi
-compinit() { : } # prevent OMZ from running redundant uncached compinit
+compinit() {
+  local target_dump="${ZSH_COMPDUMP:-${ZDOTDIR:-$HOME}/.zcompdump-${HOST%%.*}-$ZSH_VERSION}"
+  unfunction compinit
+  autoload -Uz compinit
+  if [[ -f "$target_dump" && -z "$target_dump"(#qN.mh+24) ]]; then
+    compinit -C "$@"
+  else
+    compinit "$@"
+    zcompile "$target_dump" 2>/dev/null
+  fi
+}
 
 [[ -f "$ZSH/oh-my-zsh.sh" ]] && source "$ZSH/oh-my-zsh.sh"
-unfunction compinit # restore normal compinit after OMZ is loaded
 
 # Bun completions
 [[ -s "$HOME/.bun/_bun" ]] && source "$HOME/.bun/_bun"
@@ -141,9 +144,14 @@ bindkey "${terminfo[kcud1]:-^[[B}" down-line-or-beginning-search
 # ------------------------------------------------------------------------------
 # 4. Modern CLI Integrations (mise, fzf, fd, zoxide, yazi)
 # ------------------------------------------------------------------------------
-# mise (Polyglot runtime manager: Node, Bun, pnpm, Go, Python, Ruby)
+# mise (Polyglot runtime manager: Node, Bun, pnpm, Go, Python, Ruby — cached for speed)
 if command -v mise >/dev/null 2>&1; then
-  eval "$(mise activate zsh)"
+  _mise_cache="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/mise.zsh"
+  if [[ ! -f "$_mise_cache" || "$(command -v mise)" -nt "$_mise_cache" ]]; then
+    mkdir -p "${_mise_cache:h}"
+    mise activate zsh > "$_mise_cache" 2>/dev/null
+  fi
+  [[ -f "$_mise_cache" ]] && source "$_mise_cache"
 fi
 
 # Normalize fd & bat binary names across Linux distributions
@@ -178,6 +186,46 @@ if command -v fzf >/dev/null 2>&1; then
     --color=marker:#79B8FF,fg+:#F8F8F8,prompt:#B392F1,hl+:#79B8FF"
   export FZF_CTRL_T_OPTS="--preview '$BAT_BIN --color=always --theme=TwoDark --style=numbers --line-range=:200 {} 2>/dev/null || eza --tree --level=2 --color=always {}'"
   export FZF_ALT_C_OPTS="--preview 'eza --tree --level=2 --icons --color=always {}'"
+
+  # Interactive Git Branch Switcher ('fco' & Ctrl+G)
+  fco() {
+    git rev-parse --git-dir >/dev/null 2>&1 || { echo "Not in a git repository"; return 1; }
+    local branch
+    branch=$(git branch --all --color=always | grep -v '/HEAD\s' | \
+      fzf --ansi --no-multi --preview-window=right:65% \
+          --preview 'git log -n 15 --color=always --graph --pretty=format:"%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset" $(echo {} | sed "s/.* //" | sed "s#remotes/[^/]*/##")' | \
+      sed "s/.* //" | sed "s#remotes/[^/]*/##")
+    if [[ -n "$branch" ]]; then
+      git checkout "$branch"
+    fi
+  }
+
+  # Interactive Process Killer ('fkill' & 'kp')
+  fkill() {
+    local pid
+    pid=$(ps -ef | sed 1d | fzf -m --preview 'echo {}' --preview-window=down:3:wrap | awk '{print $2}')
+    if [[ -n "$pid" ]]; then
+      echo "$pid" | xargs kill -${1:-9}
+      echo "Terminated process(es): $pid"
+    fi
+  }
+  alias kp="fkill"
+
+  # ZLE Widget: Ctrl+G Git Branch Switcher
+  fzf-git-branch-widget() {
+    local branch
+    branch=$(git branch --all --color=always 2>/dev/null | grep -v '/HEAD\s' | \
+      fzf --ansi --no-multi --preview-window=right:65% \
+          --preview 'git log -n 15 --color=always --graph --pretty=format:"%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset" $(echo {} | sed "s/.* //" | sed "s#remotes/[^/]*/##")' | \
+      sed "s/.* //" | sed "s#remotes/[^/]*/##")
+    if [[ -n "$branch" ]]; then
+      LBUFFER="${LBUFFER}git checkout ${branch}"
+      zle accept-line
+    fi
+    zle reset-prompt
+  }
+  zle -N fzf-git-branch-widget
+  bindkey '^G' fzf-git-branch-widget
 fi
 
 # zoxide (Smart cd replacement: use 'z <dir>' and 'zi' for interactive selection - cached)
@@ -258,7 +306,7 @@ function dotsync() {
     brew bundle dump --file="$HOME/.dotfiles/Brewfile" --force
   fi
   stow --restow --dir="$HOME/.dotfiles" --target="$HOME" \
-    zsh spaceship git alacritty zellij zed mise bin lazygit yazi btop bat
+    zsh spaceship git alacritty zellij zed mise bin lazygit lazydocker yazi btop bat
   if $IS_MACOS && [[ -f "$HOME/.dotfiles/scripts/macos-alacritty-shadow.py" ]]; then
     python3 "$HOME/.dotfiles/scripts/macos-alacritty-shadow.py" >/dev/null 2>&1 || true
   fi

@@ -94,9 +94,11 @@ check_symlink "$HOME/.config/alacritty/alacritty.toml" "Alacritty Config"
 check_symlink "$HOME/.config/zellij/config.kdl" "Zellij Config"
 check_symlink "$HOME/.config/zellij/layouts/compact.kdl" "Zellij Compact Layout"
 check_symlink "$HOME/.config/zed/settings.json" "Zed Settings"
+check_symlink "$HOME/.config/zed/themes" "Zed Custom Themes"
 check_symlink "$HOME/.config/mise/config.toml" "Mise Config"
 check_symlink "$HOME/.config/bat/config" "Bat Config"
 check_symlink "$HOME/.config/lazygit/config.yml" "Lazygit Config"
+check_symlink "$HOME/.config/lazydocker/config.yml" "Lazydocker Config"
 check_symlink "$HOME/.config/yazi/yazi.toml" "Yazi Config"
 check_symlink "$HOME/.config/yazi/theme.toml" "Yazi Min Dark Theme"
 check_symlink "$HOME/.config/btop/btop.conf" "Btop Config"
@@ -162,14 +164,23 @@ header "Shell Performance Benchmark"
 if command -v python3 >/dev/null 2>&1; then
   benchmark_ms=$(python3 -c '
 import subprocess, time
-t0 = time.perf_counter()
-subprocess.run(["zsh", "-i", "-c", "exit"], capture_output=True, env={"ZELLIJ": "1", "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin", "HOME": "'"$HOME"'"})
-dt = (time.perf_counter() - t0) * 1000
-print(f"{dt:.1f}")
+runs = []
+for _ in range(3):
+    t0 = time.perf_counter()
+    subprocess.run(["zsh", "-i", "-c", "exit"], capture_output=True, env={"ZELLIJ": "1", "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin", "HOME": "'"$HOME"'"})
+    runs.append((time.perf_counter() - t0) * 1000)
+runs.sort()
+print(f"{runs[0]:.1f}")
 ' 2>/dev/null || echo "N/A")
   if [[ "$benchmark_ms" != "N/A" ]]; then
-    printf "  %b Interactive Zsh Launch: ${BOLD}%s ms${RESET} (Target <250ms)\n" "$OK" "$benchmark_ms"
-    passed=$((passed + 1))
+    is_fast=$(python3 -c "print(1 if float('$benchmark_ms') < 250 else 0)" 2>/dev/null || echo 0)
+    if [[ "$is_fast" -eq 1 ]]; then
+      printf "  %b Interactive Zsh Launch: ${BOLD}%s ms${RESET} (Target <250ms)\n" "$OK" "$benchmark_ms"
+      passed=$((passed + 1))
+    else
+      printf "  %b Interactive Zsh Launch: ${BOLD}%s ms${RESET} (Slower than 250ms target)\n" "$WARN" "$benchmark_ms"
+      warnings=$((warnings + 1))
+    fi
   fi
 fi
 

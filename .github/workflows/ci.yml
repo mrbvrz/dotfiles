@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  lint-and-validate:
+    name: Lint & Syntax Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout dotfiles
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck & Zsh
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck zsh
+
+      - name: Validate Shell Scripts Syntax
+        run: |
+          bash -n install.sh
+          bash -n bin/.local/bin/dotcheck
+          bash -n bin/.local/bin/lzj
+          bash -n bin/.local/bin/lzj-snapshot
+          zsh -n zsh/.zshrc
+          zsh -n spaceship/.config/spaceship.zsh
+
+      - name: Validate Python Scripts
+        run: |
+          python3 -m py_compile scripts/macos-alacritty-shadow.py
+          python3 -m py_compile scripts/zellij-brand-prefix.py
+
+      - name: Run ShellCheck on core scripts
+        run: |
+          shellcheck -e SC1091,SC2034,SC2155,SC2086 install.sh
+          shellcheck -e SC1091,SC2034,SC2155 bin/.local/bin/dotcheck bin/.local/bin/lzj bin/.local/bin/lzj-snapshot
+
+  test-stow-ubuntu:
+    name: Test Stow & Linking (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout dotfiles
+        uses: actions/checkout@v4
+
+      - name: Install GNU Stow & Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y stow zsh
+
+      - name: Test GNU Stow Linking
+        run: |
+          mkdir -p ~/.config
+          stow --verbose --dir="$GITHUB_WORKSPACE" --target="$HOME" \
+            zsh spaceship git alacritty zellij zed mise bin lazygit lazydocker yazi btop bat
+
+      - name: Verify Stow Links
+        run: |
+          test -L ~/.zshrc
+          test -L ~/.gitconfig
+          test -L ~/.config/alacritty/alacritty.toml
+          test -L ~/.config/zellij/config.kdl
+          test -L ~/.config/lazydocker/config.yml
+          test -L ~/.config/btop/btop.conf
+
+  test-stow-macos:
+    name: Test Stow & Linking (macOS)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout dotfiles
+        uses: actions/checkout@v4
+
+      - name: Install GNU Stow
+        run: |
+          brew install stow
+
+      - name: Test GNU Stow Linking
+        run: |
+          mkdir -p ~/.config
+          stow --verbose --dir="$GITHUB_WORKSPACE" --target="$HOME" \
+            zsh spaceship git alacritty zellij zed mise bin lazygit lazydocker yazi btop bat
+
+      - name: Verify Stow Links
+        run: |
+          test -L ~/.zshrc
+          test -L ~/.gitconfig
+          test -L ~/.config/alacritty/alacritty.toml
+          test -L ~/.config/zellij/config.kdl
+          test -L ~/.config/lazydocker/config.yml
+          test -L ~/.config/btop/btop.conf

@@ -1,0 +1,31 @@
+gui:
+  scrollHeight: 2
+  scrollPastBottom: true
+  mouseEvents: true
+  sidePanelWidth: 0.3333
+  theme:
+    activeBorderColor:
+      - "#B392F1"
+      - "bold"
+    inactiveBorderColor:
+      - "#444444"
+    optionsColor:
+      - "#79B8FF"
+    selectedLineBgColor:
+      - "#2A2A2A"
+    selectedRangeBgColor:
+      - "#333333"
+reporting: "off"
+checkForUpdates: false
+commandTemplates:
+  dockerCompose: "docker compose"
+customCommands:
+  containers:
+    - name: "Shell (sh)"
+      attach: true
+      command: "docker exec -it {{ .Container.ID }} /bin/sh"
+      serviceNames: []
+    - name: "Shell (bash)"
+      attach: true
+      command: "docker exec -it {{ .Container.ID }} /bin/bash"
+      serviceNames: []

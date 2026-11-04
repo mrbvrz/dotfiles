@@ -8,6 +8,7 @@
 ![Alacritty](https://img.shields.io/badge/Terminal-Alacritty-F46D01?style=flat-square&logo=alacritty&logoColor=white)
 ![Spaceship](https://img.shields.io/badge/Prompt-Spaceship-7C3AED?style=flat-square)
 ![GNU Stow](https://img.shields.io/badge/Manager-GNU_Stow-F59E0B?style=flat-square)
+[![CI](https://github.com/mrbvrz/dotfiles/actions/workflows/ci.yml/badge.svg)](https://github.com/mrbvrz/dotfiles/actions/workflows/ci.yml)
 
 ---
 
@@ -51,6 +52,8 @@ This repository contains my personal, cross-platform dotfiles managed with **GNU
 │   └── .local/bin/                      # -> lzj & lzj-snapshot (lazy-zellij fzf session picker)
 ├── lazygit/
 │   └── .config/lazygit/config.yml       # -> ~/.config/lazygit/config.yml (Min Dark theme)
+├── lazydocker/
+│   └── .config/lazydocker/config.yml    # -> ~/.config/lazydocker/config.yml (Min Dark theme)
 ├── yazi/
 │   ├── .config/yazi/yazi.toml           # -> ~/.config/yazi/yazi.toml
 │   └── .config/yazi/theme.toml          # -> ~/.config/yazi/theme.toml (Min Dark theme)
@@ -109,6 +112,8 @@ dotsync
 | `Ctrl + R` | **fzf** | Interactive fuzzy search through command history |
 | `Ctrl + T` | **fzf + fd + bat** | Fuzzy find files in the current directory with syntax-highlighted preview |
 | `Alt + C` | **fzf + eza** | Fuzzy find subdirectories with tree preview |
+| `Ctrl + G` / `fco` | **Git + fzf** | Interactive Git branch checkout with commit history preview |
+| `kp` / `fkill` | **fzf + kill** | Interactive fuzzy process killer with PID and memory stats |
 | `y` | **yazi** | Terminal file manager (automatically changes working directory when exiting with `q`) |
 | `Cmd + N` | **Alacritty** | Open a new independent Alacritty terminal window (auto `SPACE01..N`) |
 | `Cmd + Enter` / `Cmd + Ctrl + F` | **Alacritty** | Toggle Fullscreen window (or `F11`) |

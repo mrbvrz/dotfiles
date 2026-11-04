@@ -4,3 +4,5 @@
 *.bak
 .zshenv.local
 .gitconfig.local
+__pycache__/
+*.pyc

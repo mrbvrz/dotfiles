@@ -82,7 +82,7 @@ elif [[ "$OS_TYPE" == "Linux" ]]; then
     sudo apt-get update
     sudo apt-get install -y \
       zsh git stow curl wget unzip fontconfig alacritty fzf fd-find ripgrep bat zoxide btop duf jq \
-      zsh-autosuggestions zsh-syntax-highlighting xclip wl-clipboard
+      zsh-autosuggestions zsh-syntax-highlighting xclip wl-clipboard || true
   fi
 
   # Install CommitMono Nerd Font on Linux if not already present
@@ -128,6 +128,7 @@ mkdir -p \
   "$HOME/.config/zed" \
   "$HOME/.config/mise" \
   "$HOME/.config/lazygit" \
+  "$HOME/.config/lazydocker" \
   "$HOME/.config/yazi" \
   "$HOME/.config/btop/themes"
 
@@ -143,8 +144,10 @@ for target_file in \
   "$HOME/.config/zellij/config.kdl" \
   "$HOME/.config/zellij/layouts/compact.kdl" \
   "$HOME/.config/zed/settings.json" \
+  "$HOME/.config/zed/themes" \
   "$HOME/.config/mise/config.toml" \
   "$HOME/.config/lazygit/config.yml" \
+  "$HOME/.config/lazydocker/config.yml" \
   "$HOME/.config/yazi/yazi.toml" \
   "$HOME/.config/yazi/theme.toml" \
   "$HOME/.config/btop/btop.conf" \
@@ -156,7 +159,17 @@ done
 
 echo "==> Linking dotfiles with GNU Stow..."
 stow --restow --dir="$DOTFILES_DIR" --target="$HOME" \
-  zsh spaceship git alacritty zellij zed mise bin lazygit yazi btop bat
+  zsh spaceship git alacritty zellij zed mise bin lazygit lazydocker yazi btop bat
+
+# macOS Lazydocker support: ensure Application Support points to XDG config
+if [[ "$OS_TYPE" == "Darwin" ]]; then
+  LAZYDOCKER_APP_DIR="$HOME/Library/Application Support/lazydocker"
+  mkdir -p "$LAZYDOCKER_APP_DIR"
+  if [[ ! -L "$LAZYDOCKER_APP_DIR/config.yml" ]]; then
+    rm -f "$LAZYDOCKER_APP_DIR/config.yml"
+    ln -s "$HOME/.config/lazydocker/config.yml" "$LAZYDOCKER_APP_DIR/config.yml"
+  fi
+fi
 
 # Pre-grant Zellij permissions for bundled local plugins (zellij-tabula & monocle)
 if [[ "$OS_TYPE" == "Darwin" ]]; then
