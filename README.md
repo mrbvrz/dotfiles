@@ -44,7 +44,8 @@ This repository contains my personal, cross-platform dotfiles managed with **GNU
 ├── zed/
 │   └── .config/zed/settings.json        # -> ~/.config/zed/settings.json
 ├── zellij/
-│   └── .config/zellij/config.kdl        # -> ~/.config/zellij/config.kdl
+│   ├── .config/zellij/config.kdl        # -> ~/.config/zellij/config.kdl
+│   └── .config/zellij/layouts/compact.kdl # -> ~/.config/zellij/layouts/compact.kdl
 ├── mise/
 │   └── .config/mise/config.toml         # -> ~/.config/mise/config.toml
 ├── spaceship/
@@ -57,7 +58,8 @@ This repository contains my personal, cross-platform dotfiles managed with **GNU
 │   ├── .gitconfig                       # -> ~/.gitconfig
 │   └── .gitignore_global                # -> ~/.gitignore_global
 ├── scripts/
-│   └── macos-alacritty-shadow.py        # Enables native Apple NSWindow drop shadow on blurred Alacritty
+│   ├── macos-alacritty-shadow.py        # Enables native Apple NSWindow drop shadow on blurred Alacritty
+│   └── zellij-brand-prefix.py           # Replaces Zellij bottom-bar prefix with mrbvrz-space01..N
 ├── Brewfile                             # Declarative macOS Homebrew bundle
 ├── install.sh                           # Universal bootstrap script (macOS & Fedora)
 └── README.md

@@ -120,10 +120,10 @@ fi
 # ------------------------------------------------------------------------------
 # 3. Symlink Configurations Using GNU Stow
 # ------------------------------------------------------------------------------
-mkdir -p "$HOME/.config/alacritty" "$HOME/.config/zellij" "$HOME/.config/zed" "$HOME/.config/mise"
+mkdir -p "$HOME/.config/alacritty" "$HOME/.config/zellij/layouts" "$HOME/.config/zed" "$HOME/.config/mise"
 
 # Backup existing non-symlink files before stowing
-for target_file in "$HOME/.zshrc" "$HOME/.zshenv" "$HOME/.zprofile" "$HOME/.gitconfig" "$HOME/.gitignore_global" "$HOME/.config/spaceship.zsh" "$HOME/.config/alacritty/alacritty.toml" "$HOME/.config/zellij/config.kdl" "$HOME/.config/zed/settings.json" "$HOME/.config/mise/config.toml"; do
+for target_file in "$HOME/.zshrc" "$HOME/.zshenv" "$HOME/.zprofile" "$HOME/.gitconfig" "$HOME/.gitignore_global" "$HOME/.config/spaceship.zsh" "$HOME/.config/alacritty/alacritty.toml" "$HOME/.config/zellij/config.kdl" "$HOME/.config/zellij/layouts/compact.kdl" "$HOME/.config/zed/settings.json" "$HOME/.config/mise/config.toml"; do
   if [[ -f "$target_file" && ! -L "$target_file" ]]; then
     mv "$target_file" "${target_file}.bak"
   fi
@@ -131,6 +131,14 @@ done
 
 echo "==> Linking dotfiles with GNU Stow..."
 stow --restow --dir="$DOTFILES_DIR" --target="$HOME" zsh spaceship git alacritty zellij zed mise
+
+# Apply macOS Alacritty native shadow patch & Zellij mrbvrz-space prefix patch
+if [[ "$OS_TYPE" == "Darwin" ]] && [[ -x "$DOTFILES_DIR/scripts/macos-alacritty-shadow.py" ]]; then
+  "$DOTFILES_DIR/scripts/macos-alacritty-shadow.py" || true
+fi
+if [[ -x "$DOTFILES_DIR/scripts/zellij-brand-prefix.py" ]]; then
+  "$DOTFILES_DIR/scripts/zellij-brand-prefix.py" || true
+fi
 
 # Install global runtimes configured in ~/.config/mise/config.toml
 if command -v mise >/dev/null 2>&1; then
