@@ -106,7 +106,7 @@ cyan    = "#5A8AC0"
 white   = "#898989"
 
 # ------------------------------------------------------------------------------
-# Keybindings (Word Navigation, Clear Screen, New Window)
+# Keybindings (Word Navigation, Clear Screen, New Window, & Zellij Bottom Tabs)
 # ------------------------------------------------------------------------------
 [[keyboard.bindings]]
 key = "N"
@@ -132,3 +132,84 @@ chars = "\u001Bf"
 key = "Back"
 mods = "Alt"
 chars = "\u0017"
+
+# Zellij Bottom Tab & Split Pane Shortcuts (Replaces macOS Native Top Tab Bar)
+[[keyboard.bindings]]
+key = "T"
+mods = "Command"
+chars = "\u001Bt"
+
+[[keyboard.bindings]]
+key = "W"
+mods = "Command"
+chars = "\u001Bw"
+
+[[keyboard.bindings]]
+key = "D"
+mods = "Command"
+chars = "\u001Bd"
+
+[[keyboard.bindings]]
+key = "D"
+mods = "Command|Shift"
+chars = "\u001BD"
+
+[[keyboard.bindings]]
+key = "R"
+mods = "Command|Shift"
+chars = "\u001Br"
+
+[[keyboard.bindings]]
+key = "LBracket"
+mods = "Command|Shift"
+chars = "\u001B["
+
+[[keyboard.bindings]]
+key = "RBracket"
+mods = "Command|Shift"
+chars = "\u001B]"
+
+[[keyboard.bindings]]
+key = "Key1"
+mods = "Command"
+chars = "\u001B1"
+
+[[keyboard.bindings]]
+key = "Key2"
+mods = "Command"
+chars = "\u001B2"
+
+[[keyboard.bindings]]
+key = "Key3"
+mods = "Command"
+chars = "\u001B3"
+
+[[keyboard.bindings]]
+key = "Key4"
+mods = "Command"
+chars = "\u001B4"
+
+[[keyboard.bindings]]
+key = "Key5"
+mods = "Command"
+chars = "\u001B5"
+
+[[keyboard.bindings]]
+key = "Key6"
+mods = "Command"
+chars = "\u001B6"
+
+[[keyboard.bindings]]
+key = "Key7"
+mods = "Command"
+chars = "\u001B7"
+
+[[keyboard.bindings]]
+key = "Key8"
+mods = "Command"
+chars = "\u001B8"
+
+[[keyboard.bindings]]
+key = "Key9"
+mods = "Command"
+chars = "\u001B9"

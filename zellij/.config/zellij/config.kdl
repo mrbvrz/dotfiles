@@ -1,16 +1,184 @@
 // =============================================================================
 // Zellij Terminal Multiplexer Configuration (~/.config/zellij/config.kdl)
-// Theme: Tokyo Night
+// Theme: Min Dark (Minimal Flat Bottom Tab Bar — No Buttons/Boxes)
 // Managed via GNU Stow in ~/.dotfiles/zellij/.config/zellij/config.kdl
 // Docs: https://zellij.dev/documentation/configuration
 // =============================================================================
 
-theme "tokyo-night"
+theme "min-dark"
 default_layout "compact"
 pane_frames false
 simplified_ui true
 mouse_mode true
 copy_on_select true
 scroll_buffer_size 50000
-on_force_close "detach"
-session_serialization true
+on_force_close "quit"
+session_serialization false
+show_startup_tips false
+
+// -----------------------------------------------------------------------------
+// Custom Theme: Min Dark (Seamless background so tabs appear as flat text,
+// not buttons/boxes, matching Alacritty & Zed Min Dark Blurred)
+// -----------------------------------------------------------------------------
+themes {
+    min-dark {
+        text_unselected {
+            base 115 115 115        // #737373 muted label
+            background 26 26 26     // #1A1A1A seamless terminal background
+            emphasis_0 255 171 112  // #FFAB70 orange
+            emphasis_1 121 184 255  // #79B8FF blue
+            emphasis_2 179 146 241  // #B392F1 purple
+            emphasis_3 249 117 131  // #F97583 red/pink
+        }
+        text_selected {
+            base 248 248 248        // #F8F8F8 bright white
+            background 26 26 26     // #1A1A1A seamless background (no button box)
+            emphasis_0 255 171 112
+            emphasis_1 121 184 255
+            emphasis_2 179 146 241
+            emphasis_3 249 117 131
+        }
+        ribbon_unselected {
+            base 110 110 110        // #6E6E6E inactive tab text
+            background 26 26 26     // #1A1A1A same as terminal bg -> no button shape!
+            emphasis_0 110 110 110
+            emphasis_1 110 110 110
+            emphasis_2 110 110 110
+            emphasis_3 110 110 110
+        }
+        ribbon_selected {
+            base 248 248 248        // #F8F8F8 active tab text (crisp white)
+            background 26 26 26     // #1A1A1A same as terminal bg -> no button shape!
+            emphasis_0 179 146 241  // #B392F1 accent indicator
+            emphasis_1 121 184 255  // #79B8FF
+            emphasis_2 179 146 241
+            emphasis_3 255 171 112
+        }
+        table_title {
+            base 179 146 241
+            background 26 26 26
+            emphasis_0 255 171 112
+            emphasis_1 121 184 255
+            emphasis_2 179 146 241
+            emphasis_3 249 117 131
+        }
+        table_cell_selected {
+            base 248 248 248
+            background 42 42 42
+            emphasis_0 255 171 112
+            emphasis_1 121 184 255
+            emphasis_2 179 146 241
+            emphasis_3 249 117 131
+        }
+        table_cell_unselected {
+            base 187 187 187
+            background 26 26 26
+            emphasis_0 255 171 112
+            emphasis_1 121 184 255
+            emphasis_2 179 146 241
+            emphasis_3 249 117 131
+        }
+        list_selected {
+            base 248 248 248
+            background 42 42 42
+            emphasis_0 255 171 112
+            emphasis_1 121 184 255
+            emphasis_2 179 146 241
+            emphasis_3 249 117 131
+        }
+        list_unselected {
+            base 187 187 187
+            background 26 26 26
+            emphasis_0 255 171 112
+            emphasis_1 121 184 255
+            emphasis_2 179 146 241
+            emphasis_3 249 117 131
+        }
+        frame_selected {
+            base 179 146 241
+            background 0
+            emphasis_0 255 171 112
+            emphasis_1 121 184 255
+            emphasis_2 179 146 241
+            emphasis_3 249 117 131
+        }
+        frame_highlight {
+            base 121 184 255
+            background 0
+            emphasis_0 179 146 241
+            emphasis_1 255 171 112
+            emphasis_2 121 184 255
+            emphasis_3 121 184 255
+        }
+        exit_code_success {
+            base 121 184 255
+            background 0
+            emphasis_0 121 184 255
+            emphasis_1 26 26 26
+            emphasis_2 179 146 241
+            emphasis_3 121 184 255
+        }
+        exit_code_error {
+            base 249 117 131
+            background 0
+            emphasis_0 255 171 112
+            emphasis_1 26 26 26
+            emphasis_2 179 146 241
+            emphasis_3 121 184 255
+        }
+        multiplayer_user_colors {
+            player_1 179 146 241
+            player_2 121 184 255
+            player_3 255 171 112
+            player_4 249 117 131
+            player_5 219 171 217
+            player_6 255 156 170
+            player_7 163 208 255
+            player_8 207 184 255
+            player_9 255 201 163
+            player_10 248 248 248
+        }
+        terminal_colors {
+            black 26 26 26
+            red 249 117 131
+            green 121 184 255
+            yellow 255 171 112
+            blue 179 146 241
+            magenta 219 171 217
+            cyan 121 184 255
+            white 187 187 187
+            bright_black 102 102 102
+            bright_red 255 156 170
+            bright_green 163 208 255
+            bright_yellow 255 201 163
+            bright_blue 207 184 255
+            bright_magenta 243 184 236
+            bright_cyan 163 208 255
+            bright_white 248 248 248
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Direct Shortcuts (Mapped from Alacritty Cmd+T, Cmd+W, Cmd+1..9, Cmd+D)
+// -----------------------------------------------------------------------------
+keybinds {
+    shared_except "locked" {
+        bind "Alt t" { NewTab; SwitchToMode "Normal"; }
+        bind "Alt w" { CloseFocus; SwitchToMode "Normal"; }
+        bind "Alt d" { NewPane "Right"; SwitchToMode "Normal"; }
+        bind "Alt D" { NewPane "Down"; SwitchToMode "Normal"; }
+        bind "Alt [" { GoToPreviousTab; }
+        bind "Alt ]" { GoToNextTab; }
+        bind "Alt r" { SwitchToMode "RenameTab"; TabNameInput 0; }
+        bind "Alt 1" { GoToTab 1; SwitchToMode "Normal"; }
+        bind "Alt 2" { GoToTab 2; SwitchToMode "Normal"; }
+        bind "Alt 3" { GoToTab 3; SwitchToMode "Normal"; }
+        bind "Alt 4" { GoToTab 4; SwitchToMode "Normal"; }
+        bind "Alt 5" { GoToTab 5; SwitchToMode "Normal"; }
+        bind "Alt 6" { GoToTab 6; SwitchToMode "Normal"; }
+        bind "Alt 7" { GoToTab 7; SwitchToMode "Normal"; }
+        bind "Alt 8" { GoToTab 8; SwitchToMode "Normal"; }
+        bind "Alt 9" { GoToTab 9; SwitchToMode "Normal"; }
+    }
+}

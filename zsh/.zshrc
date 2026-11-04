@@ -292,3 +292,12 @@ for syntax_path in \
     break
   fi
 done
+
+# ------------------------------------------------------------------------------
+# 8. Auto-Start Zellij Workspace in Alacritty (Minimal Bottom Tab Bar)
+# ------------------------------------------------------------------------------
+if [[ -o interactive ]] && [[ -z "$ZELLIJ" ]] && [[ -n "$ALACRITTY_WINDOW_ID" || "$TERM_PROGRAM" == "Alacritty" ]]; then
+  if command -v zellij >/dev/null 2>&1; then
+    zellij
+  fi
+fi
