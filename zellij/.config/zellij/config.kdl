@@ -163,6 +163,12 @@ themes {
 // Direct Shortcuts (Mapped from Alacritty Cmd+T, Cmd+W, Cmd+1..9, Cmd+D)
 // -----------------------------------------------------------------------------
 keybinds {
+    search {
+        bind "s" { SwitchToMode "EnterSearch"; SearchInput 0; }
+        bind "Down" "n" { Search "down"; }
+        bind "Up" "p" "N" { Search "up"; }
+        bind "Enter" "Esc" "Ctrl c" { ScrollToBottom; SearchInput 0; SwitchToMode "Normal"; }
+    }
     shared_except "locked" {
         bind "Alt t" { NewTab; SwitchToMode "Normal"; }
         bind "Alt w" { CloseFocus; SwitchToMode "Normal"; }
