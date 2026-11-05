@@ -27,23 +27,23 @@ themes {
         text_unselected {
             base 94 158 160         // #5E9EA0 Ceramic Blue for Session Badge (SPACE01)
             background 0            // 0 = ANSI Default transparent background
-            emphasis_0 232 125 75   // #E87D4B Persimmon orange
-            emphasis_1 94 158 160   // #5E9EA0 Ceramic blue
+            emphasis_0 94 158 160   // #5E9EA0 Ceramic Blue for badge bg
+            emphasis_1 184 150 158  // #B8969E Cashmere Mauve
             emphasis_2 154 144 134  // #9A9086 Warm Stone for NORMAL mode on the far right
             emphasis_3 210 92 84    // #D25C54 Paprika red (LOCKED mode indicator)
         }
         text_selected {
             base 246 241 234        // #F6F1EA Bright oat white
             background 0            // 0 = ANSI Black -> transparent
-            emphasis_0 232 125 75
-            emphasis_1 94 158 160
+            emphasis_0 94 158 160
+            emphasis_1 184 150 158
             emphasis_2 184 150 158
             emphasis_3 210 92 84
         }
         ribbon_unselected {
             base 184 150 158        // #B8969E Cashmere Mauve inactive tab text (soft, distinct, no box)
             background 0            // 0 = Transparent inactive tab background (no solid boxes)
-            emphasis_0 232 125 75   // #E87D4B Persimmon orange
+            emphasis_0 94 158 160   // #5E9EA0 Ceramic Blue
             emphasis_1 0            // 0 = Transparent alternate tab background
             emphasis_2 94 158 160   // #5E9EA0 Ceramic blue
             emphasis_3 210 92 84    // #D25C54 Paprika red
@@ -269,36 +269,36 @@ themes {
     }
     min-dark {
         text_unselected {
-            base 179 146 241        // #B392F1 purple accent
+            base 94 158 160         // #5E9EA0 Ceramic Blue for Session Badge (SPACE01)
             background 0            // 0 = ANSI Default transparent background
-            emphasis_0 255 171 112  // #FFAB70 secondary orange (used for mrbvrz-space01 badge bg & active modes!)
-            emphasis_1 121 184 255  // #79B8FF blue
-            emphasis_2 115 115 115  // #737373 muted gray for NORMAL mode on the far right
-            emphasis_3 249 117 131  // #F97583 red/pink (LOCKED mode indicator)
+            emphasis_0 94 158 160   // #5E9EA0 Ceramic Blue for badge bg
+            emphasis_1 184 150 158  // #B8969E Cashmere Mauve
+            emphasis_2 154 144 134  // #9A9086 Warm Stone for NORMAL mode on the far right
+            emphasis_3 210 92 84    // #D25C54 Paprika red (LOCKED mode indicator)
         }
         text_selected {
-            base 248 248 248        // #F8F8F8 bright white
+            base 246 241 234        // #F6F1EA Bright oat white
             background 0            // 0 = ANSI Black -> transparent
-            emphasis_0 255 171 112
-            emphasis_1 121 184 255
-            emphasis_2 179 146 241
-            emphasis_3 249 117 131
+            emphasis_0 94 158 160
+            emphasis_1 184 150 158
+            emphasis_2 184 150 158
+            emphasis_3 210 92 84
         }
         ribbon_unselected {
-            base 170 170 170        // #AAAAAA inactive tab text (clearly readable)
-            background 0            // 0 = ANSI Black -> transparent inactive tab background!
-            emphasis_0 255 171 112  // #FFAB70 orange
-            emphasis_1 0            // 0 = ANSI Black -> transparent alternate tab background!
-            emphasis_2 121 184 255  // #79B8FF blue
-            emphasis_3 249 117 131  // #F97583 pink/red
+            base 184 150 158        // #B8969E Cashmere Mauve inactive tab text (soft, distinct, no box)
+            background 0            // 0 = Transparent inactive tab background (no solid boxes)
+            emphasis_0 94 158 160   // #5E9EA0 Ceramic Blue
+            emphasis_1 0            // 0 = Transparent alternate tab background
+            emphasis_2 94 158 160   // #5E9EA0 Ceramic blue
+            emphasis_3 210 92 84    // #D25C54 Paprika red
         }
         ribbon_selected {
-            base 26 26 26           // #1A1A1A dark text on purple box
-            background 179 146 241  // #B392F1 main Min Dark purple accent box!
-            emphasis_0 26 26 26
-            emphasis_1 26 26 26
-            emphasis_2 26 26 26
-            emphasis_3 249 117 131
+            base 22 20 19           // #161413 Dark espresso text on Persimmon badge
+            background 232 125 75   // #E87D4B Persimmon Orange active tab badge!
+            emphasis_0 22 20 19
+            emphasis_1 22 20 19
+            emphasis_2 22 20 19
+            emphasis_3 210 92 84
         }
         table_title {
             base 179 146 241
