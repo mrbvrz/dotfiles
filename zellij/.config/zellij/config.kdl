@@ -25,11 +25,11 @@ show_startup_tips false
 themes {
     cukup-kopi {
         text_unselected {
-            base 232 125 75         // #E87D4B Persimmon orange (badge bg & active modes)
+            base 94 158 160         // #5E9EA0 Ceramic Blue for Session Badge (SPACE01)
             background 0            // 0 = ANSI Default transparent background
             emphasis_0 232 125 75   // #E87D4B Persimmon orange
             emphasis_1 94 158 160   // #5E9EA0 Ceramic blue
-            emphasis_2 184 150 158  // #B8969E Cashmere Mauve for NORMAL mode on the far right
+            emphasis_2 154 144 134  // #9A9086 Warm Stone for NORMAL mode on the far right
             emphasis_3 210 92 84    // #D25C54 Paprika red (LOCKED mode indicator)
         }
         text_selected {
@@ -41,7 +41,7 @@ themes {
             emphasis_3 210 92 84
         }
         ribbon_unselected {
-            base 216 208 200        // #D8D0C8 Oat Silk inactive tab text (clean, warm, highly readable)
+            base 184 150 158        // #B8969E Cashmere Mauve inactive tab text (soft, distinct, no box)
             background 0            // 0 = Transparent inactive tab background (no solid boxes)
             emphasis_0 232 125 75   // #E87D4B Persimmon orange
             emphasis_1 0            // 0 = Transparent alternate tab background
@@ -50,7 +50,7 @@ themes {
         }
         ribbon_selected {
             base 22 20 19           // #161413 Dark espresso text on Persimmon badge
-            background 232 125 75   // #E87D4B Persimmon Orange active badge!
+            background 232 125 75   // #E87D4B Persimmon Orange active tab badge!
             emphasis_0 22 20 19
             emphasis_1 22 20 19
             emphasis_2 22 20 19
