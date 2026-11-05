@@ -376,19 +376,21 @@ for syntax_path in \
 done
 
 # ------------------------------------------------------------------------------
-# 8. Auto-Start Zellij Workspace in Alacritty (Minimal Bottom Tab Bar)
+# 8. Auto-Start Zellij Workspace in Standalone Alacritty (Never inside IDE terminals)
 # ------------------------------------------------------------------------------
-if [[ -o interactive && -t 0 ]] && [[ -z "$ZELLIJ" ]] && [[ "$TERM_PROGRAM" == "Alacritty" || -n "$ALACRITTY_WINDOW_ID" ]]; then
-  if command -v zellij >/dev/null 2>&1; then
-    _zj_sessions="$(zellij list-sessions -n -s 2>/dev/null)"
-    typeset -i _zj_idx=1
-    while print -r -- "$_zj_sessions" | grep -qx "$(printf 'SPACE%02d' $_zj_idx)"; do
-      ((_zj_idx++))
-    done
-    _zj_name="$(printf 'SPACE%02d' $_zj_idx)"
-    unset _zj_idx _zj_sessions
-    # Keep the Alacritty window title in sync with the Zellij badge (MRBVRZ-SPACE01, ...)
-    print -Pn "\e]0;MRBVRZ-${_zj_name}\a"
-    exec zellij -s "$_zj_name"
+if [[ -z "$ZED_TERM" && "$TERM_PROGRAM" != "zed" && -z "$VSCODE_INJECTION" ]]; then
+  if [[ -o interactive && -t 0 ]] && [[ -z "$ZELLIJ" ]] && [[ "$TERM_PROGRAM" == "Alacritty" ]]; then
+    if command -v zellij >/dev/null 2>&1; then
+      _zj_sessions="$(zellij list-sessions -n -s 2>/dev/null)"
+      typeset -i _zj_idx=1
+      while print -r -- "$_zj_sessions" | grep -qx "$(printf 'SPACE%02d' $_zj_idx)"; do
+        ((_zj_idx++))
+      done
+      _zj_name="$(printf 'SPACE%02d' $_zj_idx)"
+      unset _zj_idx _zj_sessions
+      # Keep the Alacritty window title in sync with the Zellij badge (MRBVRZ-SPACE01, ...)
+      print -Pn "\e]0;MRBVRZ-${_zj_name}\a"
+      exec zellij -s "$_zj_name"
+    fi
   fi
 fi
