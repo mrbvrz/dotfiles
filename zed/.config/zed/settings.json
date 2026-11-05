@@ -35,6 +35,8 @@
   "terminal": {
     "font_family": "CommitMono Nerd Font",
     "font_size": 12.0,
+    "cursor_shape": "underline",
+    "blinking": "on",
     "env": {
       "ZED_TERM": "true",
       "TERM_PROGRAM": "zed",
