@@ -6,6 +6,8 @@
 // =============================================================================
 
 theme "cukup-kopi"
+theme_dark "cukup-kopi"
+theme_light "cukup-terang"
 default_layout "compact"
 pane_frames false
 simplified_ui true
@@ -23,11 +25,11 @@ show_startup_tips false
 themes {
     cukup-kopi {
         text_unselected {
-            base 184 150 158        // #B8969E Cashmere Mauve
+            base 232 125 75         // #E87D4B Persimmon orange (badge bg & active modes)
             background 0            // 0 = ANSI Default transparent background
-            emphasis_0 232 125 75   // #E87D4B Persimmon orange (badge bg & active modes)
+            emphasis_0 232 125 75   // #E87D4B Persimmon orange
             emphasis_1 94 158 160   // #5E9EA0 Ceramic blue
-            emphasis_2 122 114 106  // #7A726A Muted chicory gray for NORMAL mode on the far right
+            emphasis_2 184 150 158  // #B8969E Cashmere Mauve for NORMAL mode on the far right
             emphasis_3 210 92 84    // #D25C54 Paprika red (LOCKED mode indicator)
         }
         text_selected {
@@ -39,16 +41,16 @@ themes {
             emphasis_3 210 92 84
         }
         ribbon_unselected {
-            base 122 114 106        // #7A726A Inactive tab text
-            background 0            // 0 = Transparent inactive tab background
+            base 216 208 200        // #D8D0C8 Oat Silk inactive tab text (clean, warm, highly readable)
+            background 0            // 0 = Transparent inactive tab background (no solid boxes)
             emphasis_0 232 125 75   // #E87D4B Persimmon orange
             emphasis_1 0            // 0 = Transparent alternate tab background
             emphasis_2 94 158 160   // #5E9EA0 Ceramic blue
             emphasis_3 210 92 84    // #D25C54 Paprika red
         }
         ribbon_selected {
-            base 22 20 19           // #161413 Dark text on Persimmon badge
-            background 232 125 75   // #E87D4B Persimmon active badge
+            base 22 20 19           // #161413 Dark espresso text on Persimmon badge
+            background 232 125 75   // #E87D4B Persimmon Orange active badge!
             emphasis_0 22 20 19
             emphasis_1 22 20 19
             emphasis_2 22 20 19
@@ -141,6 +143,128 @@ themes {
             player_4 204 160 98
             player_5 125 174 114
             player_6 210 92 84
+        }
+    }
+    cukup-terang {
+        text_unselected {
+            base 217 107 39         // #D96B27 Terracotta
+            background 0
+            emphasis_0 217 107 39
+            emphasis_1 30 126 128   // #1E7E80
+            emphasis_2 138 130 120  // #8A8278
+            emphasis_3 196 67 75    // #C4434B
+        }
+        text_selected {
+            base 44 40 37           // #2C2825
+            background 0
+            emphasis_0 217 107 39
+            emphasis_1 30 126 128
+            emphasis_2 120 75 184
+            emphasis_3 196 67 75
+        }
+        ribbon_unselected {
+            base 90 82 74           // #5A524A
+            background 0
+            emphasis_0 217 107 39
+            emphasis_1 0
+            emphasis_2 30 126 128
+            emphasis_3 196 67 75
+        }
+        ribbon_selected {
+            base 250 248 245        // #FAF8F5
+            background 217 107 39   // #D96B27 Terracotta badge
+            emphasis_0 250 248 245
+            emphasis_1 250 248 245
+            emphasis_2 250 248 245
+            emphasis_3 196 67 75
+        }
+        table_title {
+            base 217 107 39
+            background 250 248 245
+            emphasis_0 217 107 39
+            emphasis_1 30 126 128
+            emphasis_2 120 75 184
+            emphasis_3 196 67 75
+        }
+        table_cell_selected {
+            base 44 40 37
+            background 235 230 222
+            emphasis_0 217 107 39
+            emphasis_1 30 126 128
+            emphasis_2 120 75 184
+            emphasis_3 196 67 75
+        }
+        table_cell_unselected {
+            base 90 82 74
+            background 250 248 245
+            emphasis_0 217 107 39
+            emphasis_1 30 126 128
+            emphasis_2 120 75 184
+            emphasis_3 196 67 75
+        }
+        list_selected {
+            base 44 40 37
+            background 235 230 222
+            emphasis_0 217 107 39
+            emphasis_1 30 126 128
+            emphasis_2 120 75 184
+            emphasis_3 196 67 75
+        }
+        list_unselected {
+            base 90 82 74
+            background 250 248 245
+            emphasis_0 217 107 39
+            emphasis_1 30 126 128
+            emphasis_2 120 75 184
+            emphasis_3 196 67 75
+        }
+        frame_selected {
+            base 217 107 39
+            background 0
+            emphasis_0 217 107 39
+            emphasis_1 30 126 128
+            emphasis_2 120 75 184
+            emphasis_3 196 67 75
+        }
+        frame_unselected {
+            base 226 221 213
+            background 0
+            emphasis_0 235 230 222
+            emphasis_1 235 230 222
+            emphasis_2 235 230 222
+            emphasis_3 235 230 222
+        }
+        frame_highlight {
+            base 30 126 128
+            background 0
+            emphasis_0 120 75 184
+            emphasis_1 217 107 39
+            emphasis_2 30 126 128
+            emphasis_3 30 126 128
+        }
+        exit_code_success {
+            base 46 133 64
+            background 0
+            emphasis_0 46 133 64
+            emphasis_1 250 248 245
+            emphasis_2 120 75 184
+            emphasis_3 46 133 64
+        }
+        exit_code_error {
+            base 196 67 75
+            background 0
+            emphasis_0 217 107 39
+            emphasis_1 250 248 245
+            emphasis_2 120 75 184
+            emphasis_3 46 133 64
+        }
+        multiplayer_user_colors {
+            player_1 217 107 39
+            player_2 30 126 128
+            player_3 120 75 184
+            player_4 181 120 30
+            player_5 46 133 64
+            player_6 196 67 75
         }
     }
     min-dark {
@@ -285,6 +409,128 @@ themes {
             bright_magenta 243 184 236
             bright_cyan 163 208 255
             bright_white 248 248 248
+        }
+    }
+    cukup-terang {
+        text_unselected {
+            base 217 107 39         // #D96B27 Terracotta
+            background 0
+            emphasis_0 217 107 39
+            emphasis_1 30 126 128   // #1E7E80
+            emphasis_2 138 130 120  // #8A8278
+            emphasis_3 196 67 75    // #C4434B
+        }
+        text_selected {
+            base 44 40 37           // #2C2825
+            background 0
+            emphasis_0 217 107 39
+            emphasis_1 30 126 128
+            emphasis_2 120 75 184
+            emphasis_3 196 67 75
+        }
+        ribbon_unselected {
+            base 90 82 74           // #5A524A
+            background 0
+            emphasis_0 217 107 39
+            emphasis_1 0
+            emphasis_2 30 126 128
+            emphasis_3 196 67 75
+        }
+        ribbon_selected {
+            base 250 248 245        // #FAF8F5
+            background 217 107 39   // #D96B27 Terracotta badge
+            emphasis_0 250 248 245
+            emphasis_1 250 248 245
+            emphasis_2 250 248 245
+            emphasis_3 196 67 75
+        }
+        table_title {
+            base 217 107 39
+            background 250 248 245
+            emphasis_0 217 107 39
+            emphasis_1 30 126 128
+            emphasis_2 120 75 184
+            emphasis_3 196 67 75
+        }
+        table_cell_selected {
+            base 44 40 37
+            background 235 230 222
+            emphasis_0 217 107 39
+            emphasis_1 30 126 128
+            emphasis_2 120 75 184
+            emphasis_3 196 67 75
+        }
+        table_cell_unselected {
+            base 90 82 74
+            background 250 248 245
+            emphasis_0 217 107 39
+            emphasis_1 30 126 128
+            emphasis_2 120 75 184
+            emphasis_3 196 67 75
+        }
+        list_selected {
+            base 44 40 37
+            background 235 230 222
+            emphasis_0 217 107 39
+            emphasis_1 30 126 128
+            emphasis_2 120 75 184
+            emphasis_3 196 67 75
+        }
+        list_unselected {
+            base 90 82 74
+            background 250 248 245
+            emphasis_0 217 107 39
+            emphasis_1 30 126 128
+            emphasis_2 120 75 184
+            emphasis_3 196 67 75
+        }
+        frame_selected {
+            base 217 107 39
+            background 0
+            emphasis_0 217 107 39
+            emphasis_1 30 126 128
+            emphasis_2 120 75 184
+            emphasis_3 196 67 75
+        }
+        frame_unselected {
+            base 226 221 213
+            background 0
+            emphasis_0 235 230 222
+            emphasis_1 235 230 222
+            emphasis_2 235 230 222
+            emphasis_3 235 230 222
+        }
+        frame_highlight {
+            base 30 126 128
+            background 0
+            emphasis_0 120 75 184
+            emphasis_1 217 107 39
+            emphasis_2 30 126 128
+            emphasis_3 30 126 128
+        }
+        exit_code_success {
+            base 46 133 64
+            background 0
+            emphasis_0 46 133 64
+            emphasis_1 250 248 245
+            emphasis_2 120 75 184
+            emphasis_3 46 133 64
+        }
+        exit_code_error {
+            base 196 67 75
+            background 0
+            emphasis_0 217 107 39
+            emphasis_1 250 248 245
+            emphasis_2 120 75 184
+            emphasis_3 46 133 64
+        }
+        multiplayer_user_colors {
+            player_1 217 107 39
+            player_2 30 126 128
+            player_3 120 75 184
+            player_4 181 120 30
+            player_5 46 133 64
+            player_6 196 67 75
         }
     }
 }
