@@ -1,11 +1,11 @@
 // =============================================================================
 // Zellij Terminal Multiplexer Configuration (~/.config/zellij/config.kdl)
-// Theme: Min Dark (Minimal Flat Bottom Tab Bar — No Buttons/Boxes)
+// Theme: Cukup Kopi (Minimal Flat Bottom Tab Bar — No Buttons/Boxes)
 // Managed via GNU Stow in ~/.dotfiles/zellij/.config/zellij/config.kdl
 // Docs: https://zellij.dev/documentation/configuration
 // =============================================================================
 
-theme "min-dark"
+theme "cukup-kopi"
 default_layout "compact"
 pane_frames false
 simplified_ui true
@@ -17,10 +17,132 @@ session_serialization false
 show_startup_tips false
 
 // -----------------------------------------------------------------------------
-// Custom Theme: Min Dark (Seamless background so tabs appear as flat text,
-// not buttons/boxes, matching Alacritty & Zed Min Dark Blurred)
+// Custom Theme: Cukup Kopi (Seamless transparent background so tabs appear as flat text,
+// not buttons/boxes, matching Alacritty & Zed Cukup Kopi Blurred)
 // -----------------------------------------------------------------------------
 themes {
+    cukup-kopi {
+        text_unselected {
+            base 184 150 158        // #B8969E Cashmere Mauve
+            background 0            // 0 = ANSI Default transparent background
+            emphasis_0 232 125 75   // #E87D4B Persimmon orange (badge bg & active modes)
+            emphasis_1 94 158 160   // #5E9EA0 Ceramic blue
+            emphasis_2 122 114 106  // #7A726A Muted chicory gray for NORMAL mode on the far right
+            emphasis_3 210 92 84    // #D25C54 Paprika red (LOCKED mode indicator)
+        }
+        text_selected {
+            base 246 241 234        // #F6F1EA Bright oat white
+            background 0            // 0 = ANSI Black -> transparent
+            emphasis_0 232 125 75
+            emphasis_1 94 158 160
+            emphasis_2 184 150 158
+            emphasis_3 210 92 84
+        }
+        ribbon_unselected {
+            base 122 114 106        // #7A726A Inactive tab text
+            background 0            // 0 = Transparent inactive tab background
+            emphasis_0 232 125 75   // #E87D4B Persimmon orange
+            emphasis_1 0            // 0 = Transparent alternate tab background
+            emphasis_2 94 158 160   // #5E9EA0 Ceramic blue
+            emphasis_3 210 92 84    // #D25C54 Paprika red
+        }
+        ribbon_selected {
+            base 22 20 19           // #161413 Dark text on Persimmon badge
+            background 232 125 75   // #E87D4B Persimmon active badge
+            emphasis_0 22 20 19
+            emphasis_1 22 20 19
+            emphasis_2 22 20 19
+            emphasis_3 210 92 84
+        }
+        table_title {
+            base 232 125 75
+            background 22 20 19
+            emphasis_0 232 125 75
+            emphasis_1 94 158 160
+            emphasis_2 184 150 158
+            emphasis_3 210 92 84
+        }
+        table_cell_selected {
+            base 246 241 234
+            background 52 47 42
+            emphasis_0 232 125 75
+            emphasis_1 94 158 160
+            emphasis_2 184 150 158
+            emphasis_3 210 92 84
+        }
+        table_cell_unselected {
+            base 224 216 208
+            background 22 20 19
+            emphasis_0 232 125 75
+            emphasis_1 94 158 160
+            emphasis_2 184 150 158
+            emphasis_3 210 92 84
+        }
+        list_selected {
+            base 246 241 234
+            background 52 47 42
+            emphasis_0 232 125 75
+            emphasis_1 94 158 160
+            emphasis_2 184 150 158
+            emphasis_3 210 92 84
+        }
+        list_unselected {
+            base 224 216 208
+            background 22 20 19
+            emphasis_0 232 125 75
+            emphasis_1 94 158 160
+            emphasis_2 184 150 158
+            emphasis_3 210 92 84
+        }
+        frame_selected {
+            base 232 125 75         // #E87D4B Persimmon orange border for focused pane
+            background 0
+            emphasis_0 232 125 75
+            emphasis_1 94 158 160
+            emphasis_2 184 150 158
+            emphasis_3 210 92 84
+        }
+        frame_unselected {
+            base 52 47 42           // #342F2A subtle dark border for unfocused split panes
+            background 0
+            emphasis_0 64 57 51
+            emphasis_1 64 57 51
+            emphasis_2 64 57 51
+            emphasis_3 64 57 51
+        }
+        frame_highlight {
+            base 94 158 160
+            background 0
+            emphasis_0 184 150 158
+            emphasis_1 232 125 75
+            emphasis_2 94 158 160
+            emphasis_3 94 158 160
+        }
+        exit_code_success {
+            base 125 174 114
+            background 0
+            emphasis_0 125 174 114
+            emphasis_1 22 20 19
+            emphasis_2 184 150 158
+            emphasis_3 125 174 114
+        }
+        exit_code_error {
+            base 210 92 84
+            background 0
+            emphasis_0 232 125 75
+            emphasis_1 22 20 19
+            emphasis_2 184 150 158
+            emphasis_3 125 174 114
+        }
+        multiplayer_user_colors {
+            player_1 232 125 75
+            player_2 94 158 160
+            player_3 184 150 158
+            player_4 204 160 98
+            player_5 125 174 114
+            player_6 210 92 84
+        }
+    }
     min-dark {
         text_unselected {
             base 179 146 241        // #B392F1 purple accent
