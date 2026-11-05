@@ -40,7 +40,7 @@
     "show": "never"
   },
   "theme": {
-    "mode": "dark",
+    "mode": "system",
     "light": "Cukup Light (Blurred)",
     "dark": "Cukup Kopi (Blurred)"
   }

@@ -55,18 +55,18 @@ render_code_sample() {
 
 # Print current active Cukup
 print_current() {
-    printf "${BOLD}📍 [TEMA AKTIF SAAT INI] Cukup Senja (Warm Terracotta, Dusty Lilac & Celadon)${RESET}\n"
-    printf "${DIM}Filosofi: Kehangatan tanah liat & senja. Organik, natural, sangat ramah mata.${RESET}\n"
-    hex_row "#181816" "Background (Warm)"
-    hex_row "#D8D5CD" "Foreground (Parchment)"
-    hex_row "#E89058" "Function / Primary"
-    hex_row "#B294C7" "String / Literal"
-    hex_row "#DE6E75" "Keyword / Operator"
-    hex_row "#6BAFAD" "Type / Constant"
-    hex_row "#DDA861" "Constant / Number"
-    hex_row "#78776F" "Comment / Stone"
+    printf "${BOLD}☕ [TEMA AKTIF SAAT INI] Cukup Kopi (Espresso, Persimmon & Cashmere Mauve)${RESET}\n"
+    printf "${DIM}Filosofi: Modern tactile coffeehouse. Hangat, bersahabat, kontras lembut.${RESET}\n"
+    hex_row "#161413" "Background (Espresso)"
+    hex_row "#E0D8D0" "Foreground (Oat Silk)"
+    hex_row "#E87D4B" "Function (Persimmon)"
+    hex_row "#B8969E" "String (Cashmere)"
+    hex_row "#D25C54" "Keyword (Paprika)"
+    hex_row "#5E9EA0" "Type (Ceramic Blue)"
+    hex_row "#CCA062" "Constant (Ochre)"
+    hex_row "#7A726A" "Comment (Chicory)"
     echo ""
-    render_code_sample 222 110 117  232 144 88   178 148 199  107 175 173  120 119 111
+    render_code_sample 210 92 84  232 125 75   184 150 158  94 158 160  122 114 106
 }
 
 # Proposal 1: Cukup Senja
