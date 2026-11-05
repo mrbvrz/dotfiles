@@ -36,9 +36,12 @@
     "font_family": "CommitMono Nerd Font",
     "font_size": 12.0
   },
+  "scrollbar": {
+    "show": "never"
+  },
   "theme": {
     "mode": "dark",
-    "light": "Gruvbox Light Soft",
-    "dark": "Min Dark (Blurred)"
+    "light": "Cukup Light (Blurred)",
+    "dark": "Cukup Dark (Blurred)"
   }
 }

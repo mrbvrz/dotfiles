@@ -1,6 +1,6 @@
 # ==============================================================================
 # Alacritty Terminal Configuration (~/.config/alacritty/alacritty.toml)
-# Theme: Min Dark (Blurred)
+# Theme: Cukup Dark (Blurred)
 # Managed via GNU Stow in ~/.dotfiles/alacritty/.config/alacritty/alacritty.toml
 # Docs: https://alacritty.org/config-alacritty.html
 # ==============================================================================
@@ -60,54 +60,54 @@ save_to_clipboard = true
 hide_when_typing = true
 
 # ------------------------------------------------------------------------------
-# Color Scheme: Min Dark (Blurred)
+# Color Scheme: Cukup Senja (Warm Terracotta, Dusty Lilac & Celadon)
 # ------------------------------------------------------------------------------
 [colors]
 transparent_background_colors = true
 
 [colors.primary]
-background = "#1A1A1A"
-foreground = "#BBBBBB"
-bright_foreground = "#F8F8F8"
-dim_foreground = "#898989"
+background = "#181816"
+foreground = "#D8D5CD"
+bright_foreground = "#F4F2EC"
+dim_foreground = "#78776F"
 
 [colors.cursor]
-text = "#1A1A1A"
-cursor = "#F8F8F8"
+text = "#181816"
+cursor = "#E89058"
 
 [colors.selection]
-text = "#F8F8F8"
-background = "#2A2A2A"
+text = "#F4F2EC"
+background = "#3A3530"
 
 [colors.normal]
-black   = "#1A1A1A"
-red     = "#FA7584"
-green   = "#79B8FF"
-yellow  = "#FFAB70"
-blue    = "#B392F1"
-magenta = "#E394DC"
-cyan    = "#79B8FF"
-white   = "#BBBBBB"
+black   = "#181816"
+red     = "#DE6E75"
+green   = "#89BA81"
+yellow  = "#E89058"
+blue    = "#6BAFAD"
+magenta = "#B294C7"
+cyan    = "#6BAFAD"
+white   = "#D8D5CD"
 
 [colors.bright]
-black   = "#5C5C5C"
-red     = "#FF9CAA"
-green   = "#A3D0FF"
-yellow  = "#FFC9A3"
-blue    = "#CFB8FF"
-magenta = "#F3B8EC"
-cyan    = "#A3D0FF"
-white   = "#F8F8F8"
+black   = "#5E5D56"
+red     = "#EA8A90"
+green   = "#A2D19A"
+yellow  = "#F2A979"
+blue    = "#87C7C5"
+magenta = "#CCAEE1"
+cyan    = "#87C7C5"
+white   = "#F4F2EC"
 
 [colors.dim]
-black   = "#000000"
-red     = "#D15A68"
-green   = "#5A8AC0"
-yellow  = "#D18F5A"
-blue    = "#8A6EC0"
-magenta = "#B376B0"
-cyan    = "#5A8AC0"
-white   = "#898989"
+black   = "#11110F"
+red     = "#B84E55"
+green   = "#6B9664"
+yellow  = "#C4723E"
+blue    = "#4F8F8D"
+magenta = "#9275A6"
+cyan    = "#4F8F8D"
+white   = "#78776F"
 
 # ------------------------------------------------------------------------------
 # Keybindings (Word Navigation, Clear Screen, New Window, & Zellij Bottom Tabs)
