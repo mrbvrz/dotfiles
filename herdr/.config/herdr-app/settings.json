@@ -1,0 +1,11 @@
+{
+  "zoom": 1,
+  "sounds": {
+    "enabled": true
+  },
+  "font_size": 12,
+  "font_ligatures": false,
+  "ui_font": "Uncut Sans",
+  "telemetry": false,
+  "minimum_contrast": 1
+}

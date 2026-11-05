@@ -158,7 +158,7 @@ done
 
 echo "==> Linking dotfiles with GNU Stow..."
 stow --restow --dir="$DOTFILES_DIR" --target="$HOME" \
-  zsh spaceship git alacritty zellij zed mise bin lazygit lazydocker yazi btop bat
+  zsh spaceship git alacritty zellij zed mise bin lazygit lazydocker yazi btop bat herdr
 
 # macOS Lazydocker support: ensure Application Support points to XDG config
 if [[ "$OS_TYPE" == "Darwin" ]]; then
