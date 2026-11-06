@@ -6,6 +6,7 @@
   "font_size": 12.0,
   "font_ligatures": false,
   "ui_font": "Uncut Sans",
+  "ui_font_size": 14.0,
   "telemetry": false,
   "minimum_contrast": 1.0
 }

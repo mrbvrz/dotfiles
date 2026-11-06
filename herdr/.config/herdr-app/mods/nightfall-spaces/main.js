@@ -10,6 +10,7 @@ import { spaces, machines, panes, agents, terminals, run, openOverlay, closeOver
 const ICONS = "mods/nightfall-chrome";
 const R = 4;
 const MONO = "Geist Mono";
+const uiSize = () => Number(settings()?.ui_font_size) || 14;
 const bright = (t) => (settings()?.dark === false ? t.foreground : t.ansi15);
 const PINS = "nightfall.spaces.pinned";
 // { space, panel, at }: nightfall-tabs shows that panel when that space comes into view.
@@ -633,7 +634,7 @@ export default class Spaces extends View {
   // its branch and its state.
   worktree({ w, i, g }, t) {
     const on = w.active, soft = t.dim;
-    return h_flex().id(`space-${w.id}`).h(28).mx(8).pl(42).pr(10).gap(8).items_center().rounded(R).text_size(12)
+    return h_flex().id(`space-${w.id}`).h(28).mx(8).pl(42).pr(10).gap(8).items_center().rounded(R).text_size(uiSize() - 1.5)
       .when(on, (el) => el.bg(t.selected))
       .when(!on, (el) => el.hover((s) => s.bg(t.hover)))
       .map(this.press(w, i))
@@ -708,7 +709,7 @@ export default class Spaces extends View {
       .gap(8)
       .items_center()
       .rounded(R)
-      .text_size(12)
+      .text_size(uiSize() - 1.5)
       .when(on, (el) => el.bg(t.selected))
       .when(!on, (el) => el.hover((s) => s.bg(t.hover)))
       .cursor_pointer()
@@ -798,11 +799,11 @@ export default class Spaces extends View {
       .child(avatar(t, w.name, color, 28, under, w.status, pinned || hovered ? pin : null, on || hovered))
       .child(v_flex().flex_1().min_w(0).gap(3)
         .child(h_flex().h(18).gap(8).items_center()
-          .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(on ? ink : t.muted).child(w.name))
+          .child(div().flex_1().min_w(0).truncate().text_size(uiSize() - 1.5).text_color(on ? ink : t.muted).child(w.name))
           .when(Boolean(since), (el) => el.child(div().flex_none().font_family(MONO).text_size(11).text_color(t[STATES[since.st].tone]).child(since.text)))
           .when(!since && Boolean(branch), (el) => el.child(this.branchTag(t, color, branch, 120, on ? soft : null))))
         .child(h_flex().h(20).gap(8).items_center()
-          .child(div().flex_1().min_w(0).truncate().text_size(13).font_weight(500).text_color(on ? ink : quiet ? t.muted : bright(t)).child(title || " "))
+          .child(div().flex_1().min_w(0).truncate().text_size(uiSize() - 0.5).font_weight(500).text_color(on ? ink : quiet ? t.muted : bright(t)).child(title || " "))
           .when(Boolean(since) && Boolean(branch), (el) => el.child(this.branchTag(t, color, branch, 90, on ? soft : null)))
           .children([this.changesLink(w, head.g, t, on ? soft : t.dim)].filter(Boolean))
           .when(myAgents.length > 0, (el) => el.child(this.agentButton(head, myAgents, agentsOpen, t)))
@@ -855,7 +856,7 @@ export default class Spaces extends View {
     this.syncColors(spaces());
     if (narrow()) return this.rail(t);
     const rows = this.rows(t);
-    return v_flex().size_full().min_h(0).bg(t.chrome).text_size(13)
+    return v_flex().size_full().min_h(0).bg(t.chrome).text_size(uiSize())
       .child(v_flex().id("spaces-box").relative().flex_1().min_h(0)
         .on_hover((on, cx) => { this.lit = on; cx.notify(); })
         .on_mouse_up("left", (_e, cx) => { this.pressed = null; cx.notify(); })

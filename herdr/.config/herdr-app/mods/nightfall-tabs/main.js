@@ -17,6 +17,7 @@ const DEFAULT_PANEL = "files";
 // { [space id]: { add, del } }, written by nightfall-spaces from its git look.
 const LINES = "nightfall.changes.lines";
 const MONO = "Geist Mono";
+const uiSize = () => Number(settings()?.ui_font_size) || 14;
 const bright = (t) => (settings()?.dark === false ? t.foreground : t.ansi15);
 
 // Agent state, the same table in every Nightfall mod: its theme color, the color of
@@ -149,7 +150,7 @@ export default class Tabs extends View {
       const name = heading(c, ps) || program?.name || "Terminal";
       const on = c.active;
       const closable = on || this.hovered === c.id;
-      return h_flex().id(`tab-${c.id}`).h_full().min_w(140).max_w(260).flex_none().pl(12).pr(8).gap(8).items_center().text_size(12.5)
+      return h_flex().id(`tab-${c.id}`).h_full().min_w(140).max_w(260).flex_none().pl(12).pr(8).gap(8).items_center().text_size(uiSize() - 1)
         .border_r(1).border_color(t.border)
         .when(on, el => el.bg(t.background).text_color(t.foreground))
         .when(!on, el => line(el).bg(t.chrome).text_color(t.dim).hover(s => s.bg(t.hover).text_color(t.muted)))
@@ -198,7 +199,7 @@ export default class Tabs extends View {
     const panelButton = (id, label, icon, tail = null) => {
       const on = panel && !panel.hidden && body?.active === id;
       return h_flex().id(`panel-${id}`).h(28).px(10).gap(6).flex_none().items_center().rounded(R)
-        .text_size(12.5).border(1).border_color(on ? t.selected : t.chrome).bg(on ? t.selected : t.chrome).text_color(on ? hi : t.muted)
+        .text_size(uiSize() - 1).border(1).border_color(on ? t.selected : t.chrome).bg(on ? t.selected : t.chrome).text_color(on ? hi : t.muted)
         .hover(s => s.bg(t.hover).text_color(hi)).on_mouse_down("left", stop)
         .on_click(() => {
           if (on) run("layout.hide", { id: "panel" });

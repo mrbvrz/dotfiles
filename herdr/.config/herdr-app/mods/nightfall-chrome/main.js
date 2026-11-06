@@ -10,6 +10,7 @@ import { theme, run, props, window, shared, setShared, updates, layout, keys, se
 
 const ICONS = "mods/nightfall-chrome";
 const R = 4;
+const uiSize = () => Number(settings()?.ui_font_size) || 14;
 // The brightest text: white on a dark theme, the theme's text on a light one.
 const bright = (t) => (settings()?.dark === false ? t.foreground : t.ansi15);
 
@@ -69,7 +70,7 @@ export default class NightfallChrome extends View {
       .child(settingsButton)
       .child(this.button("machines", "monitor", () => run("mod.open", { name: "machine-add" }), { size: 30, icon: 18, tip: "Machines" }))
       .child(div().flex_1())
-      .child(div().pr(10).min_w(0).truncate().text_size(13).text_color(t.muted).child(machine));
+      .child(div().pr(10).min_w(0).truncate().text_size(uiSize() - 1).text_color(t.muted).child(machine));
   }
 
   // The rail, as in T3: the Herdr logo, which turns into the open button under the
@@ -97,11 +98,11 @@ export default class NightfallChrome extends View {
     // 38 + 28 px: the same lines as the tab bar and the pane header beside it.
     const top = h_flex().h(38).flex_none().pl(mac ? 76 : 14).pr(6).gap(9).items_center()
       .child(image("frame/welcome/herdr.png").size(16).rounded(R).flex_none())
-      .child(div().flex_1().text_size(13.5).font_semibold().text_color(bright(t)).child("Herdr"))
+      .child(div().flex_1().text_size(uiSize()).font_semibold().text_color(bright(t)).child("Herdr"))
       .child(this.button("sidebar-toggle", "sidebar", toggleSidebar, { tip: "Hide sidebar" }));
     const search = h_flex().id("search").flex_1().min_w(0).h(24).px(9).gap(8).items_center()
       .bg(t.canvas).border(1).border_color(t.input).rounded(R)
-      .text_size(12.5).text_color(t.dim).cursor_pointer()
+      .text_size(uiSize() - 1).text_color(t.dim).cursor_pointer()
       .hover((s) => s.text_color(t.muted))
       .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
       .on_click(openPicker)

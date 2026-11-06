@@ -214,5 +214,6 @@
     12,
     16
   ],
-  "preview": "layouts/nightfall.svg"
+  "preview": "layouts/nightfall.svg",
+  "ui_font_size": 14.0
 }

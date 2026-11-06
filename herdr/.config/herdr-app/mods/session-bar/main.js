@@ -7,10 +7,11 @@
 // Claude chips open a card with every number. Colors come from theme().
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { spaces, panes, focused, exec, readTextFile, watchFolder, theme, home, layout, props, run, notify, openOverlay, closeOverlay, setShared } from "herdr";
+import { spaces, panes, focused, exec, readTextFile, watchFolder, theme, settings, home, layout, props, run, notify, openOverlay, closeOverlay, setShared } from "herdr";
 
 const NAME = "session-bar";
 const ICON = (name) => `mods/${NAME}/${name}.svg`;
+const uiSize = () => Number(settings()?.ui_font_size) || 14;
 const READ = ["--no-optional-locks", "-c", "core.fsmonitor=false"];
 const METER = { ctx: "ansi6", "5h": "ansi5", "7d": "ansi2" };
 const infoDir = () => `${home()}/.local/state/herdr-session-bar`;
@@ -294,7 +295,7 @@ export default class SessionBar extends View {
       ...meters.map((m) => chip(`sb-m-${m.label}`, { onClick: claudeCard, tip: `${m.label}: ${m.percent}% used` },
         div().text_color(t.dim).child(m.label), this.track(t, m.percent, this.meterColor(t, m.label, m.percent)), div().child(`${m.percent}%`))),
     ].filter(Boolean) : [routerChip].filter(Boolean);
-    return h_flex().id(NAME).size_full().px(14).gap(8).items_center().overflow_hidden().bg(t.chrome).border_t(1).border_color(t.border).text_size(12).text_color(t.muted)
+    return h_flex().id(NAME).size_full().px(14).gap(8).items_center().overflow_hidden().bg(t.chrome).border_t(1).border_color(t.border).text_size(uiSize() - 1).text_color(t.muted)
       .on_size_change((size, cx) => { if (Math.abs(size.width - this.width) > 8) { this.width = size.width; cx.notify(); } })
       .children(left)
       .child(div().flex_1().min_w(8))

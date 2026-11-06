@@ -11,7 +11,8 @@ import { spaces, panes, agents, focused, exec, readTextFile, watchFolder, theme,
 
 const NAME = "filetree";
 const ICON = (name) => `mods/${NAME}/${name}.svg`;
-const ROW = 24;
+const uiSize = () => Number(settings()?.ui_font_size) || 13.5;
+const ROW = 26;
 const PER_FOLDER = 2000;
 const FIND_LIMIT = 200;
 const FLASH_MS = 2700, TINT_MS = 45000, RUNNING_MS = 600000, CHIP_MS = 45000;
@@ -973,11 +974,11 @@ export default class FileTree extends View {
       : this.view === "recent" ? (rows.length ? null : q ? "No matches" : "Files Claude reads and writes here show up in this list")
       : this.searching && !rows.length ? "Searching…" : this.hits ? (rows.length ? null : "No matches") : this.loading && !rows.length ? "Loading files…" : !rows.length ? "Empty folder" : null);
 
-    const treeHeader = h_flex().h(look.header).flex_none().px(8).gap(4).items_center().bg(t.chrome).border_b(1).border_color(t.border).text_size(12)
+    const treeHeader = h_flex().h(look.header).flex_none().px(8).gap(4).items_center().bg(t.chrome).border_b(1).border_color(t.border).text_size(uiSize() - 1)
       .child(div().flex_1().min_w(0).truncate().font_medium().text_color(t.muted).child(this.root ? baseOf(this.root) : "Files"))
       .child(h_flex().flex_none().gap(2).items_center().children(VIEWS.map(([id, label, icon], i) => {
         const on = this.view === id;
-        return h_flex().id(`ft-tab-${id}`).h(22).px(7).gap(5).flex_none().items_center().rounded(R).cursor_pointer().text_size(11.5)
+        return h_flex().id(`ft-tab-${id}`).h(22).px(7).gap(5).flex_none().items_center().rounded(R).cursor_pointer().text_size(uiSize() - 1.5)
           .text_color(on ? t.foreground : t.dim).when(on, (el) => el.bg(t.selected)).when(!on, (el) => el.hover((s) => s.bg(t.hover).text_color(t.foreground)))
           .tooltip(`${label} (${i + 1})`).on_mouse_down("left", (_e, cx) => cx.stop_propagation()).on_click((_e, cx) => this.setView(id, cx))
           .child(svg(ICON(icon)).size(12).flex_none())
@@ -994,7 +995,7 @@ export default class FileTree extends View {
         .child(h_flex().flex_1().min_w(0).h(26).px(8).gap(6).items_center().rounded(R).bg(t.canvas ?? t.background).border_1().border_color(this.typing ? t.accent : t.input ?? t.border).cursor_text()
           .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
           .child(svg(ICON("search")).size(12).flex_none().text_color(t.dim))
-          .child(Input.new(this.input).flex_1().h_full().text_size(11).text_color(t.foreground))
+          .child(Input.new(this.input).flex_1().h_full().text_size(uiSize() - 1.5).text_color(t.foreground))
           .when(Boolean(this.query), (el) => el.child(div().id("ft-clear").flex_none().text_size(12).text_color(t.dim).cursor_pointer().hover((s) => s.text_color(t.foreground)).on_click((_e, cx) => this.clearSearch(cx)).child("×"))))
         .children(tools))
       .child(div().flex_1().min_h(0).relative().px(4)
@@ -1013,7 +1014,7 @@ export default class FileTree extends View {
 
     let editorPane = null;
     if (this.file) {
-      const editorHeader = h_flex().h(look.header).flex_none().px(10).gap(8).items_center().bg(t.chrome).border_b(1).border_color(t.border).text_size(12)
+      const editorHeader = h_flex().h(look.header).flex_none().px(10).gap(8).items_center().bg(t.chrome).border_b(1).border_color(t.border).text_size(uiSize() - 1)
         .child(zedIcon(this.file, false, false, t))
         .child(div().flex_1().min_w(0).truncate().font_medium().text_color(t.foreground).child(this.file))
         .child(btn("ft-copy", "⧉", "Copy path", false, (cx) => copy(cx, this.file)))
@@ -1029,7 +1030,7 @@ export default class FileTree extends View {
         .child(editorContent);
     }
 
-    return h_flex().id(NAME).size_full().min_h(0).overflow_hidden().bg(t.background).text_color(t.foreground).text_size(11.5)
+    return h_flex().id(NAME).size_full().min_h(0).overflow_hidden().bg(t.background).text_color(t.foreground).text_size(uiSize() - 1)
       .track_focus(this.handle).on_key_down((e, cx) => this.key(e, cx))
       .on_size_change((size, cx) => { if (Math.abs(size.width - this.width) > 4) { this.width = size.width; cx.notify(); } })
       .when(Boolean(editorPane), (el) => el.child(editorPane))
