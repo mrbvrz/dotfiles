@@ -160,6 +160,14 @@ echo "==> Linking dotfiles with GNU Stow..."
 stow --restow --dir="$DOTFILES_DIR" --target="$HOME" \
   zsh spaceship git alacritty zellij zed mise bin lazygit lazydocker yazi btop bat herdr
 
+# Herdr App: GPUI security sandbox requires mod files and SVG assets to reside
+# physically inside ~/.config/herdr-app/mods (rejects canonical symlinks outside app home)
+if [[ -d "$DOTFILES_DIR/herdr/.config/herdr-app/mods" ]]; then
+  echo "==> Syncing Herdr mods into ~/.config/herdr-app/mods..."
+  mkdir -p "$HOME/.config/herdr-app/mods"
+  rsync -a --delete "$DOTFILES_DIR/herdr/.config/herdr-app/mods/" "$HOME/.config/herdr-app/mods/"
+fi
+
 # macOS Lazydocker support: ensure Application Support points to XDG config
 if [[ "$OS_TYPE" == "Darwin" ]]; then
   LAZYDOCKER_APP_DIR="$HOME/Library/Application Support/lazydocker"

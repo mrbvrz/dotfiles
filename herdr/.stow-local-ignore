@@ -1,0 +1,2 @@
+# Ignore mods directory so Stow does not create symlinks that break Herdr's GPUI sandbox
+^.*mods.*$

@@ -21,3 +21,4 @@ herdr/.config/herdr-app/windows.json
 herdr/.config/herdr-app/seen.json
 herdr/.config/herdr-app/installed.json
 herdr/.config/herdr-app/herdr-app.sock
+herdr/.config/herdr-app/layouts/.state/

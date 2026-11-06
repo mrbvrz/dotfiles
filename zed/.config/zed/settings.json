@@ -4,6 +4,7 @@
 // Docs: https://zed.dev/docs/configuring-zed
 // =============================================================================
 {
+  "use_display_p3": true,
   "agent": {
     "default_model": {
       "provider": "opencode",
