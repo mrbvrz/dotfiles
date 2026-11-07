@@ -16,13 +16,15 @@
       --canvas-rgb: 24, 24, 22;
       --panel-rgb: 19, 19, 17;
       --accent-rgb: 232, 144, 88;
-      --opacity: 0.70;
-      --blur: 40px;
+      --opacity: 0.55;
+      --blur: 32px;
+      --aura-intensity: 0.85;
       --text-primary: #D8D5CD;
       --text-secondary: #C4C1B9;
       --text-muted: #78776F;
       --accent: #E89058;
-      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-subtle: rgba(255, 255, 255, 0.10);
+      --border-highlight: rgba(255, 255, 255, 0.16);
       --border-focus: #E89058;
       --font-family: "Uncut Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
@@ -40,10 +42,7 @@
       overflow: hidden;
       font-family: var(--font-family);
       color: var(--text-primary);
-      background-color: rgba(var(--canvas-rgb), var(--opacity));
-      backdrop-filter: blur(var(--blur)) saturate(140%);
-      -webkit-backdrop-filter: blur(var(--blur)) saturate(140%);
-      transition: background-color 0.2s ease, backdrop-filter 0.2s ease;
+      background-color: #100f0e;
     }
 
     body {
@@ -52,6 +51,52 @@
       align-items: center;
       justify-content: center;
       position: relative;
+    }
+
+    /* Ambient Lighting Layer for Realistic Translucent Glass Depth */
+    .ambient-glow {
+      position: fixed;
+      inset: -25%;
+      width: 150%;
+      height: 150%;
+      pointer-events: none;
+      z-index: 1;
+      opacity: var(--aura-intensity);
+      background:
+        radial-gradient(ellipse at 25% 20%, rgba(232, 144, 88, 0.35) 0%, transparent 45%),
+        radial-gradient(ellipse at 75% 65%, rgba(140, 72, 40, 0.38) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 88%, rgba(232, 144, 88, 0.20) 0%, transparent 42%),
+        radial-gradient(ellipse at 80% 20%, rgba(70, 42, 30, 0.45) 0%, transparent 45%);
+      filter: blur(55px);
+      transition: opacity 0.3s ease;
+    }
+
+    /* Custom Wallpaper Layer (if set) */
+    .wallpaper-bg {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      pointer-events: none;
+      z-index: 0;
+      display: none;
+    }
+
+    /* Frosted Glass Sheet */
+    .glass-backdrop {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      background-color: rgba(var(--canvas-rgb), var(--opacity));
+      backdrop-filter: blur(var(--blur)) saturate(150%);
+      -webkit-backdrop-filter: blur(var(--blur)) saturate(150%);
+      pointer-events: none;
+      transition: background-color 0.2s ease, backdrop-filter 0.2s ease;
+      box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.45);
     }
 
     /* Top Action Bar */
@@ -115,6 +160,8 @@
 
     /* Main Container */
     .hero {
+      position: relative;
+      z-index: 10;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -453,6 +500,10 @@
   </style>
 </head>
 <body>
+  <div class="wallpaper-bg" id="wallpaperBg"></div>
+  <div class="ambient-glow" id="ambientGlow"></div>
+  <div class="glass-backdrop" id="glassBackdrop"></div>
+
   <div class="top-bar">
     <div class="theme-badge">
       <span class="dot"></span>
@@ -583,18 +634,33 @@
 
       <div class="setting-group">
         <div class="setting-label">
-          <span>Tingkat Transparansi (Opacity)</span>
-          <span id="opacityVal">70%</span>
+          <span>Opasitas Kaca (Transparansi)</span>
+          <span id="opacityVal">55%</span>
         </div>
-        <input type="range" id="opacityRange" min="10" max="100" value="70">
+        <input type="range" id="opacityRange" min="15" max="95" value="55">
       </div>
 
       <div class="setting-group">
         <div class="setting-label">
-          <span>Intensitas Frosted Blur</span>
-          <span id="blurVal">40px</span>
+          <span>Radius Frosted Blur</span>
+          <span id="blurVal">32px</span>
         </div>
-        <input type="range" id="blurRange" min="0" max="80" value="40">
+        <input type="range" id="blurRange" min="0" max="64" value="32">
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-label">
+          <span>Kedalaman Aura Cahaya Kaca</span>
+          <span id="auraVal">85%</span>
+        </div>
+        <input type="range" id="auraRange" min="0" max="100" value="85">
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-label">
+          <span>URL Wallpaper (Opsional)</span>
+        </div>
+        <input type="text" id="wallpaperInput" placeholder="https://... atau biarkan kosong" style="background: rgba(var(--canvas-rgb), 0.8); border: 1px solid var(--border-subtle); color: var(--text-primary); padding: 8px 12px; border-radius: 8px; font-family: var(--font-family); font-size: 0.85rem; outline: none;">
       </div>
 
       <div class="setting-group">
@@ -649,32 +715,66 @@
       localStorage.setItem('cukup_engine', engineSelect.value);
     });
 
-    // Transparency & Blur Settings
+    // Transparency, Blur, Aura & Wallpaper Controls
     const opacityRange = document.getElementById('opacityRange');
     const opacityVal = document.getElementById('opacityVal');
     const blurRange = document.getElementById('blurRange');
     const blurVal = document.getElementById('blurVal');
+    const auraRange = document.getElementById('auraRange');
+    const auraVal = document.getElementById('auraVal');
+    const wallpaperInput = document.getElementById('wallpaperInput');
+    const wallpaperBg = document.getElementById('wallpaperBg');
 
-    const savedOpacity = localStorage.getItem('cukup_opacity') || '70';
-    const savedBlur = localStorage.getItem('cukup_blur') || '40';
+    const savedOpacity = localStorage.getItem('cukup_opacity') || '55';
+    const savedBlur = localStorage.getItem('cukup_blur') || '32';
+    const savedAura = localStorage.getItem('cukup_aura') || '85';
+    const savedWallpaper = localStorage.getItem('cukup_wallpaper') || '';
 
-    function applyVisuals(op, bl) {
+    function applyVisuals(op, bl, au, wp) {
       document.documentElement.style.setProperty('--opacity', (op / 100).toString());
       document.documentElement.style.setProperty('--blur', bl + 'px');
+      document.documentElement.style.setProperty('--aura-intensity', (au / 100).toString());
+      
       opacityVal.textContent = op + '%';
       blurVal.textContent = bl + 'px';
+      auraVal.textContent = au + '%';
+      
       opacityRange.value = op;
       blurRange.value = bl;
+      auraRange.value = au;
+
+      if (wp) {
+        wallpaperBg.style.backgroundImage = 'url("' + wp + '")';
+        wallpaperBg.style.display = 'block';
+        wallpaperInput.value = wp;
+      } else {
+        wallpaperBg.style.display = 'none';
+        wallpaperInput.value = '';
+      }
     }
 
-    applyVisuals(savedOpacity, savedBlur);
+    applyVisuals(savedOpacity, savedBlur, savedAura, savedWallpaper);
 
     opacityRange.addEventListener('input', () => {
-      applyVisuals(opacityRange.value, blurRange.value);
+      applyVisuals(opacityRange.value, blurRange.value, auraRange.value, localStorage.getItem('cukup_wallpaper') || '');
       localStorage.setItem('cukup_opacity', opacityRange.value);
     });
 
     blurRange.addEventListener('input', () => {
+      applyVisuals(opacityRange.value, blurRange.value, auraRange.value, localStorage.getItem('cukup_wallpaper') || '');
+      localStorage.setItem('cukup_blur', blurRange.value);
+    });
+
+    auraRange.addEventListener('input', () => {
+      applyVisuals(opacityRange.value, blurRange.value, auraRange.value, localStorage.getItem('cukup_wallpaper') || '');
+      localStorage.setItem('cukup_aura', auraRange.value);
+    });
+
+    wallpaperInput.addEventListener('change', () => {
+      const wp = wallpaperInput.value.trim();
+      localStorage.setItem('cukup_wallpaper', wp);
+      applyVisuals(opacityRange.value, blurRange.value, auraRange.value, wp);
+    });
       applyVisuals(opacityRange.value, blurRange.value);
       localStorage.setItem('cukup_blur', blurRange.value);
     });
