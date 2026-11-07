@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "name": "Cukup Kopi (Blurred)",
-  "description": "Dark Roasted Espresso, Persimmon Orange & Cashmere Mauve — Cozy tactile cafe aesthetic — Translucent blurred vibrancy edition",
+  "description": "Dark Roasted Espresso, Persimmon Orange & Cashmere Mauve — Cozy tactile cafe aesthetic — Ultra-translucent glass edition for native macOS blur",
   "icons": {
     "128": "icon.png"
   },
@@ -12,31 +12,31 @@
         15,
         14,
         12,
-        0.05
+        0
       ],
       "frame_inactive": [
         17,
         16,
         14,
-        0.1
+        0.05
       ],
       "frame_incognito": [
         15,
         14,
         12,
-        0.05
+        0
       ],
       "frame_incognito_inactive": [
         17,
         16,
         14,
-        0.1
+        0.05
       ],
       "toolbar": [
         19,
         18,
         16,
-        0.2
+        0.15
       ],
       "toolbar_button_icon": [
         224,
@@ -61,8 +61,7 @@
       "tab_background_text_inactive": [
         122,
         114,
-        106,
-        0.4
+        106
       ],
       "bookmark_text": [
         224,
@@ -73,7 +72,7 @@
         17,
         16,
         14,
-        0.28
+        0.22
       ],
       "omnibox_text": [
         224,
@@ -84,7 +83,7 @@
         22,
         20,
         19,
-        0.35
+        0.25
       ],
       "ntp_text": [
         224,

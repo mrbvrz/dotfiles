@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "name": "Cukup Malam (Blurred)",
-  "description": "Deep Pine Slate, Wild Amber & Frost Jade — Cool, serene Nordic night — Translucent blurred vibrancy edition",
+  "description": "Deep Pine Slate, Wild Amber & Frost Jade — Cool, serene Nordic night — Ultra-translucent glass edition for native macOS blur",
   "icons": {
     "128": "icon.png"
   },
@@ -12,31 +12,31 @@
         12,
         16,
         17,
-        0.05
+        0
       ],
       "frame_inactive": [
         14,
         18,
         19,
-        0.1
+        0.05
       ],
       "frame_incognito": [
         12,
         16,
         17,
-        0.05
+        0
       ],
       "frame_incognito_inactive": [
         14,
         18,
         19,
-        0.1
+        0.05
       ],
       "toolbar": [
         17,
         21,
         22,
-        0.2
+        0.15
       ],
       "toolbar_button_icon": [
         214,
@@ -61,8 +61,7 @@
       "tab_background_text_inactive": [
         106,
         120,
-        117,
-        0.4
+        117
       ],
       "bookmark_text": [
         214,
@@ -73,7 +72,7 @@
         14,
         18,
         19,
-        0.28
+        0.22
       ],
       "omnibox_text": [
         214,
@@ -84,7 +83,7 @@
         19,
         23,
         24,
-        0.35
+        0.25
       ],
       "ntp_text": [
         214,

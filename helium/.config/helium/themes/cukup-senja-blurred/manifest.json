@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "name": "Cukup Senja (Blurred)",
-  "description": "Warm Terracotta, Dusty Lilac & Celadon Teal — Organic, tactile, calm focus — Translucent blurred vibrancy edition",
+  "description": "Warm Terracotta, Dusty Lilac & Celadon Teal — Organic, tactile, calm focus — Ultra-translucent glass edition for native macOS blur",
   "icons": {
     "128": "icon.png"
   },
@@ -12,31 +12,31 @@
         17,
         17,
         15,
-        0.05
+        0
       ],
       "frame_inactive": [
         19,
         19,
         17,
-        0.1
+        0.05
       ],
       "frame_incognito": [
         17,
         17,
         15,
-        0.05
+        0
       ],
       "frame_incognito_inactive": [
         19,
         19,
         17,
-        0.1
+        0.05
       ],
       "toolbar": [
         21,
         21,
         19,
-        0.2
+        0.15
       ],
       "toolbar_button_icon": [
         216,
@@ -61,8 +61,7 @@
       "tab_background_text_inactive": [
         120,
         119,
-        111,
-        0.4
+        111
       ],
       "bookmark_text": [
         216,
@@ -73,7 +72,7 @@
         19,
         19,
         17,
-        0.28
+        0.22
       ],
       "omnibox_text": [
         216,
@@ -84,7 +83,7 @@
         24,
         24,
         22,
-        0.35
+        0.25
       ],
       "ntp_text": [
         216,

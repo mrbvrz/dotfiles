@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "name": "Cukup Malam",
   "description": "Deep Pine Slate, Wild Amber & Frost Jade — Cool, serene Nordic night",
   "icons": {
@@ -56,8 +56,7 @@
       "tab_background_text_inactive": [
         106,
         120,
-        117,
-        0.4
+        117
       ],
       "bookmark_text": [
         214,
