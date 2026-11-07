@@ -1,0 +1,104 @@
+{
+  "manifest_version": 3,
+  "version": "1.1.0",
+  "name": "Cukup Kopi (Blurred)",
+  "description": "Dark Roasted Espresso, Persimmon Orange & Cashmere Mauve — Cozy tactile cafe aesthetic — Translucent blurred vibrancy edition",
+  "icons": {
+    "128": "icon.png"
+  },
+  "theme": {
+    "colors": {
+      "frame": [
+        15,
+        14,
+        12,
+        0.45
+      ],
+      "frame_inactive": [
+        17,
+        16,
+        14,
+        0.55
+      ],
+      "frame_incognito": [
+        15,
+        14,
+        12,
+        0.45
+      ],
+      "frame_incognito_inactive": [
+        17,
+        16,
+        14,
+        0.55
+      ],
+      "toolbar": [
+        19,
+        18,
+        16,
+        0.72
+      ],
+      "toolbar_button_icon": [
+        224,
+        216,
+        208
+      ],
+      "toolbar_button_icon_inactive": [
+        122,
+        114,
+        106
+      ],
+      "tab_text": [
+        224,
+        216,
+        208
+      ],
+      "tab_background_text": [
+        122,
+        114,
+        106
+      ],
+      "tab_background_text_inactive": [
+        122,
+        114,
+        106,
+        0.4
+      ],
+      "bookmark_text": [
+        224,
+        216,
+        208
+      ],
+      "omnibox_background": [
+        17,
+        16,
+        14,
+        0.78
+      ],
+      "omnibox_text": [
+        224,
+        216,
+        208
+      ],
+      "ntp_background": [
+        22,
+        20,
+        19,
+        0.85
+      ],
+      "ntp_text": [
+        224,
+        216,
+        208
+      ],
+      "ntp_link": [
+        232,
+        125,
+        75
+      ]
+    },
+    "properties": {
+      "ntp_logo_alternate": 1
+    }
+  }
+}

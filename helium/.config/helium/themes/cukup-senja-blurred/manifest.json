@@ -1,0 +1,104 @@
+{
+  "manifest_version": 3,
+  "version": "1.1.0",
+  "name": "Cukup Senja (Blurred)",
+  "description": "Warm Terracotta, Dusty Lilac & Celadon Teal — Organic, tactile, calm focus — Translucent blurred vibrancy edition",
+  "icons": {
+    "128": "icon.png"
+  },
+  "theme": {
+    "colors": {
+      "frame": [
+        17,
+        17,
+        15,
+        0.45
+      ],
+      "frame_inactive": [
+        19,
+        19,
+        17,
+        0.55
+      ],
+      "frame_incognito": [
+        17,
+        17,
+        15,
+        0.45
+      ],
+      "frame_incognito_inactive": [
+        19,
+        19,
+        17,
+        0.55
+      ],
+      "toolbar": [
+        21,
+        21,
+        19,
+        0.72
+      ],
+      "toolbar_button_icon": [
+        216,
+        213,
+        205
+      ],
+      "toolbar_button_icon_inactive": [
+        120,
+        119,
+        111
+      ],
+      "tab_text": [
+        216,
+        213,
+        205
+      ],
+      "tab_background_text": [
+        120,
+        119,
+        111
+      ],
+      "tab_background_text_inactive": [
+        120,
+        119,
+        111,
+        0.4
+      ],
+      "bookmark_text": [
+        216,
+        213,
+        205
+      ],
+      "omnibox_background": [
+        19,
+        19,
+        17,
+        0.78
+      ],
+      "omnibox_text": [
+        216,
+        213,
+        205
+      ],
+      "ntp_background": [
+        24,
+        24,
+        22,
+        0.85
+      ],
+      "ntp_text": [
+        216,
+        213,
+        205
+      ],
+      "ntp_link": [
+        232,
+        144,
+        88
+      ]
+    },
+    "properties": {
+      "ntp_logo_alternate": 1
+    }
+  }
+}

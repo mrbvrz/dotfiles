@@ -1,0 +1,104 @@
+{
+  "manifest_version": 3,
+  "version": "1.1.0",
+  "name": "Cukup Malam (Blurred)",
+  "description": "Deep Pine Slate, Wild Amber & Frost Jade — Cool, serene Nordic night — Translucent blurred vibrancy edition",
+  "icons": {
+    "128": "icon.png"
+  },
+  "theme": {
+    "colors": {
+      "frame": [
+        12,
+        16,
+        17,
+        0.45
+      ],
+      "frame_inactive": [
+        14,
+        18,
+        19,
+        0.55
+      ],
+      "frame_incognito": [
+        12,
+        16,
+        17,
+        0.45
+      ],
+      "frame_incognito_inactive": [
+        14,
+        18,
+        19,
+        0.55
+      ],
+      "toolbar": [
+        17,
+        21,
+        22,
+        0.72
+      ],
+      "toolbar_button_icon": [
+        214,
+        224,
+        221
+      ],
+      "toolbar_button_icon_inactive": [
+        106,
+        120,
+        117
+      ],
+      "tab_text": [
+        214,
+        224,
+        221
+      ],
+      "tab_background_text": [
+        106,
+        120,
+        117
+      ],
+      "tab_background_text_inactive": [
+        106,
+        120,
+        117,
+        0.4
+      ],
+      "bookmark_text": [
+        214,
+        224,
+        221
+      ],
+      "omnibox_background": [
+        14,
+        18,
+        19,
+        0.78
+      ],
+      "omnibox_text": [
+        214,
+        224,
+        221
+      ],
+      "ntp_background": [
+        19,
+        23,
+        24,
+        0.85
+      ],
+      "ntp_text": [
+        214,
+        224,
+        221
+      ],
+      "ntp_link": [
+        230,
+        168,
+        84
+      ]
+    },
+    "properties": {
+      "ntp_logo_alternate": 1
+    }
+  }
+}
