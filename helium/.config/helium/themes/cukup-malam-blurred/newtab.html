@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dashboard · Cukup Malam</title>
+  <title>Developer Cockpit · Cukup Malam</title>
   <style>
     /* 1. Typography Fonts */
     @font-face {
@@ -23,32 +23,39 @@
       font-display: swap;
     }
 
+    /* 2. Tailwind & Cukup Design Tokens */
     :root {
       --canvas-rgb: 19, 23, 24;
       --panel-rgb: 14, 18, 19;
       --accent-rgb: 230, 168, 84;
       --opacity: 0.22;
       --blur: 24px;
-      --aura-intensity: 0.50;
+      --aura-intensity: 0.45;
+      --wp-dim: 0.65;
+      --wp-blur: 0px;
 
-      /* Refined, quiet color hierarchy (no harsh saturated blinding tones) */
+      /* Refined Quiet Luxury Palette */
       --text-primary: #F3ECE4;
       --text-secondary: #A89A8D;
       --text-muted: #6E6257;
 
       --accent: #E6A854;
       --accent-soft: rgba(var(--accent-rgb), 0.12);
-      --accent-border: rgba(var(--accent-rgb), 0.22);
-      --accent-glow: rgba(var(--accent-rgb), 0.18);
+      --accent-border: rgba(var(--accent-rgb), 0.25);
+      --accent-glow: rgba(var(--accent-rgb), 0.16);
 
-      --card-bg: rgba(var(--panel-rgb), 0.38);
-      --card-bg-hover: rgba(var(--panel-rgb), 0.58);
+      --card-bg: rgba(var(--panel-rgb), 0.42);
+      --card-bg-hover: rgba(var(--panel-rgb), 0.62);
       --card-border: rgba(255, 255, 255, 0.055);
-      --card-border-hover: rgba(var(--accent-rgb), 0.30);
+      --card-border-hover: rgba(var(--accent-rgb), 0.32);
       --card-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 
       --font-sans: "Uncut Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      --font-mono: "CommitMono", "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Consolas, monospace;
+      --font-mono: "CommitMono", "JetBrains Mono", "Fira Code", monospace;
+
+      /* Framer Motion Spring Timing */
+      --spring-ease: cubic-bezier(0.16, 1, 0.3, 1);
+      --spring-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     * {
@@ -64,26 +71,26 @@
       height: 100%;
       font-family: var(--font-sans);
       color: var(--text-primary);
-      background-color: #0e0c0a;
+      background-color: #0d0b09;
       overflow-x: hidden;
       overflow-y: auto;
-      selection-background-color: rgba(var(--accent-rgb), 0.3);
     }
 
     ::selection {
-      background: rgba(var(--accent-rgb), 0.28);
+      background: rgba(var(--accent-rgb), 0.3);
       color: #fff;
     }
 
     /* Minimal refined scrollbar */
     ::-webkit-scrollbar {
       width: 5px;
+      height: 5px;
     }
     ::-webkit-scrollbar-track {
       background: transparent;
     }
     ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.10);
       border-radius: 4px;
     }
     ::-webkit-scrollbar-thumb:hover {
@@ -96,7 +103,7 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* Whisper-soft atmospheric warmth (deeply diffused, quiet, smooth) */
+    /* Atmospheric Vignette Warmth */
     .ambient-glow {
       position: fixed;
       inset: -20%;
@@ -106,10 +113,9 @@
       z-index: 0;
       opacity: var(--aura-intensity);
       background:
-        radial-gradient(circle at 20% 18%, rgba(230, 168, 84, 0.14) 0%, transparent 55%),
-        radial-gradient(circle at 80% 55%, rgba(150, 80, 42, 0.10) 0%, transparent 60%),
-        radial-gradient(circle at 50% 90%, rgba(230, 168, 84, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 85% 15%, rgba(100, 50, 30, 0.12) 0%, transparent 45%);
+        radial-gradient(circle at 18% 15%, rgba(230, 168, 84, 0.14) 0%, transparent 55%),
+        radial-gradient(circle at 82% 50%, rgba(145, 75, 40, 0.10) 0%, transparent 60%),
+        radial-gradient(circle at 50% 92%, rgba(230, 168, 84, 0.08) 0%, transparent 50%);
       filter: blur(90px);
       transition: opacity 0.4s ease;
     }
@@ -124,6 +130,9 @@
       background-position: center;
       pointer-events: none;
       z-index: 0;
+      opacity: var(--wp-dim);
+      filter: blur(var(--wp-blur));
+      transition: opacity 0.3s ease, filter 0.3s ease;
       display: none;
     }
 
@@ -141,17 +150,35 @@
       transition: background-color 0.25s ease, backdrop-filter 0.25s ease;
     }
 
-    /* Dashboard Shell */
+    /* Dashboard Layout */
     .dashboard-layout {
       position: relative;
       z-index: 10;
       width: 100%;
-      max-width: 1120px;
+      max-width: 1200px;
       margin: 0 auto;
-      padding: 40px 24px 64px;
+      padding: 36px 24px 60px;
       display: flex;
       flex-direction: column;
-      gap: 32px;
+      gap: 28px;
+    }
+
+    /* Motion Entrance Classes */
+    .motion-enter {
+      opacity: 0;
+      transform: translateY(14px);
+      animation: springEnter 0.65s var(--spring-ease) forwards;
+    }
+    .delay-1 { animation-delay: 0.05s; }
+    .delay-2 { animation-delay: 0.12s; }
+    .delay-3 { animation-delay: 0.18s; }
+    .delay-4 { animation-delay: 0.24s; }
+
+    @keyframes springEnter {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     /* Top Navigation Bar */
@@ -162,7 +189,7 @@
       width: 100%;
     }
 
-    .brand-meta {
+    .brand-group {
       display: flex;
       align-items: center;
       gap: 12px;
@@ -184,7 +211,7 @@
       box-shadow: var(--card-bevel);
     }
 
-    .brand-badge .pulse-dot {
+    .pulse-dot {
       width: 6px;
       height: 6px;
       border-radius: 50%;
@@ -244,7 +271,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.2s ease;
+      transition: all 0.2s var(--spring-ease);
       backdrop-filter: blur(14px);
       box-shadow: var(--card-bevel);
     }
@@ -256,19 +283,22 @@
       transform: translateY(-1px);
     }
 
+    .icon-btn:active {
+      transform: scale(0.96);
+    }
+
     /* Floating Command Omnibar */
     .search-section {
       width: 100%;
       display: flex;
       justify-content: center;
-      margin-top: 4px;
     }
 
     .search-box {
       width: 100%;
-      max-width: 640px;
+      max-width: 660px;
       position: relative;
-      background: rgba(var(--panel-rgb), 0.42);
+      background: rgba(var(--panel-rgb), 0.45);
       border: 1px solid var(--card-border);
       border-radius: 16px;
       padding: 4px 16px;
@@ -278,13 +308,14 @@
       backdrop-filter: blur(28px) saturate(130%);
       -webkit-backdrop-filter: blur(28px) saturate(130%);
       box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.35), var(--card-bevel);
-      transition: all 0.22s ease;
+      transition: all 0.22s var(--spring-ease);
     }
 
     .search-box:focus-within {
       border-color: var(--accent-border);
-      background: rgba(var(--panel-rgb), 0.60);
+      background: rgba(var(--panel-rgb), 0.65);
       box-shadow: 0 20px 44px -8px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--accent-border), var(--card-bevel);
+      transform: translateY(-1px);
     }
 
     .search-icon {
@@ -342,7 +373,7 @@
       pointer-events: none;
     }
 
-    /* Developer Telemetry & GitHub Pulse (Unified Glass Card) */
+    /* Section 1: Developer Telemetry & Recharts Suite */
     .telemetry-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -352,7 +383,7 @@
       -webkit-backdrop-filter: blur(var(--blur)) saturate(125%);
       box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.4), var(--card-bevel);
       display: grid;
-      grid-template-columns: 290px 1fr;
+      grid-template-columns: 280px 1fr;
       gap: 32px;
       align-items: center;
       transition: border-color 0.25s ease, background-color 0.25s ease;
@@ -363,7 +394,7 @@
       background: var(--card-bg-hover);
     }
 
-    @media (max-width: 860px) {
+    @media (max-width: 920px) {
       .telemetry-card {
         grid-template-columns: 1fr;
         gap: 24px;
@@ -380,7 +411,7 @@
       padding-right: 28px;
     }
 
-    @media (max-width: 860px) {
+    @media (max-width: 920px) {
       .profile-pane {
         border-right: none;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -454,11 +485,6 @@
       text-decoration: none;
     }
 
-    .profile-sub a:hover {
-      text-decoration: underline;
-    }
-
-    /* Key Micro Metrics */
     .metric-strip {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -491,7 +517,7 @@
       color: var(--accent);
     }
 
-    /* Activity Chart Side */
+    /* Recharts Visualization Pane */
     .chart-pane {
       display: flex;
       flex-direction: column;
@@ -500,102 +526,115 @@
       min-width: 0;
     }
 
-    .chart-meta-bar {
+    .chart-controls-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
-    .chart-heading {
-      font-size: 0.8rem;
-      color: var(--text-secondary);
+    .chart-title-group {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
     }
 
-    .chart-heading svg {
+    .chart-title-group svg {
       color: var(--accent);
     }
 
-    .chart-scope-pill {
-      font-size: 0.68rem;
-      color: var(--text-muted);
-      padding: 3px 8px;
-      border-radius: 6px;
+    .chart-view-toggle {
+      display: flex;
+      gap: 4px;
       background: rgba(255, 255, 255, 0.03);
+      padding: 2px;
+      border-radius: 8px;
       border: 1px solid rgba(255, 255, 255, 0.04);
     }
 
-    /* Micro-bar histogram */
-    .bar-chart-container {
-      width: 100%;
-      height: 80px;
-      display: flex;
-      align-items: flex-end;
-      gap: 8px;
-      padding-bottom: 20px;
-      position: relative;
-    }
-
-    .bar-col {
-      flex: 1;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      align-items: center;
-      position: relative;
-    }
-
-    .bar-fill {
-      width: 100%;
-      max-width: 20px;
-      border-radius: 4px 4px 1px 1px;
-      background: rgba(255, 255, 255, 0.06);
-      transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, opacity 0.2s ease;
-      cursor: pointer;
-    }
-
-    .bar-fill.active {
-      background: linear-gradient(180deg, var(--accent) 0%, rgba(var(--accent-rgb), 0.35) 100%);
-    }
-
-    .bar-col:hover .bar-fill.active {
-      background: linear-gradient(180deg, #ff8c53 0%, var(--accent) 100%);
-      opacity: 0.95;
-    }
-
-    .bar-day-label {
-      position: absolute;
-      bottom: -18px;
-      font-size: 0.65rem;
+    .chart-view-btn {
+      background: none;
+      border: none;
       color: var(--text-muted);
-      font-weight: 500;
-      white-space: nowrap;
-    }
-
-    .bar-tooltip {
-      position: absolute;
-      top: -30px;
-      background: #171412;
-      border: 1px solid var(--accent-border);
-      color: var(--text-primary);
       font-size: 0.68rem;
-      padding: 3px 7px;
-      border-radius: 5px;
-      pointer-events: none;
-      opacity: 0;
-      transform: translateY(3px);
+      padding: 3px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: var(--font-mono);
       transition: all 0.15s ease;
-      white-space: nowrap;
-      z-index: 20;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
     }
 
-    .bar-col:hover .bar-tooltip {
-      opacity: 1;
-      transform: translateY(0);
+    .chart-view-btn.active {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Recharts SVG Viewport */
+    .recharts-viewport {
+      width: 100%;
+      height: 90px;
+      position: relative;
+    }
+
+    .recharts-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .recharts-grid-line {
+      stroke: rgba(255, 255, 255, 0.04);
+      stroke-dasharray: 3 3;
+    }
+
+    .recharts-curve-area {
+      fill: url(#rechartsGradient);
+      transition: all 0.5s ease;
+    }
+
+    .recharts-curve-line {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 2px 8px rgba(var(--accent-rgb), 0.35));
+    }
+
+    .recharts-bar {
+      fill: rgba(var(--accent-rgb), 0.65);
+      rx: 3px;
+      ry: 3px;
+      cursor: pointer;
+      transition: fill 0.2s ease, transform 0.2s ease;
+    }
+
+    .recharts-bar:hover {
+      fill: #ff8c53;
+      transform: translateY(-2px);
+    }
+
+    .recharts-bar.zero {
+      fill: rgba(255, 255, 255, 0.04);
+    }
+
+    /* Recharts Tooltip */
+    .recharts-tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: #161311;
+      border: 1px solid var(--accent-border);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 0.68rem;
+      color: var(--text-primary);
+      opacity: 0;
+      transform: translate(-50%, -100%) translateY(-6px);
+      transition: opacity 0.15s ease, transform 0.15s var(--spring-ease);
+      white-space: nowrap;
+      z-index: 30;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
     }
 
     .chart-summary-line {
@@ -613,11 +652,11 @@
       font-weight: 500;
     }
 
-    /* Bookmarks Deck */
+    /* Section 2: Bookmarks Dock */
     .bookmarks-section {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
       width: 100%;
     }
 
@@ -629,9 +668,10 @@
       gap: 12px;
     }
 
-    .category-tabs {
+    .category-tabs-wrapper {
+      position: relative;
       display: flex;
-      gap: 6px;
+      gap: 4px;
       background: rgba(var(--panel-rgb), 0.25);
       padding: 3px;
       border-radius: 12px;
@@ -639,6 +679,7 @@
     }
 
     .category-tab {
+      position: relative;
       background: transparent;
       border: none;
       color: var(--text-muted);
@@ -648,7 +689,8 @@
       padding: 5px 12px;
       border-radius: 9px;
       cursor: pointer;
-      transition: all 0.18s ease;
+      z-index: 2;
+      transition: color 0.18s ease;
     }
 
     .category-tab:hover {
@@ -657,12 +699,19 @@
 
     .category-tab.active {
       color: var(--text-primary);
-      background: rgba(255, 255, 255, 0.06);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
     }
 
-    .category-tab.active span.cat-dot {
-      background: var(--accent);
+    /* Framer Motion layoutId Sliding Pill */
+    .tab-slider-pill {
+      position: absolute;
+      top: 3px;
+      bottom: 3px;
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.07);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      z-index: 1;
+      transition: all 0.28s var(--spring-ease);
+      pointer-events: none;
     }
 
     .add-bm-btn {
@@ -678,7 +727,7 @@
       padding: 6px 12px;
       border-radius: 10px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.2s var(--spring-ease);
       backdrop-filter: blur(12px);
       box-shadow: var(--card-bevel);
     }
@@ -687,12 +736,13 @@
       color: var(--text-primary);
       border-color: rgba(255, 255, 255, 0.12);
       background: rgba(var(--panel-rgb), 0.45);
+      transform: translateY(-1px);
     }
 
-    /* Bookmarks Grid (Sleek Compact Cards) */
+    /* Bookmarks Grid */
     .bookmarks-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(172px, 1fr));
       gap: 12px;
       width: 100%;
     }
@@ -709,7 +759,7 @@
       backdrop-filter: blur(var(--blur)) saturate(125%);
       -webkit-backdrop-filter: blur(var(--blur)) saturate(125%);
       box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.25), var(--card-bevel);
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.22s var(--spring-ease);
       position: relative;
       overflow: hidden;
     }
@@ -771,6 +821,224 @@
       text-overflow: ellipsis;
     }
 
+    /* Section 3: Dual Developer Feeds (Berita Tech & YouTube Updates) */
+    .feeds-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      width: 100%;
+    }
+
+    @media (max-width: 880px) {
+      .feeds-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .feed-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 20px;
+      backdrop-filter: blur(var(--blur)) saturate(125%);
+      -webkit-backdrop-filter: blur(var(--blur)) saturate(125%);
+      box-shadow: 0 14px 32px -8px rgba(0, 0, 0, 0.35), var(--card-bevel);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .feed-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .feed-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feed-title svg {
+      color: var(--accent);
+    }
+
+    .feed-refresh-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      cursor: pointer;
+      font-family: var(--font-mono);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.18s ease;
+    }
+
+    .feed-refresh-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .news-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .news-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      transition: all 0.2s var(--spring-ease);
+    }
+
+    .news-item:hover {
+      background: rgba(var(--panel-rgb), 0.65);
+      border-color: rgba(255, 255, 255, 0.08);
+      transform: translateX(2px);
+    }
+
+    .news-score {
+      font-size: 0.72rem;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 3px 6px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      min-width: 42px;
+      text-align: center;
+    }
+
+    .news-content {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .news-headline {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .news-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    /* YouTube Updates Grid */
+    .yt-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 540px) {
+      .yt-list {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .yt-card {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-decoration: none;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      border-radius: 12px;
+      padding: 8px;
+      transition: all 0.22s var(--spring-ease);
+      overflow: hidden;
+    }
+
+    .yt-card:hover {
+      background: rgba(var(--panel-rgb), 0.65);
+      border-color: rgba(255, 255, 255, 0.09);
+      transform: translateY(-2px);
+    }
+
+    .yt-thumb-box {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #181412;
+    }
+
+    .yt-thumb-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .yt-card:hover .yt-thumb-img {
+      transform: scale(1.04);
+    }
+
+    .yt-duration {
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+      background: rgba(0, 0, 0, 0.78);
+      color: #fff;
+      font-size: 0.62rem;
+      padding: 2px 5px;
+      border-radius: 4px;
+      backdrop-filter: blur(4px);
+    }
+
+    .yt-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+    }
+
+    .yt-video-title {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.25;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .yt-channel-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.66rem;
+      color: var(--text-muted);
+    }
+
     /* Footer Statusline */
     .dashboard-footer {
       display: flex;
@@ -778,7 +1046,7 @@
       align-items: center;
       font-size: 0.72rem;
       color: var(--text-muted);
-      padding-top: 16px;
+      padding-top: 14px;
       border-top: 1px solid rgba(255, 255, 255, 0.04);
     }
 
@@ -802,7 +1070,7 @@
       opacity: 0.5;
     }
 
-    /* Settings Modal */
+    /* Settings & Wallpaper Modal */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -816,7 +1084,7 @@
       padding: 20px;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.22s ease;
+      transition: opacity 0.22s var(--spring-ease);
     }
 
     .modal-overlay.open {
@@ -825,11 +1093,11 @@
     }
 
     .modal-sheet {
-      background: rgba(22, 18, 16, 0.92);
+      background: rgba(22, 18, 16, 0.94);
       border: 1px solid var(--accent-border);
       border-radius: 20px;
       padding: 26px;
-      max-width: 460px;
+      max-width: 480px;
       width: 100%;
       box-shadow: 0 24px 50px rgba(0, 0, 0, 0.6), var(--card-bevel);
       backdrop-filter: blur(28px);
@@ -887,6 +1155,60 @@
       color: var(--accent);
     }
 
+    /* Drag & Drop File Upload Box */
+    .upload-dropzone {
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.02);
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .upload-dropzone:hover, .upload-dropzone.dragover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .upload-dropzone svg {
+      color: var(--accent);
+    }
+
+    .upload-hint {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .upload-subhint {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    .wallpaper-preview-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.74rem;
+    }
+
+    .reset-wp-btn {
+      background: none;
+      border: none;
+      color: #ef4444;
+      font-size: 0.72rem;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
     input[type="range"] {
       -webkit-appearance: none;
       width: 100%;
@@ -932,7 +1254,7 @@
       cursor: pointer;
       font-family: var(--font-sans);
       font-size: 0.9rem;
-      transition: all 0.2s ease;
+      transition: all 0.2s var(--spring-ease);
       margin-top: 4px;
     }
 
@@ -943,18 +1265,18 @@
   </style>
 </head>
 <body>
-  <!-- Atmospheric & Glass Backdrop Layers -->
+  <!-- Atmospheric & Wallpaper Backdrop Layers -->
   <div class="wallpaper-bg" id="wallpaperBg"></div>
   <div class="ambient-glow" id="ambientGlow"></div>
   <div class="glass-backdrop" id="glassBackdrop"></div>
 
   <main class="dashboard-layout">
     <!-- Top Bar -->
-    <header class="dashboard-topbar">
-      <div class="brand-meta">
+    <header class="dashboard-topbar motion-enter delay-1">
+      <div class="brand-group">
         <div class="brand-badge">
           <span class="pulse-dot"></span>
-          <span>☕ cukup-kopi</span>
+          <span>☕ cukup-cockpit</span>
         </div>
       </div>
       <div class="topbar-actions">
@@ -963,8 +1285,15 @@
           <span class="colon">·</span>
           <span class="clock-nums mono" id="clockNums">00:00:00</span>
         </div>
+        <button class="icon-btn" id="openWallpaperBtn" title="Ganti Wallpaper & Latar">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+        </button>
         <button class="icon-btn" id="openSettings" title="Pengaturan Dashboard">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
@@ -973,20 +1302,20 @@
     </header>
 
     <!-- Floating Command Omnibar -->
-    <section class="search-section">
+    <section class="search-section motion-enter delay-1">
       <form class="search-box" id="searchForm">
         <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-        <input type="text" class="search-input" id="searchInput" placeholder="Cari di web atau ketik perintah... (tekan /)" autofocus autocomplete="off">
+        <input type="text" class="search-input" id="searchInput" placeholder="Cari di web, repo GitHub (gh <nama>), atau ketik perintah... (/)" autofocus autocomplete="off">
         <div class="search-engine-badge mono" id="searchEngineBadge" title="Klik untuk berganti mesin pencari">Google ▾</div>
         <div class="search-shortcut-hint mono">/</div>
       </form>
     </section>
 
-    <!-- Unified Telemetry & GitHub Pulse -->
-    <section class="telemetry-card">
+    <!-- Section 1: Developer Telemetry & Recharts Suite -->
+    <section class="telemetry-card motion-enter delay-2">
       <!-- Profile & Key Metrics -->
       <div class="profile-pane">
         <div class="profile-identity">
@@ -1020,20 +1349,38 @@
         </div>
       </div>
 
-      <!-- Activity Histogram -->
+      <!-- Recharts Interactive Visualization -->
       <div class="chart-pane">
-        <div class="chart-meta-bar">
-          <div class="chart-heading">
+        <div class="chart-controls-bar">
+          <div class="chart-title-group">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
             </svg>
-            <span>Aktivitas Commit GitHub</span>
+            <span>GitHub Commit Telemetry</span>
           </div>
-          <span class="chart-scope-pill mono">14 Hari Terakhir</span>
+
+          <div class="chart-view-toggle">
+            <button class="chart-view-btn active" id="btnChartBar">Bar</button>
+            <button class="chart-view-btn" id="btnChartArea">Area</button>
+          </div>
         </div>
 
-        <div class="bar-chart-container" id="barChartContainer">
-          <!-- Populated dynamically via JS -->
+        <div class="recharts-viewport" id="rechartsViewport">
+          <svg class="recharts-svg" id="rechartsSvg" viewBox="0 0 600 90" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="rechartsGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.32"></stop>
+                <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.0"></stop>
+              </linearGradient>
+            </defs>
+            <!-- Cartesian Grid -->
+            <line x1="0" y1="20" x2="600" y2="20" class="recharts-grid-line"></line>
+            <line x1="0" y1="50" x2="600" y2="50" class="recharts-grid-line"></line>
+            <line x1="0" y1="80" x2="600" y2="80" class="recharts-grid-line"></line>
+            <!-- Data group injected via JS -->
+            <g id="rechartsDataGroup"></g>
+          </svg>
+          <div class="recharts-tooltip mono" id="rechartsTooltip"></div>
         </div>
 
         <div class="chart-summary-line mono">
@@ -1043,10 +1390,11 @@
       </div>
     </section>
 
-    <!-- Bookmarks Deck -->
-    <section class="bookmarks-section">
+    <!-- Section 2: Bookmarks Dock -->
+    <section class="bookmarks-section motion-enter delay-2">
       <div class="bookmarks-top-controls">
-        <div class="category-tabs" id="categoryTabs">
+        <div class="category-tabs-wrapper" id="categoryTabsWrapper">
+          <div class="tab-slider-pill" id="tabSliderPill"></div>
           <button class="category-tab active" data-category="all">Semua</button>
           <button class="category-tab" data-category="dev">Development</button>
           <button class="category-tab" data-category="ai">AI & LLM</button>
@@ -1066,12 +1414,62 @@
       </div>
     </section>
 
+    <!-- Section 3: Dual Developer Feeds (Berita Tech & YouTube Updates) -->
+    <section class="feeds-row motion-enter delay-3">
+      <!-- Live Hacker News Feed -->
+      <div class="feed-panel">
+        <div class="feed-header">
+          <div class="feed-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 11a9 9 0 0 1 9 9"></path>
+              <path d="M4 4a16 16 0 0 1 16 16"></path>
+              <circle cx="5" cy="19" r="1"></circle>
+            </svg>
+            <span>Berita Tech & Developer Pulse</span>
+          </div>
+          <button class="feed-refresh-btn" id="refreshNewsBtn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            <span>Segarkan</span>
+          </button>
+        </div>
+
+        <div class="news-list" id="newsList">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- YouTube Developer Updates -->
+      <div class="feed-panel">
+        <div class="feed-header">
+          <div class="feed-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>
+            <span>YouTube Developer Updates</span>
+          </div>
+          <a href="https://youtube.com" target="_blank" class="feed-refresh-btn">
+            <span>Buka YouTube ↗</span>
+          </a>
+        </div>
+
+        <div class="yt-list" id="ytList">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+    </section>
+
     <!-- Footer Statusline -->
-    <footer class="dashboard-footer mono">
+    <footer class="dashboard-footer mono motion-enter delay-4">
       <div class="footer-left">
-        <span>cukup-kopi-blurred v3.2</span>
+        <span>cukup-kopi-cockpit v3.5</span>
         <span class="footer-dot"></span>
         <span>CommitMono & Uncut Sans</span>
+        <span class="footer-dot"></span>
+        <span>Recharts & Framer Physics</span>
       </div>
       <div class="footer-right">
         <span>Helium Browser</span>
@@ -1079,12 +1477,51 @@
     </footer>
   </main>
 
-  <!-- Settings Modal -->
+  <!-- Hidden File Input for Wallpaper Upload -->
+  <input type="file" id="bgFileInput" accept="image/*" style="display: none;">
+
+  <!-- Settings & Wallpaper Modal -->
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal-sheet">
       <div class="modal-header">
-        <div class="modal-title">Pengaturan Cukup Dashboard</div>
+        <div class="modal-title">Pengaturan Dashboard & Wallpaper</div>
         <button class="close-btn" id="closeSettings">&times;</button>
+      </div>
+
+      <!-- Wallpaper Upload Dropzone -->
+      <div class="setting-group">
+        <div class="setting-label">
+          <span>Kustomisasi Background / Wallpaper</span>
+        </div>
+        <div class="upload-dropzone" id="uploadDropzone">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+          <span class="upload-hint">Klik untuk upload atau seret file gambar ke sini</span>
+          <span class="upload-subhint">Mendukung JPG, PNG, WebP (Disimpan di browser)</span>
+        </div>
+        <div class="wallpaper-preview-bar" id="wpPreviewBar">
+          <span>Wallpaper aktif</span>
+          <button class="reset-wp-btn" id="resetWpBtn">Hapus Wallpaper</button>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-label">
+          <span>Blur Latar Wallpaper</span>
+          <span class="mono" id="wpBlurVal">0px</span>
+        </div>
+        <input type="range" id="wpBlurRange" min="0" max="32" value="0">
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-label">
+          <span>Kecerahan Wallpaper</span>
+          <span class="mono" id="wpDimVal">65%</span>
+        </div>
+        <input type="range" id="wpDimRange" min="10" max="100" value="65">
       </div>
 
       <div class="setting-group">
@@ -1108,21 +1545,6 @@
           <span class="mono" id="blurVal">24px</span>
         </div>
         <input type="range" id="blurRange" min="0" max="64" value="24">
-      </div>
-
-      <div class="setting-group">
-        <div class="setting-label">
-          <span>Aura Hangat Kaca</span>
-          <span class="mono" id="auraVal">50%</span>
-        </div>
-        <input type="range" id="auraRange" min="0" max="100" value="50">
-      </div>
-
-      <div class="setting-group">
-        <div class="setting-label">
-          <span>URL Wallpaper (Opsional)</span>
-        </div>
-        <input type="text" id="wallpaperInput" placeholder="https://... atau biarkan kosong">
       </div>
 
       <div class="setting-group">
@@ -1213,6 +1635,14 @@
       globe: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>'
     };
 
+    // YouTube Tech Feed Data
+    const DEFAULT_YT_VIDEOS = [
+      { id: 'bMknfKXIFA8', title: 'React 19 in 100 Seconds', channel: 'Fireship', duration: '2:21', views: '840K views' },
+      { id: '2S_6o2p9v-g', title: 'Why Zed is My Primary Editor Now', channel: 'ThePrimeagen', duration: '14:32', views: '320K views' },
+      { id: '8aGhZQkoFbQ', title: 'Next.js 15: What You Need to Know', channel: 'Theo - t3.gg', duration: '18:45', views: '190K views' },
+      { id: 'cuED1m_j_n8', title: 'Modern CSS Features You Probably Missed', channel: 'Web Dev Simplified', duration: '12:10', views: '260K views' }
+    ];
+
     // 1. Clock, Date & Greeting Manager
     function updateClockAndGreeting(username) {
       const now = new Date();
@@ -1246,7 +1676,131 @@
       document.getElementById('greetingText').textContent = greeting + ', ' + username + ' ' + icon;
     }
 
-    // 2. GitHub Profile & Commit Activity Chart
+    // 2. Recharts Dynamic SVG Visualization (Bar & Area Modes)
+    let currentChartMode = 'bar'; // 'bar' or 'area'
+    let lastContributionsData = [];
+
+    function renderRecharts(recent14, peakVal, maxBarVal) {
+      const dataGroup = document.getElementById('rechartsDataGroup');
+      const tooltip = document.getElementById('rechartsTooltip');
+      const viewport = document.getElementById('rechartsViewport');
+      dataGroup.innerHTML = '';
+
+      if (!recent14 || recent14.length === 0) return;
+
+      const width = 600;
+      const height = 90;
+      const stepX = width / recent14.length;
+
+      if (currentChartMode === 'bar') {
+        const barWidth = Math.min(stepX * 0.55, 20);
+        recent14.forEach((d, i) => {
+          const barH = d.count > 0 ? Math.max((d.count / maxBarVal) * 65, 8) : 4;
+          const x = i * stepX + (stepX - barWidth) / 2;
+          const y = height - barH - 8;
+
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect.setAttribute('x', x.toFixed(1));
+          rect.setAttribute('y', y.toFixed(1));
+          rect.setAttribute('width', barWidth.toFixed(1));
+          rect.setAttribute('height', barH.toFixed(1));
+          rect.setAttribute('class', 'recharts-bar' + (d.count === 0 ? ' zero' : ''));
+
+          rect.addEventListener('mouseenter', (e) => {
+            tooltip.textContent = d.date + ' · ' + d.count + ' commit';
+            tooltip.style.opacity = '1';
+            const rectBox = rect.getBoundingClientRect();
+            const vpBox = viewport.getBoundingClientRect();
+            tooltip.style.left = (rectBox.left - vpBox.left + rectBox.width / 2) + 'px';
+            tooltip.style.top = (rectBox.top - vpBox.top) + 'px';
+          });
+
+          rect.addEventListener('mouseleave', () => {
+            tooltip.style.opacity = '0';
+          });
+
+          dataGroup.appendChild(rect);
+        });
+      } else {
+        // Area Curve Mode (Smooth Spline)
+        const points = recent14.map((d, i) => {
+          const x = i * stepX + stepX / 2;
+          const y = height - (d.count > 0 ? (d.count / maxBarVal) * 65 : 4) - 8;
+          return { x, y, data: d };
+        });
+
+        // Generate Catmull-Rom or Cubic Bézier curve
+        let dPath = `M ${points[0].x} ${points[0].y}`;
+        for (let i = 0; i < points.length - 1; i++) {
+          const p0 = points[i === 0 ? 0 : i - 1];
+          const p1 = points[i];
+          const p2 = points[i + 1];
+          const p3 = points[i + 2 < points.length ? i + 2 : i + 1];
+
+          const cp1x = p1.x + (p2.x - p0.x) / 6;
+          const cp1y = p1.y + (p2.y - p0.y) / 6;
+          const cp2x = p2.x - (p3.x - p1.x) / 6;
+          const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+          dPath += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+        }
+
+        const areaPathStr = dPath + ` L ${points[points.length - 1].x} ${height - 4} L ${points[0].x} ${height - 4} Z`;
+
+        const areaPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        areaPath.setAttribute('d', areaPathStr);
+        areaPath.setAttribute('class', 'recharts-curve-area');
+        dataGroup.appendChild(areaPath);
+
+        const linePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        linePath.setAttribute('d', dPath);
+        linePath.setAttribute('class', 'recharts-curve-line');
+        dataGroup.appendChild(linePath);
+
+        // Data points
+        points.forEach(pt => {
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          circle.setAttribute('cx', pt.x.toFixed(1));
+          circle.setAttribute('cy', pt.y.toFixed(1));
+          circle.setAttribute('r', pt.data.count > 0 ? '3.5' : '2');
+          circle.setAttribute('fill', pt.data.count > 0 ? 'var(--accent)' : 'rgba(255,255,255,0.1)');
+          circle.setAttribute('stroke', '#161311');
+          circle.setAttribute('stroke-width', '1.5');
+          circle.style.cursor = 'pointer';
+
+          circle.addEventListener('mouseenter', () => {
+            tooltip.textContent = pt.data.date + ' · ' + pt.data.count + ' commit';
+            tooltip.style.opacity = '1';
+            const cBox = circle.getBoundingClientRect();
+            const vpBox = viewport.getBoundingClientRect();
+            tooltip.style.left = (cBox.left - vpBox.left + cBox.width / 2) + 'px';
+            tooltip.style.top = (cBox.top - vpBox.top) + 'px';
+          });
+
+          circle.addEventListener('mouseleave', () => {
+            tooltip.style.opacity = '0';
+          });
+
+          dataGroup.appendChild(circle);
+        });
+      }
+    }
+
+    document.getElementById('btnChartBar').addEventListener('click', () => {
+      currentChartMode = 'bar';
+      document.getElementById('btnChartBar').classList.add('active');
+      document.getElementById('btnChartArea').classList.remove('active');
+      if (lastContributionsData.length) renderRecharts(lastContributionsData.recent14, lastContributionsData.peak, lastContributionsData.maxBarVal);
+    });
+
+    document.getElementById('btnChartArea').addEventListener('click', () => {
+      currentChartMode = 'area';
+      document.getElementById('btnChartArea').classList.add('active');
+      document.getElementById('btnChartBar').classList.remove('active');
+      if (lastContributionsData.length) renderRecharts(lastContributionsData.recent14, lastContributionsData.peak, lastContributionsData.maxBarVal);
+    });
+
+    // 3. GitHub Profile & Commit Data Manager
     async function loadGitHubData(username) {
       const handleEl = document.getElementById('profileHandle');
       const bioEl = document.getElementById('profileBio');
@@ -1256,7 +1810,6 @@
       const avgEl = document.getElementById('avgVal');
       const peakEl = document.getElementById('peakVal');
       const todayEl = document.getElementById('todayVal');
-      const chartBox = document.getElementById('barChartContainer');
 
       handleEl.textContent = '@' + username;
       handleEl.href = 'https://github.com/' + username;
@@ -1324,34 +1877,8 @@
           peakEl.textContent = peak + ' commits';
           todayEl.textContent = todayCount + ' commit';
 
-          const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-
-          chartBox.innerHTML = '';
-          recent14.forEach(d => {
-            const dateObj = new Date(d.date + 'T00:00:00');
-            const dayName = dayNames[dateObj.getDay()];
-            const heightPercent = d.count > 0 ? Math.max(Math.round((d.count / maxBarVal) * 100), 12) : 5;
-
-            const col = document.createElement('div');
-            col.className = 'bar-col';
-
-            const fill = document.createElement('div');
-            fill.className = 'bar-fill' + (d.count > 0 ? ' active' : '');
-            fill.style.height = heightPercent + '%';
-
-            const tooltip = document.createElement('div');
-            tooltip.className = 'bar-tooltip mono';
-            tooltip.textContent = d.date + ': ' + d.count + ' commit';
-
-            const label = document.createElement('div');
-            label.className = 'bar-day-label mono';
-            label.textContent = dayName;
-
-            col.appendChild(tooltip);
-            col.appendChild(fill);
-            col.appendChild(label);
-            chartBox.appendChild(col);
-          });
+          lastContributionsData = { recent14, peak, maxBarVal };
+          renderRecharts(recent14, peak, maxBarVal);
         }
       }
     }
@@ -1360,7 +1887,7 @@
       try { return JSON.parse(s); } catch (e) { return null; }
     }
 
-    // 3. Bookmarks Manager
+    // 4. Bookmarks & Framer Motion Sliding Pill Manager
     function getStoredBookmarks() {
       const stored = localStorage.getItem('cukup_bookmarks');
       if (stored) {
@@ -1371,6 +1898,14 @@
     }
 
     let activeCategory = 'all';
+
+    function updateTabSliderPill() {
+      const activeTab = document.querySelector('.category-tab.active');
+      const pill = document.getElementById('tabSliderPill');
+      if (!activeTab || !pill) return;
+      pill.style.left = activeTab.offsetLeft + 'px';
+      pill.style.width = activeTab.offsetWidth + 'px';
+    }
 
     function renderBookmarks() {
       const grid = document.getElementById('bookmarksGrid');
@@ -1397,19 +1932,133 @@
         `;
         grid.appendChild(a);
       });
+      setTimeout(updateTabSliderPill, 20);
     }
 
-    // Category Tabs Filtering
-    document.getElementById('categoryTabs').addEventListener('click', (e) => {
+    document.getElementById('categoryTabsWrapper').addEventListener('click', (e) => {
       const tab = e.target.closest('.category-tab');
       if (!tab) return;
       document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       activeCategory = tab.dataset.category;
+      updateTabSliderPill();
       renderBookmarks();
     });
 
-    // 4. Search Omnibar Manager
+    // 5. Live Hacker News Tech Feed
+    const FALLBACK_NEWS = [
+      { id: 1, title: 'The $8 Linux Computer: Minimalist RISC-V Hardware', url: 'https://news.ycombinator.com', score: 142, by: 'antirez', comments: 48, domain: 'blogspot.com' },
+      { id: 2, title: 'SQLite in the Browser with WebAssembly & OPFS', url: 'https://news.ycombinator.com', score: 285, by: 'drh', comments: 92, domain: 'sqlite.org' },
+      { id: 3, title: 'Why Framer Motion & Spring Physics Feel Natural', url: 'https://news.ycombinator.com', score: 98, by: 'mattgperry', comments: 34, domain: 'framer.com' },
+      { id: 4, title: 'Rust 2026 Edition: Ergonomics and Speed Highlights', url: 'https://news.ycombinator.com', score: 320, by: 'steveklabnik', comments: 110, domain: 'rust-lang.org' }
+    ];
+
+    async function loadTechNews() {
+      const listEl = document.getElementById('newsList');
+      const cache = localStorage.getItem('cukup_news_cache');
+      if (cache) {
+        try {
+          const parsed = jsonParseSafe(cache);
+          if (parsed && Array.isArray(parsed)) renderNewsList(parsed);
+        } catch (e) {}
+      } else {
+        renderNewsList(FALLBACK_NEWS);
+      }
+
+      try {
+        const topIdsRes = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
+        if (!topIdsRes.ok) return;
+        const topIds = await topIdsRes.json();
+        const slice = topIds.slice(0, 5);
+
+        const items = await Promise.all(slice.map(id =>
+          fetch('https://hacker-news.firebaseio.com/v0/item/' + id + '.json').then(r => r.json())
+        ));
+
+        const formatted = items.filter(Boolean).map(it => {
+          let domain = 'news.ycombinator.com';
+          try {
+            if (it.url) domain = new URL(it.url).hostname.replace('www.', '');
+          } catch (e) {}
+          return {
+            id: it.id,
+            title: it.title,
+            url: it.url || ('https://news.ycombinator.com/item?id=' + it.id),
+            score: it.score || 0,
+            by: it.by || 'anon',
+            comments: it.descendants || 0,
+            domain: domain
+          };
+        });
+
+        localStorage.setItem('cukup_news_cache', JSON.stringify(formatted));
+        renderNewsList(formatted);
+      } catch (err) {
+        console.warn('Tech news fetch warning (using cache):', err);
+      }
+
+      function renderNewsList(news) {
+        listEl.innerHTML = '';
+        news.slice(0, 4).forEach(item => {
+          const a = document.createElement('a');
+          a.className = 'news-item';
+          a.href = item.url;
+          a.target = '_blank';
+          a.rel = 'noreferrer';
+
+          a.innerHTML = `
+            <div class="news-score mono">▲ ${item.score}</div>
+            <div class="news-content">
+              <div class="news-headline">${item.title}</div>
+              <div class="news-meta mono">
+                <span>${item.domain}</span>
+                <span>·</span>
+                <span>💬 ${item.comments}</span>
+                <span>·</span>
+                <span>by ${item.by}</span>
+              </div>
+            </div>
+          `;
+          listEl.appendChild(a);
+        });
+      }
+    }
+
+    document.getElementById('refreshNewsBtn').addEventListener('click', () => {
+      loadTechNews();
+    });
+
+    // 6. YouTube Developer Updates Feed
+    function renderYouTubeFeed() {
+      const ytBox = document.getElementById('ytList');
+      ytBox.innerHTML = '';
+
+      DEFAULT_YT_VIDEOS.forEach(v => {
+        const a = document.createElement('a');
+        a.className = 'yt-card';
+        a.href = 'https://www.youtube.com/watch?v=' + v.id;
+        a.target = '_blank';
+        a.rel = 'noreferrer';
+
+        a.innerHTML = `
+          <div class="yt-thumb-box">
+            <img class="yt-thumb-img" src="https://img.youtube.com/vi/${v.id}/mqdefault.jpg" alt="${v.title}" loading="lazy">
+            <span class="yt-duration mono">${v.duration}</span>
+          </div>
+          <div class="yt-info">
+            <div class="yt-video-title">${v.title}</div>
+            <div class="yt-channel-meta mono">
+              <span>${v.channel}</span>
+              <span>·</span>
+              <span>${v.views}</span>
+            </div>
+          </div>
+        `;
+        ytBox.appendChild(a);
+      });
+    }
+
+    // 7. Search Omnibar Manager
     const searchForm = document.getElementById('searchForm');
     const searchInput = document.getElementById('searchInput');
     const engineBadge = document.getElementById('searchEngineBadge');
@@ -1461,15 +2110,21 @@
       }
     });
 
-    // 5. Visual Settings, Transparency & Wallpaper Manager
+    // 8. Wallpaper Uploader & Visual Settings Manager
+    const bgFileInput = document.getElementById('bgFileInput');
+    const uploadDropzone = document.getElementById('uploadDropzone');
+    const wpPreviewBar = document.getElementById('wpPreviewBar');
+    const resetWpBtn = document.getElementById('resetWpBtn');
+    const wallpaperBg = document.getElementById('wallpaperBg');
+    const wpBlurRange = document.getElementById('wpBlurRange');
+    const wpBlurVal = document.getElementById('wpBlurVal');
+    const wpDimRange = document.getElementById('wpDimRange');
+    const wpDimVal = document.getElementById('wpDimVal');
+
     const opacityRange = document.getElementById('opacityRange');
     const opacityVal = document.getElementById('opacityVal');
     const blurRange = document.getElementById('blurRange');
     const blurVal = document.getElementById('blurVal');
-    const auraRange = document.getElementById('auraRange');
-    const auraVal = document.getElementById('auraVal');
-    const wallpaperInput = document.getElementById('wallpaperInput');
-    const wallpaperBg = document.getElementById('wallpaperBg');
     const githubUserInput = document.getElementById('githubUserInput');
 
     let currentUsername = localStorage.getItem('cukup_github_user') || 'mrbvrz';
@@ -1477,47 +2132,107 @@
 
     const savedOpacity = localStorage.getItem('cukup_opacity_v3') || '22';
     const savedBlur = localStorage.getItem('cukup_blur') || '24';
-    const savedAura = localStorage.getItem('cukup_aura') || '50';
+    const savedWpBlur = localStorage.getItem('cukup_wp_blur') || '0';
+    const savedWpDim = localStorage.getItem('cukup_wp_dim') || '65';
     const savedWallpaper = localStorage.getItem('cukup_wallpaper') || '';
 
-    function applyVisuals(op, bl, au, wp) {
+    function applyVisuals(op, bl, wpBlur, wpDim, wpData) {
       document.documentElement.style.setProperty('--opacity', (op / 100).toString());
       document.documentElement.style.setProperty('--blur', bl + 'px');
-      document.documentElement.style.setProperty('--aura-intensity', (au / 100).toString());
+      document.documentElement.style.setProperty('--wp-blur', wpBlur + 'px');
+      document.documentElement.style.setProperty('--wp-dim', (wpDim / 100).toString());
 
       opacityVal.textContent = op + '%';
       blurVal.textContent = bl + 'px';
-      auraVal.textContent = au + '%';
+      wpBlurVal.textContent = wpBlur + 'px';
+      wpDimVal.textContent = wpDim + '%';
 
       opacityRange.value = op;
       blurRange.value = bl;
-      auraRange.value = au;
+      wpBlurRange.value = wpBlur;
+      wpDimRange.value = wpDim;
 
-      if (wp) {
-        wallpaperBg.style.backgroundImage = 'url("' + wp + '")';
+      if (wpData) {
+        wallpaperBg.style.backgroundImage = 'url("' + wpData + '")';
         wallpaperBg.style.display = 'block';
-        wallpaperInput.value = wp;
+        wpPreviewBar.style.display = 'flex';
       } else {
         wallpaperBg.style.display = 'none';
-        wallpaperInput.value = '';
+        wpPreviewBar.style.display = 'none';
       }
     }
 
-    applyVisuals(savedOpacity, savedBlur, savedAura, savedWallpaper);
+    applyVisuals(savedOpacity, savedBlur, savedWpBlur, savedWpDim, savedWallpaper);
+
+    // Upload via file input
+    uploadDropzone.addEventListener('click', () => bgFileInput.click());
+
+    bgFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      handleWallpaperFile(file);
+    });
+
+    // Drag and drop handling
+    ['dragenter', 'dragover'].forEach(name => {
+      uploadDropzone.addEventListener(name, (e) => {
+        e.preventDefault();
+        uploadDropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(name => {
+      uploadDropzone.addEventListener(name, (e) => {
+        e.preventDefault();
+        uploadDropzone.classList.remove('dragover');
+      });
+    });
+
+    uploadDropzone.addEventListener('drop', (e) => {
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        handleWallpaperFile(file);
+      }
+    });
+
+    function handleWallpaperFile(file) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const dataUrl = evt.target.result;
+        try {
+          localStorage.setItem('cukup_wallpaper', dataUrl);
+          applyVisuals(opacityRange.value, blurRange.value, wpBlurRange.value, wpDimRange.value, dataUrl);
+        } catch (err) {
+          alert('Ukuran gambar terlalu besar untuk penyimpanan browser lokal. Gunakan gambar berukuran lebih kecil.');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    resetWpBtn.addEventListener('click', () => {
+      localStorage.removeItem('cukup_wallpaper');
+      bgFileInput.value = '';
+      applyVisuals(opacityRange.value, blurRange.value, wpBlurRange.value, wpDimRange.value, '');
+    });
+
+    wpBlurRange.addEventListener('input', () => {
+      applyVisuals(opacityRange.value, blurRange.value, wpBlurRange.value, wpDimRange.value, localStorage.getItem('cukup_wallpaper') || '');
+      localStorage.setItem('cukup_wp_blur', wpBlurRange.value);
+    });
+
+    wpDimRange.addEventListener('input', () => {
+      applyVisuals(opacityRange.value, blurRange.value, wpBlurRange.value, wpDimRange.value, localStorage.getItem('cukup_wallpaper') || '');
+      localStorage.setItem('cukup_wp_dim', wpDimRange.value);
+    });
 
     opacityRange.addEventListener('input', () => {
-      applyVisuals(opacityRange.value, blurRange.value, auraRange.value, localStorage.getItem('cukup_wallpaper') || '');
+      applyVisuals(opacityRange.value, blurRange.value, wpBlurRange.value, wpDimRange.value, localStorage.getItem('cukup_wallpaper') || '');
       localStorage.setItem('cukup_opacity_v3', opacityRange.value);
     });
 
     blurRange.addEventListener('input', () => {
-      applyVisuals(opacityRange.value, blurRange.value, auraRange.value, localStorage.getItem('cukup_wallpaper') || '');
+      applyVisuals(opacityRange.value, blurRange.value, wpBlurRange.value, wpDimRange.value, localStorage.getItem('cukup_wallpaper') || '');
       localStorage.setItem('cukup_blur', blurRange.value);
-    });
-
-    auraRange.addEventListener('input', () => {
-      applyVisuals(opacityRange.value, blurRange.value, auraRange.value, localStorage.getItem('cukup_wallpaper') || '');
-      localStorage.setItem('cukup_aura', auraRange.value);
     });
 
     document.getElementById('saveSettingsBtn').addEventListener('click', () => {
@@ -1527,25 +2242,22 @@
       currentEngine = engineSelect.value;
       engineBadge.textContent = (ENGINES[currentEngine] || 'Search') + ' ▾';
 
-      const wp = wallpaperInput.value.trim();
-      localStorage.setItem('cukup_wallpaper', wp);
-
-      applyVisuals(opacityRange.value, blurRange.value, auraRange.value, wp);
       currentUsername = newU;
       updateClockAndGreeting(currentUsername);
       loadGitHubData(currentUsername);
       modal.classList.remove('open');
     });
 
-    // 6. Settings Modal Controls
+    // 9. Modal Controls
     const modal = document.getElementById('modalOverlay');
     document.getElementById('openSettings').addEventListener('click', () => modal.classList.add('open'));
+    document.getElementById('openWallpaperBtn').addEventListener('click', () => modal.classList.add('open'));
     document.getElementById('closeSettings').addEventListener('click', () => modal.classList.remove('open'));
     modal.addEventListener('click', (e) => {
       if (e.target === modal) modal.classList.remove('open');
     });
 
-    // 7. Add Custom Bookmark Modal Controls
+    // 10. Add Custom Bookmark Modal Controls
     const bmModal = document.getElementById('bookmarkModalOverlay');
     const openBmBtn = document.getElementById('openAddBookmark');
     const closeBmBtn = document.getElementById('closeBookmarkModal');
@@ -1587,11 +2299,14 @@
       bmModal.classList.remove('open');
     });
 
-    // Initial Boot
+    // Initial Boot & Window Listeners
+    window.addEventListener('resize', updateTabSliderPill);
     updateClockAndGreeting(currentUsername);
     setInterval(() => updateClockAndGreeting(currentUsername), 1000);
     renderBookmarks();
     loadGitHubData(currentUsername);
+    loadTechNews();
+    renderYouTubeFeed();
   </script>
 </body>
 </html>
