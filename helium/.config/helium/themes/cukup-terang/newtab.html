@@ -928,13 +928,30 @@
       transition: all 0.2s ease;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
       overflow: hidden;
+      position: relative;
     }
 
     .card-favicon {
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
       border-radius: 4px;
       object-fit: contain;
+    }
+
+    .card-icon-fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      color: var(--accent);
+    }
+
+    .favicon-monogram {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--accent);
+      font-family: var(--font-mono);
     }
 
     .bookmark-card:hover .card-icon-box {
@@ -2512,14 +2529,104 @@
       try { return JSON.parse(s); } catch (e) { return null; }
     }
 
-    // 4. Bookmarks Dock Manager with High-Res Favicons & Browser Bookmarks
-    function getFaviconUrl(url) {
+    // 4. Bookmarks Dock Manager with Multi-Tier Resilient Favicons & Browser Bookmarks
+    function extractDomain(url) {
+      if (!url) return '';
       try {
-        const u = new URL(url);
-        return 'https://www.google.com/s2/favicons?domain=' + u.hostname + '&sz=64';
+        return new URL(url).hostname.replace(/^www./, '');
       } catch (e) {
-        return '';
+        const after = url.split('://')[1] || url;
+        return after.split('/')[0];
       }
+    }
+
+    function createBookmarkCard(bm) {
+      const a = document.createElement('a');
+      a.className = 'bookmark-card card-3d';
+      a.href = bm.url;
+
+      const domainHint = bm.hint || extractDomain(bm.url);
+
+      const iconBox = document.createElement('div');
+      iconBox.className = 'card-icon-box';
+
+      // Fallback element (curated SVG icon or initial letter)
+      const fallbackHolder = document.createElement('div');
+      fallbackHolder.className = 'card-icon-fallback';
+      if (bm.icon && ICONS[bm.icon]) {
+        fallbackHolder.innerHTML = ICONS[bm.icon];
+      } else {
+        const initial = (bm.title || domainHint || 'W').charAt(0).toUpperCase();
+        fallbackHolder.innerHTML = '<span class="favicon-monogram mono">' + initial + '</span>';
+      }
+      iconBox.appendChild(fallbackHolder);
+
+      // Multi-tier favicon sources
+      const sources = [];
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
+        sources.push('chrome-extension://' + chrome.runtime.id + '/_favicon/?pageUrl=' + encodeURIComponent(bm.url) + '&size=64');
+      }
+      sources.push('https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=' + encodeURIComponent(bm.url) + '&size=64');
+      if (domainHint) {
+        sources.push('https://icons.duckduckgo.com/ip3/' + domainHint + '.ico');
+      }
+
+      let sourceIndex = 0;
+      const img = document.createElement('img');
+      img.className = 'card-favicon';
+      img.alt = bm.title || domainHint;
+      img.loading = 'lazy';
+      img.style.display = 'none';
+
+      function tryNext() {
+        if (sourceIndex < sources.length) {
+          img.src = sources[sourceIndex++];
+        } else {
+          img.remove();
+        }
+      }
+
+      img.onload = () => {
+        img.style.display = 'block';
+        if (fallbackHolder.parentNode) {
+          fallbackHolder.remove();
+        }
+      };
+
+      img.onerror = () => {
+        tryNext();
+      };
+
+      iconBox.appendChild(img);
+      tryNext();
+
+      const info = document.createElement('div');
+      info.className = 'card-info';
+
+      const titleRow = document.createElement('div');
+      titleRow.className = 'card-title-row';
+
+      const titleSpan = document.createElement('span');
+      titleSpan.className = 'card-title';
+      titleSpan.textContent = bm.title || domainHint;
+
+      const arrowSpan = document.createElement('span');
+      arrowSpan.className = 'card-arrow';
+      arrowSpan.textContent = '↗';
+
+      titleRow.appendChild(titleSpan);
+      titleRow.appendChild(arrowSpan);
+
+      const domainSpan = document.createElement('span');
+      domainSpan.className = 'card-domain mono';
+      domainSpan.textContent = domainHint;
+
+      info.appendChild(titleRow);
+      info.appendChild(domainSpan);
+
+      a.appendChild(iconBox);
+      a.appendChild(info);
+      return a;
     }
 
     let browserBookmarks = [];
@@ -2536,7 +2643,7 @@
                     title: node.title || node.url,
                     url: node.url,
                     category: 'browser',
-                    hint: node.url.replace(/^https?:\/\//, '').replace(/\/.*$/, '')
+                    hint: extractDomain(node.url)
                   });
                 }
                 if (node.children) traverse(node.children);
@@ -2600,26 +2707,8 @@
       }
 
       list.forEach(bm => {
-        const a = document.createElement('a');
-        a.className = 'bookmark-card card-3d';
-        a.href = bm.url;
-
-        const favUrl = getFaviconUrl(bm.url);
-        const domainHint = bm.hint || bm.url.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-
-        a.innerHTML = `
-          <div class="card-icon-box">
-            <img class="card-favicon" src="${favUrl}" alt="${bm.title}" loading="lazy" onerror="this.onerror=null; this.src='https://icons.duckduckgo.com/ip3/' + '${domainHint}' + '.ico'; this.onerror=function(){this.parentElement.innerHTML='${ICONS.globe}';};">
-          </div>
-          <div class="card-info">
-            <div class="card-title-row">
-              <span class="card-title">${bm.title}</span>
-              <span class="card-arrow">↗</span>
-            </div>
-            <span class="card-domain mono">${domainHint}</span>
-          </div>
-        `;
-        grid.appendChild(a);
+        const card = createBookmarkCard(bm);
+        grid.appendChild(card);
       });
       setTimeout(() => {
         updateTabSliderPill();
@@ -3294,7 +3383,7 @@
         title: title,
         url: url,
         category: bmCat.value,
-        hint: url.replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
+        hint: extractDomain(url),
         icon: 'globe'
       };
 
