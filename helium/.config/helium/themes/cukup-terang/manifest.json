@@ -1,0 +1,96 @@
+{
+  "manifest_version": 3,
+  "version": "1.1.0",
+  "name": "Cukup Terang",
+  "description": "Warm Parchment, Terracotta & Deep Celadon — High-contrast tactile paper aesthetic",
+  "icons": {
+    "128": "icon.png"
+  },
+  "theme": {
+    "colors": {
+      "frame": [
+        234,
+        230,
+        223
+      ],
+      "frame_inactive": [
+        242,
+        239,
+        233
+      ],
+      "frame_incognito": [
+        234,
+        230,
+        223
+      ],
+      "frame_incognito_inactive": [
+        242,
+        239,
+        233
+      ],
+      "toolbar": [
+        240,
+        236,
+        229
+      ],
+      "toolbar_button_icon": [
+        44,
+        40,
+        37
+      ],
+      "toolbar_button_icon_inactive": [
+        138,
+        130,
+        120
+      ],
+      "tab_text": [
+        44,
+        40,
+        37
+      ],
+      "tab_background_text": [
+        138,
+        130,
+        120
+      ],
+      "tab_background_text_inactive": [
+        138,
+        130,
+        120
+      ],
+      "bookmark_text": [
+        44,
+        40,
+        37
+      ],
+      "omnibox_background": [
+        242,
+        239,
+        233
+      ],
+      "omnibox_text": [
+        44,
+        40,
+        37
+      ],
+      "ntp_background": [
+        250,
+        248,
+        245
+      ],
+      "ntp_text": [
+        44,
+        40,
+        37
+      ],
+      "ntp_link": [
+        217,
+        107,
+        39
+      ]
+    },
+    "properties": {
+      "ntp_logo_alternate": 0
+    }
+  }
+}

@@ -158,7 +158,7 @@ done
 
 echo "==> Linking dotfiles with GNU Stow..."
 stow --restow --dir="$DOTFILES_DIR" --target="$HOME" \
-  zsh spaceship git alacritty zellij zed mise bin lazygit lazydocker yazi btop bat herdr
+  zsh spaceship git alacritty zellij zed mise bin lazygit lazydocker yazi btop bat herdr helium
 
 # Herdr App: GPUI security sandbox requires mod files and SVG assets to reside
 # physically inside ~/.config/herdr-app/mods (rejects canonical symlinks outside app home)

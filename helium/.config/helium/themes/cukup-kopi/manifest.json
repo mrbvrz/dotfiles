@@ -1,0 +1,96 @@
+{
+  "manifest_version": 3,
+  "version": "1.1.0",
+  "name": "Cukup Kopi",
+  "description": "Dark Roasted Espresso, Persimmon Orange & Cashmere Mauve — Cozy tactile cafe aesthetic",
+  "icons": {
+    "128": "icon.png"
+  },
+  "theme": {
+    "colors": {
+      "frame": [
+        15,
+        14,
+        12
+      ],
+      "frame_inactive": [
+        17,
+        16,
+        14
+      ],
+      "frame_incognito": [
+        15,
+        14,
+        12
+      ],
+      "frame_incognito_inactive": [
+        17,
+        16,
+        14
+      ],
+      "toolbar": [
+        19,
+        18,
+        16
+      ],
+      "toolbar_button_icon": [
+        224,
+        216,
+        208
+      ],
+      "toolbar_button_icon_inactive": [
+        122,
+        114,
+        106
+      ],
+      "tab_text": [
+        224,
+        216,
+        208
+      ],
+      "tab_background_text": [
+        122,
+        114,
+        106
+      ],
+      "tab_background_text_inactive": [
+        122,
+        114,
+        106
+      ],
+      "bookmark_text": [
+        224,
+        216,
+        208
+      ],
+      "omnibox_background": [
+        17,
+        16,
+        14
+      ],
+      "omnibox_text": [
+        224,
+        216,
+        208
+      ],
+      "ntp_background": [
+        22,
+        20,
+        19
+      ],
+      "ntp_text": [
+        224,
+        216,
+        208
+      ],
+      "ntp_link": [
+        232,
+        125,
+        75
+      ]
+    },
+    "properties": {
+      "ntp_logo_alternate": 1
+    }
+  }
+}
