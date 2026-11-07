@@ -1904,7 +1904,6 @@
         <div class="category-tabs-wrapper" id="categoryTabsWrapper">
           <div class="tab-slider-pill" id="tabSliderPill"></div>
           <button class="category-tab active" data-category="all">All</button>
-          <button class="category-tab" data-category="browser">Browser</button>
           <button class="category-tab" data-category="dev">Development</button>
           <button class="category-tab" data-category="ai">AI</button>
           <button class="category-tab" data-category="social">Social</button>
@@ -2629,36 +2628,93 @@
       return a;
     }
 
-    let browserBookmarks = [];
-    function fetchBrowserBookmarks() {
+    // Browser Bookmarks Bar Integration (Primary Source of Truth)
+    let bookmarkBarItems = [];
+    let bookmarkBarFolders = [];
+
+    function initBookmarkBarCache() {
+      const cached = localStorage.getItem('cukup_bookmark_bar_cache');
+      if (cached) {
+        try {
+          const parsed = jsonParseSafe(cached);
+          if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
+            bookmarkBarItems = parsed.items;
+            if (Array.isArray(parsed.folders)) bookmarkBarFolders = parsed.folders;
+            updateBookmarkCategoryTabs();
+          }
+        } catch (e) {}
+      }
+    }
+
+    function loadBookmarkBar() {
       if (typeof chrome !== 'undefined' && chrome.bookmarks && chrome.bookmarks.getTree) {
         try {
           chrome.bookmarks.getTree(function(tree) {
-            const list = [];
-            function traverse(nodes) {
-              for (const node of nodes) {
-                if (node.url && !node.url.startsWith('chrome://') && !node.url.startsWith('helium://') && !node.url.startsWith('javascript:')) {
-                  list.push({
-                    id: 'bm_' + node.id,
-                    title: node.title || node.url,
-                    url: node.url,
-                    category: 'browser',
-                    hint: extractDomain(node.url)
-                  });
-                }
-                if (node.children) traverse(node.children);
+            if (!tree || !tree[0] || !tree[0].children) return;
+
+            // In Chromium:
+            // tree[0].children[0] is typically the Bookmarks Bar (id: "1")
+            const rootChildren = tree[0].children;
+            const barNode = rootChildren.find(n => n.id === '1' || (n.title && n.title.toLowerCase().includes('bar'))) || rootChildren[0];
+
+            if (!barNode || !barNode.children) return;
+
+            const items = [];
+            const folders = new Set();
+
+            barNode.children.forEach(node => {
+              // Direct bookmark on Bookmarks Bar
+              if (node.url && !node.url.startsWith('chrome://') && !node.url.startsWith('helium://') && !node.url.startsWith('javascript:')) {
+                items.push({
+                  id: 'bb_' + node.id,
+                  title: node.title || extractDomain(node.url),
+                  url: node.url,
+                  category: 'direct',
+                  folder: '',
+                  hint: extractDomain(node.url)
+                });
               }
-            }
-            traverse(tree);
-            browserBookmarks = list;
-            if (activeCategory === 'browser') {
+              // Folder inside Bookmarks Bar
+              else if (node.children && node.children.length > 0) {
+                const folderName = node.title || 'Folder';
+                folders.add(folderName);
+                node.children.forEach(sub => {
+                  if (sub.url && !sub.url.startsWith('chrome://') && !sub.url.startsWith('helium://') && !sub.url.startsWith('javascript:')) {
+                    items.push({
+                      id: 'bb_' + sub.id,
+                      title: sub.title || extractDomain(sub.url),
+                      url: sub.url,
+                      category: folderName.toLowerCase(),
+                      folder: folderName,
+                      hint: extractDomain(sub.url)
+                    });
+                  }
+                });
+              }
+            });
+
+            if (items.length > 0) {
+              bookmarkBarItems = items;
+              bookmarkBarFolders = Array.from(folders);
+              localStorage.setItem('cukup_bookmark_bar_cache', JSON.stringify({ items, folders: bookmarkBarFolders }));
+              updateBookmarkCategoryTabs();
               renderBookmarks();
             }
           });
         } catch (err) {
-          console.warn('Could not read browser bookmarks:', err);
+          console.warn('Could not read Bookmarks Bar:', err);
         }
       }
+    }
+
+    // Reactive real-time sync with browser's Bookmarks Bar
+    if (typeof chrome !== 'undefined' && chrome.bookmarks && chrome.bookmarks.onCreated) {
+      try {
+        chrome.bookmarks.onCreated.addListener(loadBookmarkBar);
+        chrome.bookmarks.onRemoved.addListener(loadBookmarkBar);
+        chrome.bookmarks.onChanged.addListener(loadBookmarkBar);
+        chrome.bookmarks.onMoved.addListener(loadBookmarkBar);
+      } catch (e) {}
     }
 
     function getStoredBookmarks() {
@@ -2668,6 +2724,24 @@
         if (parsed && Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
       return DEFAULT_BOOKMARKS;
+    }
+
+    function getActiveBookmarkList() {
+      if (bookmarkBarItems && bookmarkBarItems.length > 0) {
+        return bookmarkBarItems;
+      }
+      const cached = localStorage.getItem('cukup_bookmark_bar_cache');
+      if (cached) {
+        try {
+          const parsed = jsonParseSafe(cached);
+          if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
+            bookmarkBarItems = parsed.items;
+            if (Array.isArray(parsed.folders)) bookmarkBarFolders = parsed.folders;
+            return bookmarkBarItems;
+          }
+        } catch (e) {}
+      }
+      return getStoredBookmarks();
     }
 
     let activeCategory = 'all';
@@ -2680,27 +2754,66 @@
       pill.style.width = activeTab.offsetWidth + 'px';
     }
 
+    function updateBookmarkCategoryTabs() {
+      const wrapper = document.getElementById('categoryTabsWrapper');
+      if (!wrapper) return;
+
+      wrapper.innerHTML = '<div class="tab-slider-pill" id="tabSliderPill"></div>';
+
+      if (bookmarkBarItems && bookmarkBarItems.length > 0) {
+        const allBtn = document.createElement('button');
+        allBtn.className = 'category-tab' + (activeCategory === 'all' ? ' active' : '');
+        allBtn.dataset.category = 'all';
+        allBtn.textContent = 'All (' + bookmarkBarItems.length + ')';
+        wrapper.appendChild(allBtn);
+
+        if (bookmarkBarFolders && bookmarkBarFolders.length > 0) {
+          bookmarkBarFolders.forEach(folder => {
+            const catKey = folder.toLowerCase();
+            const count = bookmarkBarItems.filter(b => b.category === catKey || (b.folder && b.folder.toLowerCase() === catKey)).length;
+            const btn = document.createElement('button');
+            btn.className = 'category-tab' + (activeCategory === catKey ? ' active' : '');
+            btn.dataset.category = catKey;
+            btn.textContent = folder + (count > 0 ? ' (' + count + ')' : '');
+            wrapper.appendChild(btn);
+          });
+        }
+      } else {
+        const defaultCats = [
+          { id: 'all', label: 'All' },
+          { id: 'dev', label: 'Development' },
+          { id: 'ai', label: 'AI' },
+          { id: 'social', label: 'Social' }
+        ];
+        defaultCats.forEach(c => {
+          const btn = document.createElement('button');
+          btn.className = 'category-tab' + (activeCategory === c.id ? ' active' : '');
+          btn.dataset.category = c.id;
+          btn.textContent = c.label;
+          wrapper.appendChild(btn);
+        });
+      }
+
+      setTimeout(updateTabSliderPill, 20);
+    }
+
     function renderBookmarks() {
       const grid = document.getElementById('bookmarksGrid');
-      const stored = getStoredBookmarks();
+      const allBookmarks = getActiveBookmarkList();
       grid.innerHTML = '';
 
       let list = [];
       if (activeCategory === 'all') {
-        list = stored;
-      } else if (activeCategory === 'browser') {
-        list = browserBookmarks;
+        list = allBookmarks;
       } else {
-        list = stored.filter(b => b.category === activeCategory);
+        list = allBookmarks.filter(b => b.category === activeCategory || (b.folder && b.folder.toLowerCase() === activeCategory));
       }
 
       if (list.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'mono';
         empty.style.cssText = 'grid-column: 1 / -1; padding: 28px; text-align: center; color: var(--text-muted); font-size: 0.8rem;';
-        empty.textContent = activeCategory === 'browser'
-          ? (typeof chrome !== 'undefined' && chrome.bookmarks ? 'No browser bookmarks found.' : 'Browser Bookmarks API active in Chromium/Helium extension mode.')
-          : 'No bookmarks found in this category.';
+        empty.textContent = 'No bookmarks found in this section.';
         grid.appendChild(empty);
         setTimeout(updateTabSliderPill, 20);
         return;
@@ -3391,6 +3504,18 @@
       localStorage.setItem('cukup_bookmarks', JSON.stringify(bookmarks));
       renderBookmarks();
 
+      if (typeof chrome !== 'undefined' && chrome.bookmarks && chrome.bookmarks.create) {
+        try {
+          chrome.bookmarks.create({
+            parentId: '1',
+            title: title,
+            url: url
+          }, () => {
+            loadBookmarkBar();
+          });
+        } catch (e) {}
+      }
+
       bmTitle.value = '';
       bmUrl.value = '';
       bmModal.classList.remove('open');
@@ -3401,8 +3526,9 @@
     initEngineDropdown();
     updateClockAndGreeting(currentUsername, currentUsername);
     setInterval(() => updateClockAndGreeting(currentUsername), 1000);
+    initBookmarkBarCache();
     renderBookmarks();
-    fetchBrowserBookmarks();
+    loadBookmarkBar();
     loadGitHubData(currentUsername);
     loadTechNews();
     renderYouTubeFeed();
