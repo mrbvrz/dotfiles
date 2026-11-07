@@ -5,18 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Tab Baru · Cukup Kopi</title>
   <style>
+    @font-face {
+      font-family: "Uncut Sans";
+      src: local("Uncut Sans"), local("UncutSans-Regular"), local("UncutSans-Medium");
+      font-weight: 300 700;
+      font-display: swap;
+    }
+
     :root {
       --canvas-rgb: 22, 20, 19;
       --panel-rgb: 17, 16, 14;
+      --accent-rgb: 232, 125, 75;
       --opacity: 0.70;
       --blur: 40px;
       --text-primary: #E0D8D0;
+      --text-secondary: #C8BEB4;
       --text-muted: #7A726A;
       --accent: #E87D4B;
       --border-subtle: rgba(255, 255, 255, 0.08);
       --border-focus: #E87D4B;
-      --font-ui: "Uncut Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      --font-mono: "CommitMono Nerd Font Mono", "CommitMono", "JetBrains Mono", monospace;
+      --font-family: "Uncut Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
     * {
@@ -30,7 +38,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      font-family: var(--font-ui);
+      font-family: var(--font-family);
       color: var(--text-primary);
       background-color: rgba(var(--canvas-rgb), var(--opacity));
       backdrop-filter: blur(var(--blur)) saturate(140%);
@@ -54,10 +62,35 @@
       display: flex;
       gap: 12px;
       align-items: center;
+      z-index: 10;
+    }
+
+    .theme-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      background: rgba(var(--accent-rgb), 0.15);
+      border: 1px solid rgba(var(--accent-rgb), 0.35);
+      color: var(--accent);
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .theme-badge .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
     }
 
     .icon-btn {
-      background: rgba(var(--panel-rgb), 0.5);
+      background: rgba(var(--panel-rgb), 0.55);
       border: 1px solid var(--border-subtle);
       color: var(--text-muted);
       width: 38px;
@@ -73,10 +106,11 @@
     }
 
     .icon-btn:hover {
-      color: var(--text-primary);
+      color: var(--accent);
       border-color: var(--accent);
       background: rgba(var(--panel-rgb), 0.85);
       transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.25);
     }
 
     /* Main Container */
@@ -84,34 +118,45 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 28px;
-      max-width: 680px;
+      gap: 32px;
+      max-width: 720px;
       width: 90%;
-      margin-top: -40px;
+      margin-top: -30px;
     }
 
     /* Clock */
     .clock-container {
       text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .clock-time {
-      font-family: var(--font-mono);
-      font-size: 5.5rem;
+      font-family: var(--font-family);
+      font-size: 6rem;
       font-weight: 300;
       letter-spacing: -2px;
       line-height: 1;
       color: var(--text-primary);
-      text-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      text-shadow: 0 4px 28px rgba(0, 0, 0, 0.45);
     }
 
     .clock-date {
-      font-size: 1rem;
+      font-family: var(--font-family);
+      font-size: 1.05rem;
       font-weight: 400;
-      color: var(--text-muted);
-      margin-top: 10px;
-      letter-spacing: 0.5px;
-      text-transform: capitalize;
+      color: var(--text-secondary);
+      margin-top: 12px;
+      letter-spacing: 0.4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .clock-date .accent-pipe {
+      color: var(--accent);
+      font-weight: 600;
     }
 
     /* Search Bar */
@@ -120,26 +165,27 @@
       position: relative;
       background: rgba(var(--panel-rgb), 0.65);
       border: 1px solid var(--border-subtle);
-      border-radius: 14px;
-      padding: 4px 18px;
+      border-radius: 16px;
+      padding: 4px 20px;
       display: flex;
       align-items: center;
-      gap: 12px;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+      gap: 14px;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow: 0 10px 36px rgba(0, 0, 0, 0.3);
       transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .search-box:focus-within {
-      border-color: var(--border-focus);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--border-focus);
-      background: rgba(var(--panel-rgb), 0.85);
+      border-color: var(--accent);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--accent);
+      background: rgba(var(--panel-rgb), 0.88);
     }
 
     .search-icon {
       color: var(--text-muted);
       flex-shrink: 0;
+      transition: color 0.2s ease;
     }
 
     .search-box:focus-within .search-icon {
@@ -152,23 +198,23 @@
       border: none;
       outline: none;
       color: var(--text-primary);
-      font-size: 1.05rem;
-      font-family: var(--font-ui);
-      padding: 12px 0;
+      font-size: 1.1rem;
+      font-family: var(--font-family);
+      padding: 14px 0;
     }
 
     .search-input::placeholder {
       color: var(--text-muted);
-      opacity: 0.7;
+      opacity: 0.75;
     }
 
-    /* Quick Shortcuts Grid */
+    /* Shortcuts Grid */
     .shortcuts-grid {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 16px;
-      margin-top: 8px;
+      gap: 14px;
+      width: 100%;
     }
 
     .shortcut-card {
@@ -176,41 +222,45 @@
       flex-direction: column;
       align-items: center;
       gap: 8px;
-      padding: 12px 14px;
-      border-radius: 12px;
-      background: rgba(var(--panel-rgb), 0.4);
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(var(--panel-rgb), 0.45);
       border: 1px solid var(--border-subtle);
       color: var(--text-primary);
       text-decoration: none;
-      min-width: 80px;
-      transition: all 0.2s ease;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      min-width: 90px;
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
     }
 
     .shortcut-card:hover {
-      background: rgba(var(--panel-rgb), 0.8);
+      background: rgba(var(--panel-rgb), 0.85);
       border-color: var(--accent);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(var(--accent-rgb), 0.22);
     }
 
-    .shortcut-icon {
-      width: 24px;
-      height: 24px;
-      border-radius: 6px;
+    .shortcut-icon-wrapper {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: var(--font-mono);
-      font-size: 0.85rem;
-      font-weight: 600;
       color: var(--accent);
+      transition: transform 0.2s ease;
+    }
+
+    .shortcut-card:hover .shortcut-icon-wrapper {
+      transform: scale(1.1);
     }
 
     .shortcut-title {
-      font-size: 0.75rem;
-      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: color 0.2s ease;
     }
 
     .shortcut-card:hover .shortcut-title {
@@ -224,13 +274,13 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.55);
       display: none;
       align-items: center;
       justify-content: center;
       z-index: 100;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
 
     .modal-overlay.open {
@@ -238,22 +288,22 @@
     }
 
     .modal-card {
-      width: 440px;
-      background: rgba(var(--panel-rgb), 0.92);
-      border: 1px solid var(--border-subtle);
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(40px);
-      -webkit-backdrop-filter: blur(40px);
+      width: 460px;
+      background: rgba(var(--panel-rgb), 0.94);
+      border: 1px solid rgba(var(--accent-rgb), 0.3);
+      border-radius: 20px;
+      padding: 26px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 1px rgba(var(--accent-rgb), 0.5);
+      backdrop-filter: blur(48px);
+      -webkit-backdrop-filter: blur(48px);
       display: flex;
       flex-direction: column;
-      gap: 20px;
-      animation: modalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      gap: 22px;
+      animation: modalIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     @keyframes modalIn {
-      from { opacity: 0; transform: scale(0.96); }
+      from { opacity: 0; transform: scale(0.95); }
       to { opacity: 1; transform: scale(1); }
     }
 
@@ -262,13 +312,29 @@
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid var(--border-subtle);
-      padding-bottom: 12px;
+      padding-bottom: 14px;
+    }
+
+    .modal-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
     .modal-title {
-      font-size: 1.1rem;
+      font-size: 1.15rem;
       font-weight: 600;
       color: var(--text-primary);
+    }
+
+    .modal-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: rgba(var(--accent-rgb), 0.18);
+      border: 1px solid rgba(var(--accent-rgb), 0.4);
+      padding: 3px 8px;
+      border-radius: 6px;
     }
 
     .close-btn {
@@ -276,30 +342,35 @@
       border: none;
       color: var(--text-muted);
       cursor: pointer;
-      font-size: 1.2rem;
+      font-size: 1.3rem;
       padding: 4px;
+      line-height: 1;
+      border-radius: 6px;
+      transition: all 0.2s ease;
     }
 
     .close-btn:hover {
-      color: var(--text-primary);
+      color: var(--accent);
+      background: rgba(var(--accent-rgb), 0.15);
     }
 
     .setting-group {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
     }
 
     .setting-label {
       display: flex;
       justify-content: space-between;
-      font-size: 0.85rem;
-      color: var(--text-muted);
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--text-secondary);
     }
 
     .setting-label span:last-child {
-      font-family: var(--font-mono);
       color: var(--accent);
+      font-weight: 600;
     }
 
     input[type="range"] {
@@ -307,37 +378,86 @@
       width: 100%;
       height: 6px;
       border-radius: 3px;
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.12);
       outline: none;
     }
 
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       background: var(--accent);
       cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.6);
+      transition: transform 0.1s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
     }
 
     select {
-      background: rgba(var(--canvas-rgb), 0.7);
+      background: rgba(var(--canvas-rgb), 0.8);
       border: 1px solid var(--border-subtle);
-      border-radius: 8px;
+      border-radius: 10px;
       color: var(--text-primary);
-      padding: 8px 12px;
-      font-family: var(--font-ui);
+      padding: 10px 14px;
+      font-family: var(--font-family);
+      font-size: 0.9rem;
       outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s ease;
     }
 
     select:focus {
       border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    .accent-preview-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: rgba(var(--canvas-rgb), 0.6);
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .color-swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent);
+      flex-shrink: 0;
+    }
+
+    .color-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .color-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .color-hex {
+      font-size: 0.75rem;
+      color: var(--accent);
+      font-weight: 500;
     }
   </style>
 </head>
 <body>
   <div class="top-bar">
+    <div class="theme-badge">
+      <span class="dot"></span>
+      <span>Cukup Kopi</span>
+    </div>
     <button class="icon-btn" id="openSettings" title="Pengaturan Tampilan Cukup">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"></circle>
@@ -349,7 +469,11 @@
   <div class="hero">
     <div class="clock-container">
       <div class="clock-time" id="clockTime">12:00</div>
-      <div class="clock-date" id="clockDate">Jumat, 7 November</div>
+      <div class="clock-date">
+        <span id="clockDate">Jumat, 7 November</span>
+        <span class="accent-pipe">·</span>
+        <span style="color: var(--accent); font-weight: 500;">Cukup Kopi</span>
+      </div>
     </div>
 
     <form class="search-box" id="searchForm">
@@ -360,40 +484,101 @@
       <input type="text" class="search-input" id="searchInput" placeholder="Cari di web atau ketik URL..." autofocus autocomplete="off">
     </form>
 
-    <div class="shortcuts-grid" id="shortcutsGrid">
+    <div class="shortcuts-grid">
+      <!-- GitHub -->
       <a href="https://github.com" class="shortcut-card">
-        <div class="shortcut-icon">GH</div>
+        <div class="shortcut-icon-wrapper">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+        </div>
         <div class="shortcut-title">GitHub</div>
       </a>
+
+      <!-- ChatGPT -->
       <a href="https://chatgpt.com" class="shortcut-card">
-        <div class="shortcut-icon">AI</div>
+        <div class="shortcut-icon-wrapper">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10a10 10 0 0 1-10-10C2 6.477 6.477 2 12 2z"></path>
+            <path d="m9 12 2 2 4-4"></path>
+          </svg>
+        </div>
         <div class="shortcut-title">ChatGPT</div>
       </a>
+
+      <!-- Claude -->
       <a href="https://claude.ai" class="shortcut-card">
-        <div class="shortcut-icon">CL</div>
+        <div class="shortcut-icon-wrapper">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/>
+          </svg>
+        </div>
         <div class="shortcut-title">Claude</div>
       </a>
+
+      <!-- Threads -->
+      <a href="https://www.threads.net" class="shortcut-card">
+        <div class="shortcut-icon-wrapper">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12a7 7 0 1 1-14 0 7 7 0 0 1 14 0z"></path>
+            <path d="M12 8v8"></path>
+            <path d="M8 12h8"></path>
+          </svg>
+        </div>
+        <div class="shortcut-title">Threads</div>
+      </a>
+
+      <!-- YouTube -->
       <a href="https://youtube.com" class="shortcut-card">
-        <div class="shortcut-icon">YT</div>
+        <div class="shortcut-icon-wrapper">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+          </svg>
+        </div>
         <div class="shortcut-title">YouTube</div>
       </a>
+
+      <!-- Localhost 3000 -->
       <a href="http://localhost:3000" class="shortcut-card">
-        <div class="shortcut-icon">3K</div>
-        <div class="shortcut-title">Local:3000</div>
+        <div class="shortcut-icon-wrapper">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+        </div>
+        <div class="shortcut-title">Port 3000</div>
       </a>
+
+      <!-- Localhost 5173 -->
       <a href="http://localhost:5173" class="shortcut-card">
-        <div class="shortcut-icon">VI</div>
-        <div class="shortcut-title">Vite:5173</div>
+        <div class="shortcut-icon-wrapper">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
+        <div class="shortcut-title">Port 5173</div>
       </a>
     </div>
   </div>
 
-  <!-- Settings Modal -->
+  <!-- Settings Modal ("settingnya") -->
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal-card">
       <div class="modal-header">
-        <div class="modal-title">Pengaturan Tampilan Cukup</div>
+        <div class="modal-title-group">
+          <div class="modal-title">Pengaturan Tampilan Cukup</div>
+          <div class="modal-badge">☕ Cukup Kopi</div>
+        </div>
         <button class="close-btn" id="closeSettings">&times;</button>
+      </div>
+
+      <!-- Accent preview row -->
+      <div class="accent-preview-row">
+        <div class="color-swatch"></div>
+        <div class="color-info">
+          <span class="color-name">Warna Aksen: Persimmon Orange</span>
+          <span class="color-hex">#E87D4B (Cukup Kopi)</span>
+        </div>
       </div>
 
       <div class="setting-group">
@@ -414,7 +599,7 @@
 
       <div class="setting-group">
         <div class="setting-label">
-          <span>Mesin Pencari</span>
+          <span>Mesin Pencari Default</span>
         </div>
         <select id="engineSelect">
           <option value="https://google.com/search?q=">Google</option>
@@ -428,7 +613,7 @@
   </div>
 
   <script>
-    // Clock
+    // Clock in Uncut Sans
     function updateClock() {
       const now = new Date();
       const h = String(now.getHours()).padStart(2, '0');
@@ -441,7 +626,7 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Search
+    // Search Box
     const searchForm = document.getElementById('searchForm');
     const searchInput = document.getElementById('searchInput');
     const engineSelect = document.getElementById('engineSelect');

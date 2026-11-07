@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Cukup New Tab (Glass)",
+  "version": "1.0.0",
+  "description": "Minimalist ultra-translucent glass New Tab for Helium browser in Cukup design system",
+  "icons": {
+    "128": "icon.png"
+  },
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  }
+}
