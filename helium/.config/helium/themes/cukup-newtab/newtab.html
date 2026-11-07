@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Tab Baru · Cukup Kopi</title>
+  <title>Dashboard · Cukup Kopi</title>
   <style>
     @font-face {
       font-family: "Uncut Sans";
-      src: local("Uncut Sans"), local("UncutSans-Regular"), local("UncutSans-Medium");
+      src: local("Uncut Sans"), local("UncutSans-Regular"), local("UncutSans-Medium"), local("UncutSans-Semibold");
       font-weight: 300 700;
       font-display: swap;
     }
@@ -23,8 +23,10 @@
       --text-secondary: #C8BEB4;
       --text-muted: #7A726A;
       --accent: #E87D4B;
-      --border-subtle: rgba(255, 255, 255, 0.10);
-      --border-highlight: rgba(255, 255, 255, 0.18);
+      --accent-hover: #ff915b;
+      --accent-subtle: rgba(var(--accent-rgb), 0.15);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-highlight: rgba(255, 255, 255, 0.16);
       --border-focus: #E87D4B;
       --font-family: "Uncut Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
@@ -39,18 +41,26 @@
     html, body {
       width: 100%;
       height: 100%;
-      overflow: hidden;
       font-family: var(--font-family);
       color: var(--text-primary);
       background-color: #0c0b0a;
+      overflow-x: hidden;
+      overflow-y: auto;
     }
 
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      position: relative;
+    /* Custom Minimal Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(var(--accent-rgb), 0.25);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(var(--accent-rgb), 0.45);
     }
 
     /* Ambient Lighting Layer for Realistic Translucent Glass Depth */
@@ -60,18 +70,18 @@
       width: 160%;
       height: 160%;
       pointer-events: none;
-      z-index: 1;
+      z-index: 0;
       opacity: var(--aura-intensity);
       background:
-        radial-gradient(circle at 20% 25%, rgba(232, 125, 75, 0.45) 0%, transparent 45%),
-        radial-gradient(circle at 75% 65%, rgba(165, 88, 48, 0.42) 0%, transparent 50%),
-        radial-gradient(circle at 50% 88%, rgba(232, 125, 75, 0.28) 0%, transparent 42%),
-        radial-gradient(circle at 82% 18%, rgba(100, 58, 40, 0.50) 0%, transparent 45%);
-      filter: blur(65px);
+        radial-gradient(circle at 18% 22%, rgba(232, 125, 75, 0.42) 0%, transparent 45%),
+        radial-gradient(circle at 82% 60%, rgba(160, 85, 45, 0.40) 0%, transparent 50%),
+        radial-gradient(circle at 50% 90%, rgba(232, 125, 75, 0.25) 0%, transparent 45%),
+        radial-gradient(circle at 85% 15%, rgba(95, 55, 38, 0.48) 0%, transparent 45%);
+      filter: blur(70px);
       transition: opacity 0.3s ease;
     }
 
-    /* Custom Wallpaper Layer (if set) */
+    /* Custom Wallpaper Layer */
     .wallpaper-bg {
       position: fixed;
       inset: 0;
@@ -90,130 +100,416 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      z-index: 2;
+      z-index: 1;
       background-color: rgba(var(--canvas-rgb), var(--opacity));
       backdrop-filter: blur(var(--blur)) saturate(160%);
       -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
       pointer-events: none;
       transition: background-color 0.2s ease, backdrop-filter 0.2s ease;
-      box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.25);
+      box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.3);
     }
 
-    /* Top Action Bar */
-    .top-bar {
-      position: absolute;
-      top: 24px;
-      right: 28px;
-      display: flex;
-      gap: 12px;
-      align-items: center;
+    /* Main Dashboard Shell */
+    .dashboard-layout {
+      position: relative;
       z-index: 10;
+      width: 100%;
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 36px 24px 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
     }
 
-    .theme-badge {
+    /* Top Navigation Bar */
+    .dashboard-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
+    .brand-group {
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      border-radius: 20px;
-      background: rgba(var(--accent-rgb), 0.15);
-      border: 1px solid rgba(var(--accent-rgb), 0.35);
-      color: var(--accent);
-      font-size: 0.8rem;
-      font-weight: 500;
-      letter-spacing: 0.3px;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      gap: 12px;
     }
 
-    .theme-badge .dot {
+    .brand-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 24px;
+      background: rgba(var(--panel-rgb), 0.35);
+      border: 1px solid var(--border-subtle);
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      backdrop-filter: blur(16px);
+      box-shadow: inset 0 1px 1px var(--border-highlight);
+    }
+
+    .brand-badge .pulse-dot {
       width: 7px;
       height: 7px;
       border-radius: 50%;
       background: var(--accent);
       box-shadow: 0 0 8px var(--accent);
+      animation: pulse 2.4s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .date-pill {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: rgba(var(--panel-rgb), 0.25);
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(14px);
     }
 
     .icon-btn {
-      background: rgba(var(--panel-rgb), 0.55);
+      background: rgba(var(--panel-rgb), 0.25);
       border: 1px solid var(--border-subtle);
       color: var(--text-muted);
       width: 38px;
       height: 38px;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.2s ease;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      transition: all 0.22s ease;
+      backdrop-filter: blur(16px);
+      box-shadow: inset 0 1px 1px var(--border-highlight);
     }
 
     .icon-btn:hover {
       color: var(--accent);
       border-color: var(--accent);
-      background: rgba(var(--panel-rgb), 0.85);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.25);
+      background: rgba(var(--panel-rgb), 0.55);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.25), inset 0 1px 1px var(--border-highlight);
     }
 
-    /* Main Container */
-    .hero {
+    /* Grid Row 1: Profile & Greeting (Left) + GitHub Commit Chart (Right) */
+    .dashboard-hero-row {
+      display: grid;
+      grid-template-columns: 1fr 1.35fr;
+      gap: 22px;
+      width: 100%;
+    }
+
+    @media (max-width: 880px) {
+      .dashboard-hero-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .glass-card {
+      background: rgba(var(--panel-rgb), 0.25);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 24px;
+      backdrop-filter: blur(24px) saturate(150%);
+      -webkit-backdrop-filter: blur(24px) saturate(150%);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25), inset 0 1px 1px var(--border-highlight);
       position: relative;
-      z-index: 10;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 32px;
-      max-width: 720px;
-      width: 90%;
-      margin-top: -30px;
+      justify-content: space-between;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
     }
 
-    /* Clock */
-    .clock-container {
-      text-align: center;
+    .glass-card:hover {
+      border-color: rgba(var(--accent-rgb), 0.4);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.32), 0 0 20px rgba(var(--accent-rgb), 0.12), inset 0 1px 1px var(--border-highlight);
+    }
+
+    /* Profile Greeting Card */
+    .profile-card {
+      gap: 20px;
+    }
+
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .avatar-wrapper {
+      position: relative;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      padding: 2px;
+      background: linear-gradient(135deg, var(--accent), rgba(var(--accent-rgb), 0.2));
+    }
+
+    .profile-avatar {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #1e1b18;
+      display: block;
+    }
+
+    .avatar-online-dot {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 12px;
+      height: 12px;
+      background: #22c55e;
+      border: 2px solid #161413;
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+    }
+
+    .profile-meta {
       display: flex;
       flex-direction: column;
-      align-items: center;
+      gap: 4px;
+      overflow: hidden;
     }
 
-    .clock-time {
-      font-family: var(--font-family);
-      font-size: 6rem;
-      font-weight: 300;
-      letter-spacing: -2px;
-      line-height: 1;
+    .greeting-text {
+      font-size: 1.35rem;
+      font-weight: 600;
       color: var(--text-primary);
-      text-shadow: 0 4px 28px rgba(0, 0, 0, 0.45);
-    }
-
-    .clock-date {
-      font-family: var(--font-family);
-      font-size: 1.05rem;
-      font-weight: 400;
-      color: var(--text-secondary);
-      margin-top: 12px;
-      letter-spacing: 0.4px;
+      letter-spacing: -0.3px;
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
-    .clock-date .accent-pipe {
+    .profile-sub {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .profile-sub a {
       color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .profile-sub a:hover {
+      text-decoration: underline;
+    }
+
+    /* Clock in Profile Card */
+    .clock-display {
+      margin-top: auto;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .clock-time-huge {
+      font-size: 3.2rem;
+      font-weight: 300;
+      letter-spacing: -1.5px;
+      line-height: 1;
+      color: var(--text-primary);
+    }
+
+    .clock-time-huge span.colon {
+      color: var(--accent);
+      animation: blink 2s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+
+    .quick-status-pill {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.04);
+      padding: 6px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* GitHub Commit Activity Card */
+    .chart-card {
+      gap: 16px;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chart-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chart-title {
+      font-size: 1.05rem;
       font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chart-title svg {
+      color: var(--accent);
+    }
+
+    .commit-total-pill {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-subtle);
+      border: 1px solid rgba(var(--accent-rgb), 0.35);
+      padding: 4px 10px;
+      border-radius: 14px;
+    }
+
+    /* SVG Chart Canvas */
+    .bar-chart-container {
+      width: 100%;
+      height: 120px;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 10px 0 24px;
+    }
+
+    .bar-col {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      position: relative;
+    }
+
+    .bar-fill {
+      width: 100%;
+      max-width: 24px;
+      border-radius: 6px 6px 2px 2px;
+      background: linear-gradient(180deg, var(--accent) 0%, rgba(130, 65, 35, 0.6) 100%);
+      transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, transform 0.2s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .bar-fill:hover {
+      background: linear-gradient(180deg, var(--accent-hover) 0%, var(--accent) 100%);
+      transform: scaleY(1.05);
+      box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.6);
+    }
+
+    .bar-day-label {
+      position: absolute;
+      bottom: -20px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .bar-tooltip {
+      position: absolute;
+      top: -34px;
+      background: #1a1715;
+      border: 1px solid var(--accent);
+      color: var(--text-primary);
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      z-index: 20;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    }
+
+    .bar-col:hover .bar-tooltip {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Chart Stats Footer */
+    .chart-stats-footer {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .stat-tile {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .stat-tile-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-tile-value {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .stat-tile-value.accent {
+      color: var(--accent);
     }
 
     /* Search Bar */
+    .search-section {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
     .search-box {
       width: 100%;
+      max-width: 680px;
       position: relative;
       background: rgba(var(--panel-rgb), 0.25);
       border: 1px solid var(--border-subtle);
-      border-radius: 16px;
-      padding: 4px 20px;
+      border-radius: 18px;
+      padding: 4px 18px;
       display: flex;
       align-items: center;
       gap: 14px;
@@ -225,8 +521,8 @@
 
     .search-box:focus-within {
       border-color: var(--accent);
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--accent), inset 0 1px 1px var(--border-highlight);
-      background: rgba(var(--panel-rgb), 0.50);
+      box-shadow: 0 12px 42px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--accent), inset 0 1px 1px var(--border-highlight);
+      background: rgba(var(--panel-rgb), 0.45);
     }
 
     .search-icon {
@@ -245,9 +541,9 @@
       border: none;
       outline: none;
       color: var(--text-primary);
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-family: var(--font-family);
-      padding: 14px 0;
+      padding: 12px 0;
     }
 
     .search-input::placeholder {
@@ -255,118 +551,225 @@
       opacity: 0.75;
     }
 
-    /* Shortcuts Grid */
-    .shortcuts-grid {
+    .search-engine-badge {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .search-engine-badge:hover {
+      color: var(--accent);
+      background: rgba(var(--accent-rgb), 0.15);
+    }
+
+    /* Bookmarks Section */
+    .bookmarks-section {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+    }
+
+    .bookmarks-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .category-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .category-tab {
+      background: rgba(var(--panel-rgb), 0.22);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(12px);
+    }
+
+    .category-tab:hover {
+      color: var(--text-primary);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .category-tab.active {
+      color: var(--accent);
+      background: var(--accent-subtle);
+      border-color: rgba(var(--accent-rgb), 0.4);
+      font-weight: 600;
+    }
+
+    .add-bookmark-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: rgba(var(--panel-rgb), 0.22);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(12px);
+    }
+
+    .add-bookmark-btn:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: rgba(var(--panel-rgb), 0.45);
+    }
+
+    /* Bookmarks Grid */
+    .bookmarks-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
       gap: 14px;
       width: 100%;
     }
 
-    .shortcut-card {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      padding: 14px 16px;
-      border-radius: 14px;
+    .bookmark-card {
       background: rgba(var(--panel-rgb), 0.18);
       border: 1px solid var(--border-subtle);
-      color: var(--text-primary);
+      border-radius: 16px;
+      padding: 16px;
       text-decoration: none;
-      min-width: 90px;
-      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-      backdrop-filter: blur(18px) saturate(150%);
-      -webkit-backdrop-filter: blur(18px) saturate(150%);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), inset 0 1px 1px var(--border-highlight);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      backdrop-filter: blur(20px) saturate(150%);
+      -webkit-backdrop-filter: blur(20px) saturate(150%);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18), inset 0 1px 1px var(--border-highlight);
+      transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
     }
 
-    .shortcut-card:hover {
-      background: rgba(var(--panel-rgb), 0.45);
+    .bookmark-card:hover {
+      background: rgba(var(--panel-rgb), 0.42);
       border-color: var(--accent);
-      transform: translateY(-3px);
-      box-shadow: 0 8px 24px rgba(var(--accent-rgb), 0.22), inset 0 1px 1px var(--border-highlight);
+      transform: translateY(-4px);
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28), 0 0 18px rgba(var(--accent-rgb), 0.18), inset 0 1px 1px var(--border-highlight);
     }
 
-    .shortcut-icon-wrapper {
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-icon-box {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--accent);
-      transition: transform 0.2s ease;
+      transition: transform 0.2s ease, background 0.2s ease;
     }
 
-    .shortcut-card:hover .shortcut-icon-wrapper {
-      transform: scale(1.1);
+    .bookmark-card:hover .card-icon-box {
+      transform: scale(1.08);
+      background: rgba(var(--accent-rgb), 0.18);
     }
 
-    .shortcut-title {
-      font-size: 0.8rem;
+    .card-category-badge {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
       font-weight: 500;
-      color: var(--text-secondary);
+    }
+
+    .card-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       transition: color 0.2s ease;
     }
 
-    .shortcut-card:hover .shortcut-title {
-      color: var(--text-primary);
+    .bookmark-card:hover .card-title {
+      color: var(--accent);
     }
 
-    /* Settings Modal ("settingnya") */
+    .card-url-hint {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Settings Modal */
     .modal-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.55);
-      display: none;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 100;
+      display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 100;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
     }
 
     .modal-overlay.open {
-      display: flex;
+      opacity: 1;
+      pointer-events: auto;
     }
 
-    .modal-card {
-      width: 460px;
-      background: rgba(var(--panel-rgb), 0.94);
-      border: 1px solid rgba(var(--accent-rgb), 0.3);
-      border-radius: 20px;
-      padding: 26px;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 1px rgba(var(--accent-rgb), 0.5);
-      backdrop-filter: blur(48px);
-      -webkit-backdrop-filter: blur(48px);
+    .modal-sheet {
+      background: rgba(22, 20, 19, 0.88);
+      border: 1px solid rgba(var(--accent-rgb), 0.35);
+      border-radius: 24px;
+      padding: 28px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 32px rgba(var(--accent-rgb), 0.15), inset 0 1px 1px var(--border-highlight);
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
       display: flex;
       flex-direction: column;
-      gap: 22px;
-      animation: modalIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    @keyframes modalIn {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
+      gap: 20px;
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid var(--border-subtle);
-      padding-bottom: 14px;
-    }
-
-    .modal-title-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
     }
 
     .modal-title {
@@ -375,24 +778,14 @@
       color: var(--text-primary);
     }
 
-    .modal-badge {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--accent);
-      background: rgba(var(--accent-rgb), 0.18);
-      border: 1px solid rgba(var(--accent-rgb), 0.4);
-      padding: 3px 8px;
-      border-radius: 6px;
-    }
-
     .close-btn {
       background: none;
       border: none;
       color: var(--text-muted);
+      font-size: 1.4rem;
       cursor: pointer;
-      font-size: 1.3rem;
-      padding: 4px;
       line-height: 1;
+      padding: 4px;
       border-radius: 6px;
       transition: all 0.2s ease;
     }
@@ -405,13 +798,13 @@
     .setting-group {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
     .setting-label {
       display: flex;
       justify-content: space-between;
-      font-size: 0.88rem;
+      font-size: 0.85rem;
       font-weight: 500;
       color: var(--text-secondary);
     }
@@ -445,192 +838,179 @@
       transform: scale(1.15);
     }
 
-    select {
+    input[type="text"], select {
       background: rgba(var(--canvas-rgb), 0.8);
       border: 1px solid var(--border-subtle);
-      border-radius: 10px;
       color: var(--text-primary);
       padding: 10px 14px;
+      border-radius: 10px;
       font-family: var(--font-family);
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       outline: none;
-      cursor: pointer;
-      transition: border-color 0.2s ease;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
-    select:focus {
+    input[type="text"]:focus, select:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 1px var(--accent);
     }
 
-    .accent-preview-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 14px;
-      background: rgba(var(--canvas-rgb), 0.6);
-      border-radius: 10px;
-      border: 1px solid var(--border-subtle);
-    }
-
-    .color-swatch {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
+    .modal-save-btn {
       background: var(--accent);
-      box-shadow: 0 0 12px var(--accent);
-      flex-shrink: 0;
-    }
-
-    .color-info {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .color-name {
-      font-size: 0.85rem;
+      border: none;
+      color: #12100e;
       font-weight: 600;
-      color: var(--text-primary);
+      padding: 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-family: var(--font-family);
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
     }
 
-    .color-hex {
-      font-size: 0.75rem;
-      color: var(--accent);
-      font-weight: 500;
+    .modal-save-btn:hover {
+      background: var(--accent-hover);
+      box-shadow: 0 4px 18px rgba(var(--accent-rgb), 0.35);
     }
   </style>
 </head>
 <body>
+  <!-- Ambient & Glass Backdrop Layers -->
   <div class="wallpaper-bg" id="wallpaperBg"></div>
   <div class="ambient-glow" id="ambientGlow"></div>
   <div class="glass-backdrop" id="glassBackdrop"></div>
 
-  <div class="top-bar">
-    <div class="theme-badge">
-      <span class="dot"></span>
-      <span>Cukup Kopi</span>
-    </div>
-    <button class="icon-btn" id="openSettings" title="Pengaturan Tampilan Cukup">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"></circle>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-      </svg>
-    </button>
-  </div>
-
-  <div class="hero">
-    <div class="clock-container">
-      <div class="clock-time" id="clockTime">12:00</div>
-      <div class="clock-date">
-        <span id="clockDate">Jumat, 7 November</span>
-        <span class="accent-pipe">·</span>
-        <span style="color: var(--accent); font-weight: 500;">Cukup Kopi</span>
+  <main class="dashboard-layout">
+    <!-- Top Bar -->
+    <header class="dashboard-topbar">
+      <div class="brand-group">
+        <div class="brand-badge">
+          <span class="pulse-dot"></span>
+          <span>☕ Cukup Dashboard</span>
+        </div>
       </div>
-    </div>
-
-    <form class="search-box" id="searchForm">
-      <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="8"></circle>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-      </svg>
-      <input type="text" class="search-input" id="searchInput" placeholder="Cari di web atau ketik URL..." autofocus autocomplete="off">
-    </form>
-
-    <div class="shortcuts-grid">
-      <!-- GitHub -->
-      <a href="https://github.com" class="shortcut-card">
-        <div class="shortcut-icon-wrapper">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+      <div class="topbar-actions">
+        <div class="date-pill" id="datePill">Memuat tanggal...</div>
+        <button class="icon-btn" id="openSettings" title="Pengaturan Dashboard">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
-        </div>
-        <div class="shortcut-title">GitHub</div>
-      </a>
+        </button>
+      </div>
+    </header>
 
-      <!-- ChatGPT -->
-      <a href="https://chatgpt.com" class="shortcut-card">
-        <div class="shortcut-icon-wrapper">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10a10 10 0 0 1-10-10C2 6.477 6.477 2 12 2z"></path>
-            <path d="m9 12 2 2 4-4"></path>
+    <!-- Row 1: Profile & Greeting Card + GitHub Commit Chart -->
+    <section class="dashboard-hero-row">
+      <!-- Profile Card -->
+      <div class="glass-card profile-card">
+        <div class="profile-header">
+          <div class="avatar-wrapper">
+            <img class="profile-avatar" id="profileAvatar" src="https://avatars.githubusercontent.com/u/3890123?v=4" alt="Profile Avatar">
+            <span class="avatar-online-dot" title="Aktif"></span>
+          </div>
+          <div class="profile-meta">
+            <h1 class="greeting-text" id="greetingText">Selamat datang ☕</h1>
+            <div class="profile-sub">
+              <span id="profileBio">Developer</span>
+              <span>·</span>
+              <a href="https://github.com/mrbvrz" target="_blank" id="profileHandle">@mrbvrz</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="clock-display">
+          <div class="clock-time-huge" id="clockTimeHuge">12<span class="colon">:</span>00</div>
+          <div class="quick-status-pill" id="statusPill">Fokus berkarya ⚡</div>
+        </div>
+      </div>
+
+      <!-- GitHub Commit Chart Card -->
+      <div class="glass-card chart-card">
+        <div class="chart-header">
+          <div class="chart-title-group">
+            <div class="chart-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+              </svg>
+              <span>Aktivitas Commit GitHub</span>
+            </div>
+            <span class="commit-total-pill" id="commitTotalPill">Memuat...</span>
+          </div>
+          <div style="font-size: 0.76rem; color: var(--text-muted);">14 Hari Terakhir</div>
+        </div>
+
+        <!-- 14-day Dynamic SVG Bar Chart -->
+        <div class="bar-chart-container" id="barChartContainer">
+          <!-- Filled dynamically via JS -->
+        </div>
+
+        <div class="chart-stats-footer">
+          <div class="stat-tile">
+            <span class="stat-tile-label">Streak Aktif</span>
+            <span class="stat-tile-value accent" id="streakVal">-</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-tile-label">Rata-rata Harian</span>
+            <span class="stat-tile-value" id="avgVal">-</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-tile-label">Rekor Harian</span>
+            <span class="stat-tile-value" id="peakVal">-</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Row 2: Search Omnibar -->
+    <section class="search-section">
+      <form class="search-box" id="searchForm">
+        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" class="search-input" id="searchInput" placeholder="Cari di web atau ketik URL..." autofocus autocomplete="off">
+        <div class="search-engine-badge" id="searchEngineBadge" title="Klik untuk ganti mesin pencari">Google ▾</div>
+      </form>
+    </section>
+
+    <!-- Row 3: Bookmarks & Quick Access -->
+    <section class="bookmarks-section">
+      <div class="bookmarks-header">
+        <div class="category-tabs" id="categoryTabs">
+          <button class="category-tab active" data-category="all">Semua</button>
+          <button class="category-tab" data-category="dev">Development</button>
+          <button class="category-tab" data-category="ai">AI & LLM</button>
+          <button class="category-tab" data-category="social">Sosial & Media</button>
+        </div>
+        <button class="add-bookmark-btn" id="openAddBookmark">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
-        </div>
-        <div class="shortcut-title">ChatGPT</div>
-      </a>
+          <span>Tambah Bookmark</span>
+        </button>
+      </div>
 
-      <!-- Claude -->
-      <a href="https://claude.ai" class="shortcut-card">
-        <div class="shortcut-icon-wrapper">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/>
-          </svg>
-        </div>
-        <div class="shortcut-title">Claude</div>
-      </a>
+      <div class="bookmarks-grid" id="bookmarksGrid">
+        <!-- Rendered dynamically via JS -->
+      </div>
+    </section>
+  </main>
 
-      <!-- Threads -->
-      <a href="https://www.threads.net" class="shortcut-card">
-        <div class="shortcut-icon-wrapper">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 12a7 7 0 1 1-14 0 7 7 0 0 1 14 0z"></path>
-            <path d="M12 8v8"></path>
-            <path d="M8 12h8"></path>
-          </svg>
-        </div>
-        <div class="shortcut-title">Threads</div>
-      </a>
-
-      <!-- YouTube -->
-      <a href="https://youtube.com" class="shortcut-card">
-        <div class="shortcut-icon-wrapper">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-          </svg>
-        </div>
-        <div class="shortcut-title">YouTube</div>
-      </a>
-
-      <!-- Localhost 3000 -->
-      <a href="http://localhost:3000" class="shortcut-card">
-        <div class="shortcut-icon-wrapper">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="16 18 22 12 16 6"></polyline>
-            <polyline points="8 6 2 12 8 18"></polyline>
-          </svg>
-        </div>
-        <div class="shortcut-title">Port 3000</div>
-      </a>
-
-      <!-- Localhost 5173 -->
-      <a href="http://localhost:5173" class="shortcut-card">
-        <div class="shortcut-icon-wrapper">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-          </svg>
-        </div>
-        <div class="shortcut-title">Port 5173</div>
-      </a>
-    </div>
-  </div>
-
-  <!-- Settings Modal ("settingnya") -->
+  <!-- Settings Modal -->
   <div class="modal-overlay" id="modalOverlay">
-    <div class="modal-card">
+    <div class="modal-sheet">
       <div class="modal-header">
-        <div class="modal-title-group">
-          <div class="modal-title">Pengaturan Tampilan Cukup</div>
-          <div class="modal-badge">☕ Cukup Kopi</div>
-        </div>
+        <div class="modal-title">Pengaturan Cukup Dashboard</div>
         <button class="close-btn" id="closeSettings">&times;</button>
       </div>
 
-      <!-- Accent preview row -->
-      <div class="accent-preview-row">
-        <div class="color-swatch"></div>
-        <div class="color-info">
-          <span class="color-name">Warna Aksen: Persimmon Orange</span>
-          <span class="color-hex">#E87D4B (Cukup Kopi)</span>
+      <div class="setting-group">
+        <div class="setting-label">
+          <span>Username GitHub</span>
         </div>
+        <input type="text" id="githubUserInput" placeholder="mrbvrz">
       </div>
 
       <div class="setting-group">
@@ -651,7 +1031,7 @@
 
       <div class="setting-group">
         <div class="setting-label">
-          <span>Kedalaman Aura Cahaya Kaca</span>
+          <span>Intensitas Aura Cahaya Kaca</span>
           <span id="auraVal">95%</span>
         </div>
         <input type="range" id="auraRange" min="0" max="100" value="95">
@@ -661,7 +1041,7 @@
         <div class="setting-label">
           <span>URL Wallpaper (Opsional)</span>
         </div>
-        <input type="text" id="wallpaperInput" placeholder="https://... atau biarkan kosong" style="background: rgba(var(--canvas-rgb), 0.8); border: 1px solid var(--border-subtle); color: var(--text-primary); padding: 8px 12px; border-radius: 8px; font-family: var(--font-family); font-size: 0.85rem; outline: none;">
+        <input type="text" id="wallpaperInput" placeholder="https://... atau biarkan kosong">
       </div>
 
       <div class="setting-group">
@@ -674,49 +1054,349 @@
           <option value="https://kagi.com/search?q=">Kagi</option>
           <option value="https://perplexity.ai/search?q=">Perplexity</option>
           <option value="https://github.com/search?q=">GitHub</option>
+          <option value="https://youtube.com/results?search_query=">YouTube</option>
         </select>
       </div>
+
+      <button class="modal-save-btn" id="saveSettingsBtn">Simpan Pengaturan</button>
+    </div>
+  </div>
+
+  <!-- Add Bookmark Modal -->
+  <div class="modal-overlay" id="bookmarkModalOverlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div class="modal-title">Tambah Bookmark Baru</div>
+        <button class="close-btn" id="closeBookmarkModal">&times;</button>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-label">
+          <span>Nama Bookmark</span>
+        </div>
+        <input type="text" id="bmTitleInput" placeholder="Contoh: Linear / Dribbble">
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-label">
+          <span>URL Website</span>
+        </div>
+        <input type="text" id="bmUrlInput" placeholder="https://example.com">
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-label">
+          <span>Kategori</span>
+        </div>
+        <select id="bmCategorySelect">
+          <option value="dev">Development</option>
+          <option value="ai">AI & LLM</option>
+          <option value="social">Sosial & Media</option>
+        </select>
+      </div>
+
+      <button class="modal-save-btn" id="saveBookmarkBtn">Tambahkan Bookmark</button>
     </div>
   </div>
 
   <script>
-    // Clock in Uncut Sans
-    function updateClock() {
+    // Initial Constants & Built-in Bookmarks
+    const DEFAULT_BOOKMARKS = [
+      { id: 'gh', title: 'GitHub', url: 'https://github.com', category: 'dev', hint: 'github.com', icon: 'github' },
+      { id: 'l3', title: 'Localhost:3000', url: 'http://localhost:3000', category: 'dev', hint: 'localhost:3000', icon: 'code' },
+      { id: 'l5', title: 'Localhost:5173', url: 'http://localhost:5173', category: 'dev', hint: 'Vite Dev Server', icon: 'bolt' },
+      { id: 'v0', title: 'Vercel', url: 'https://vercel.com/dashboard', category: 'dev', hint: 'vercel.com', icon: 'triangle' },
+      { id: 'fg', title: 'Figma', url: 'https://figma.com', category: 'dev', hint: 'Design & Canvas', icon: 'figma' },
+      { id: 'cg', title: 'ChatGPT', url: 'https://chatgpt.com', category: 'ai', hint: 'OpenAI GPT-4o', icon: 'sparkle' },
+      { id: 'cl', title: 'Claude', url: 'https://claude.ai', category: 'ai', hint: 'Anthropic Claude', icon: 'star' },
+      { id: 'px', title: 'Perplexity', url: 'https://perplexity.ai', category: 'ai', hint: 'AI Search Engine', icon: 'search' },
+      { id: 'gm', title: 'Gemini', url: 'https://gemini.google.com', category: 'ai', hint: 'Google DeepMind', icon: 'sparkle' },
+      { id: 'yt', title: 'YouTube', url: 'https://youtube.com', category: 'social', hint: 'youtube.com', icon: 'youtube' },
+      { id: 'th', title: 'Threads', url: 'https://threads.net', category: 'social', hint: 'threads.net', icon: 'loop' },
+      { id: 'tw', title: 'X / Twitter', url: 'https://x.com', category: 'social', hint: 'x.com', icon: 'twitter' }
+    ];
+
+    // SVG Icons Map
+    const ICONS = {
+      github: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>',
+      code: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>',
+      bolt: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>',
+      triangle: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L24 22H0L12 1Z"/></svg>',
+      figma: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm-3 0a3 3 0 1 1-3-3 3 3 0 0 1 3 3zm0 6a3 3 0 1 1-3-3 3 3 0 0 1 3 3zm6-6a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm-3-6a3 3 0 1 1-3-3 3 3 0 0 1 3 3z"/></svg>',
+      sparkle: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"></path></svg>',
+      star: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>',
+      search: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>',
+      youtube: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>',
+      loop: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4a8 8 0 0 1 7.9 6.8A6 6 0 0 1 12 22a6 6 0 0 1-5.9-4.8A8 8 0 0 1 12 4z"></path></svg>',
+      twitter: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+      globe: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>'
+    };
+
+    // 1. Clock, Date & Greeting Manager
+    function updateClockAndGreeting(username) {
       const now = new Date();
-      const h = String(now.getHours()).padStart(2, '0');
-      const m = String(now.getMinutes()).padStart(2, '0');
-      document.getElementById('clockTime').textContent = h + ':' + m;
+      const hrs = now.getHours();
+      const mins = String(now.getMinutes()).padStart(2, '0');
+      const hrsStr = String(hrs).padStart(2, '0');
 
-      const opts = { weekday: 'long', day: 'numeric', month: 'long' };
-      document.getElementById('clockDate').textContent = now.toLocaleDateString('id-ID', opts);
+      document.getElementById('clockTimeHuge').innerHTML = hrsStr + '<span class="colon">:</span>' + mins;
+
+      // Indonesian Date
+      const dateOpts = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+      document.getElementById('datePill').textContent = now.toLocaleDateString('id-ID', dateOpts);
+
+      // Time-based Greeting
+      let greeting = 'Selamat datang';
+      let icon = '☕';
+      let status = 'Fokus berkarya ⚡';
+
+      if (hrs >= 4 && hrs < 11) {
+        greeting = 'Selamat pagi';
+        icon = '☕';
+        status = 'Secangkir kopi & kode baru ☕';
+      } else if (hrs >= 11 && hrs < 15) {
+        greeting = 'Selamat siang';
+        icon = '☀️';
+        status = 'Mode produktif aktif 🚀';
+      } else if (hrs >= 15 && hrs < 18) {
+        greeting = 'Selamat sore';
+        icon = '🌅';
+        status = 'Finishing & push commit 🌿';
+      } else {
+        greeting = 'Selamat malam';
+        icon = '🌙';
+        status = 'Deep work & refactoring 🌙';
+      }
+
+      document.getElementById('greetingText').textContent = greeting + ', ' + username + ' ' + icon;
+      document.getElementById('statusPill').textContent = status;
     }
-    setInterval(updateClock, 1000);
-    updateClock();
 
-    // Search Box
+    // 2. GitHub Profile & Commit Activity Chart
+    async function loadGitHubData(username) {
+      const handleEl = document.getElementById('profileHandle');
+      const bioEl = document.getElementById('profileBio');
+      const avatarEl = document.getElementById('profileAvatar');
+      const totalPill = document.getElementById('commitTotalPill');
+      const streakEl = document.getElementById('streakVal');
+      const avgEl = document.getElementById('avgVal');
+      const peakEl = document.getElementById('peakVal');
+      const chartBox = document.getElementById('barChartContainer');
+
+      handleEl.textContent = '@' + username;
+      handleEl.href = 'https://github.com/' + username;
+
+      // Try local cache first for instant rendering
+      const cacheKey = 'cukup_gh_' + username;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = jsonParseSafe(cached);
+          if (parsed) renderDashboardData(parsed);
+        } catch (e) {}
+      }
+
+      // Fetch fresh data in background
+      try {
+        const [userRes, contribRes] = await Promise.all([
+          fetch('https://api.github.com/users/' + username).then(r => r.ok ? r.json() : null),
+          fetch('https://github-contributions-api.jogruber.de/v4/' + username + '?y=last').then(r => r.ok ? r.json() : null)
+        ]);
+
+        const combined = { user: userRes, contrib: contribRes, ts: Date.now() };
+        localStorage.setItem(cacheKey, JSON.stringify(combined));
+        renderDashboardData(combined);
+      } catch (err) {
+        console.warn('GitHub fetch error (using cache if available):', err);
+      }
+
+      function renderDashboardData(data) {
+        if (data.user) {
+          avatarEl.src = data.user.avatar_url || avatarEl.src;
+          const loc = data.user.location ? ' · ' + data.user.location : '';
+          bioEl.textContent = (data.user.public_repos || 0) + ' Repos' + loc;
+        }
+
+        if (data.contrib && data.contrib.contributions) {
+          const contribs = data.contrib.contributions;
+          const totalCommits = data.contrib.total ? (data.contrib.total.lastYear || 0) : contribs.reduce((a, b) => a + b.count, 0);
+          totalPill.textContent = totalCommits.toLocaleString('id-ID') + ' commit setahun';
+
+          // Last 14 days slice
+          const recent14 = contribs.slice(-14);
+          let peak = 0;
+          let sum14 = 0;
+          let currentStreak = 0;
+
+          // Calculate current active streak from today backwards
+          for (let i = contribs.length - 1; i >= 0; i--) {
+            if (contribs[i].count > 0) {
+              currentStreak++;
+            } else if (i === contribs.length - 1) {
+              // today might not have commits yet
+              continue;
+            } else {
+              break;
+            }
+          }
+
+          recent14.forEach(d => {
+            if (d.count > peak) peak = d.count;
+            sum14 += d.count;
+          });
+
+          const maxBarVal = Math.max(peak, 20);
+          const avg14 = Math.round(sum14 / 14);
+
+          streakEl.textContent = currentStreak + ' Hari 🔥';
+          avgEl.textContent = avg14 + ' commit/hari';
+          peakEl.textContent = peak + ' commit';
+
+          // Days labels in ID
+          const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+
+          chartBox.innerHTML = '';
+          recent14.forEach(d => {
+            const dateObj = new Date(d.date + 'T00:00:00');
+            const dayName = dayNames[dateObj.getDay()];
+            const heightPercent = Math.max(Math.round((d.count / maxBarVal) * 100), 6);
+
+            const col = document.createElement('div');
+            col.className = 'bar-col';
+
+            const fill = document.createElement('div');
+            fill.className = 'bar-fill';
+            fill.style.height = heightPercent + '%';
+
+            const tooltip = document.createElement('div');
+            tooltip.className = 'bar-tooltip';
+            tooltip.textContent = d.date + ': ' + d.count + ' commit';
+
+            const label = document.createElement('div');
+            label.className = 'bar-day-label';
+            label.textContent = dayName;
+
+            col.appendChild(tooltip);
+            col.appendChild(fill);
+            col.appendChild(label);
+            chartBox.appendChild(col);
+          });
+        }
+      }
+    }
+
+    function jsonParseSafe(s) {
+      try { return JSON.parse(s); } catch (e) { return null; }
+    }
+
+    // 3. Bookmarks Manager
+    function getStoredBookmarks() {
+      const stored = localStorage.getItem('cukup_bookmarks');
+      if (stored) {
+        const parsed = jsonParseSafe(stored);
+        if (parsed && Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      return DEFAULT_BOOKMARKS;
+    }
+
+    let activeCategory = 'all';
+
+    function renderBookmarks() {
+      const grid = document.getElementById('bookmarksGrid');
+      const bookmarks = getStoredBookmarks();
+      grid.innerHTML = '';
+
+      const filtered = activeCategory === 'all'
+        ? bookmarks
+        : bookmarks.filter(b => b.category === activeCategory);
+
+      filtered.forEach(bm => {
+        const a = document.createElement('a');
+        a.className = 'bookmark-card';
+        a.href = bm.url;
+
+        const iconSvg = ICONS[bm.icon] || ICONS.globe;
+
+        a.innerHTML = `
+          <div class="card-top">
+            <div class="card-icon-box">${iconSvg}</div>
+            <span class="card-category-badge">${bm.category || 'web'}</span>
+          </div>
+          <div class="card-info">
+            <div class="card-title">${bm.title}</div>
+            <div class="card-url-hint">${bm.hint || bm.url.replace(/^https?:\/\//, '')}</div>
+          </div>
+        `;
+        grid.appendChild(a);
+      });
+    }
+
+    // Category Tabs Filtering
+    document.getElementById('categoryTabs').addEventListener('click', (e) => {
+      const tab = e.target.closest('.category-tab');
+      if (!tab) return;
+      document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeCategory = tab.dataset.category;
+      renderBookmarks();
+    });
+
+    // 4. Search Omnibar Manager
     const searchForm = document.getElementById('searchForm');
     const searchInput = document.getElementById('searchInput');
+    const engineBadge = document.getElementById('searchEngineBadge');
     const engineSelect = document.getElementById('engineSelect');
 
-    const savedEngine = localStorage.getItem('cukup_engine') || 'https://google.com/search?q=';
-    engineSelect.value = savedEngine;
+    const ENGINES = {
+      'https://google.com/search?q=': 'Google',
+      'https://duckduckgo.com/?q=': 'DuckDuckGo',
+      'https://kagi.com/search?q=': 'Kagi',
+      'https://perplexity.ai/search?q=': 'Perplexity',
+      'https://github.com/search?q=': 'GitHub',
+      'https://youtube.com/results?search_query=': 'YouTube'
+    };
+
+    let currentEngine = localStorage.getItem('cukup_engine') || 'https://google.com/search?q=';
+    engineSelect.value = currentEngine;
+    engineBadge.textContent = (ENGINES[currentEngine] || 'Search') + ' ▾';
 
     searchForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const q = searchInput.value.trim();
       if (!q) return;
+
+      // GitHub quick jump shortcut: "gh repo"
+      if (q.startsWith('gh ')) {
+        location.href = 'https://github.com/' + encodeURIComponent(q.slice(3).trim());
+        return;
+      }
+
       if (q.startsWith('http://') || q.startsWith('https://') || (q.includes('.') && !q.includes(' '))) {
         location.href = q.includes('://') ? q : 'https://' + q;
       } else {
-        location.href = engineSelect.value + encodeURIComponent(q);
+        location.href = currentEngine + encodeURIComponent(q);
       }
     });
 
-    engineSelect.addEventListener('change', () => {
-      localStorage.setItem('cukup_engine', engineSelect.value);
+    // Toggle search engines by clicking the badge
+    engineBadge.addEventListener('click', () => {
+      const keys = Object.keys(ENGINES);
+      const idx = (keys.indexOf(currentEngine) + 1) % keys.length;
+      currentEngine = keys[idx];
+      localStorage.setItem('cukup_engine', currentEngine);
+      engineSelect.value = currentEngine;
+      engineBadge.textContent = ENGINES[currentEngine] + ' ▾';
     });
 
-    // Transparency, Blur, Aura & Wallpaper Controls
+    // Press '/' anywhere to focus search
+    window.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement !== searchInput && document.activeElement.tagName !== 'INPUT') {
+        e.preventDefault();
+        searchInput.focus();
+      }
+    });
+
+    // 5. Visual Settings, Transparency & Wallpaper Manager
     const opacityRange = document.getElementById('opacityRange');
     const opacityVal = document.getElementById('opacityVal');
     const blurRange = document.getElementById('blurRange');
@@ -725,16 +1405,12 @@
     const auraVal = document.getElementById('auraVal');
     const wallpaperInput = document.getElementById('wallpaperInput');
     const wallpaperBg = document.getElementById('wallpaperBg');
+    const githubUserInput = document.getElementById('githubUserInput');
 
-    const storedOldOp = localStorage.getItem('cukup_opacity');
-    let defaultOp = '20';
-    if (localStorage.getItem('cukup_opacity_v3')) {
-      defaultOp = localStorage.getItem('cukup_opacity_v3');
-    } else if (storedOldOp && parseInt(storedOldOp) <= 35) {
-      defaultOp = storedOldOp;
-    }
+    let currentUsername = localStorage.getItem('cukup_github_user') || 'mrbvrz';
+    githubUserInput.value = currentUsername;
 
-    const savedOpacity = defaultOp;
+    const savedOpacity = localStorage.getItem('cukup_opacity_v3') || '20';
     const savedBlur = localStorage.getItem('cukup_blur') || '28';
     const savedAura = localStorage.getItem('cukup_aura') || '95';
     const savedWallpaper = localStorage.getItem('cukup_wallpaper') || '';
@@ -743,11 +1419,11 @@
       document.documentElement.style.setProperty('--opacity', (op / 100).toString());
       document.documentElement.style.setProperty('--blur', bl + 'px');
       document.documentElement.style.setProperty('--aura-intensity', (au / 100).toString());
-      
+
       opacityVal.textContent = op + '%';
       blurVal.textContent = bl + 'px';
       auraVal.textContent = au + '%';
-      
+
       opacityRange.value = op;
       blurRange.value = bl;
       auraRange.value = au;
@@ -767,7 +1443,6 @@
     opacityRange.addEventListener('input', () => {
       applyVisuals(opacityRange.value, blurRange.value, auraRange.value, localStorage.getItem('cukup_wallpaper') || '');
       localStorage.setItem('cukup_opacity_v3', opacityRange.value);
-      localStorage.setItem('cukup_opacity', opacityRange.value);
     });
 
     blurRange.addEventListener('input', () => {
@@ -780,19 +1455,78 @@
       localStorage.setItem('cukup_aura', auraRange.value);
     });
 
-    wallpaperInput.addEventListener('change', () => {
+    document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+      const newU = githubUserInput.value.trim() || 'mrbvrz';
+      localStorage.setItem('cukup_github_user', newU);
+      localStorage.setItem('cukup_engine', engineSelect.value);
+      currentEngine = engineSelect.value;
+      engineBadge.textContent = (ENGINES[currentEngine] || 'Search') + ' ▾';
+
       const wp = wallpaperInput.value.trim();
       localStorage.setItem('cukup_wallpaper', wp);
+
       applyVisuals(opacityRange.value, blurRange.value, auraRange.value, wp);
+      currentUsername = newU;
+      updateClockAndGreeting(currentUsername);
+      loadGitHubData(currentUsername);
+      modal.classList.remove('open');
     });
 
-    // Settings Modal
+    // 6. Settings Modal Controls
     const modal = document.getElementById('modalOverlay');
     document.getElementById('openSettings').addEventListener('click', () => modal.classList.add('open'));
     document.getElementById('closeSettings').addEventListener('click', () => modal.classList.remove('open'));
     modal.addEventListener('click', (e) => {
       if (e.target === modal) modal.classList.remove('open');
     });
+
+    // 7. Add Custom Bookmark Modal Controls
+    const bmModal = document.getElementById('bookmarkModalOverlay');
+    const openBmBtn = document.getElementById('openAddBookmark');
+    const closeBmBtn = document.getElementById('closeBookmarkModal');
+    const saveBmBtn = document.getElementById('saveBookmarkBtn');
+    const bmTitle = document.getElementById('bmTitleInput');
+    const bmUrl = document.getElementById('bmUrlInput');
+    const bmCat = document.getElementById('bmCategorySelect');
+
+    openBmBtn.addEventListener('click', () => bmModal.classList.add('open'));
+    closeBmBtn.addEventListener('click', () => bmModal.classList.remove('open'));
+    bmModal.addEventListener('click', (e) => {
+      if (e.target === bmModal) bmModal.classList.remove('open');
+    });
+
+    saveBmBtn.addEventListener('click', () => {
+      const title = bmTitle.value.trim();
+      let url = bmUrl.value.trim();
+      if (!title || !url) return;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+      }
+
+      const bookmarks = getStoredBookmarks();
+      const newBm = {
+        id: 'user_' + Date.now(),
+        title: title,
+        url: url,
+        category: bmCat.value,
+        hint: url.replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
+        icon: 'globe'
+      };
+
+      bookmarks.push(newBm);
+      localStorage.setItem('cukup_bookmarks', JSON.stringify(bookmarks));
+      renderBookmarks();
+
+      bmTitle.value = '';
+      bmUrl.value = '';
+      bmModal.classList.remove('open');
+    });
+
+    // Initial Boot
+    updateClockAndGreeting(currentUsername);
+    setInterval(() => updateClockAndGreeting(currentUsername), 1000);
+    renderBookmarks();
+    loadGitHubData(currentUsername);
   </script>
 </body>
 </html>
