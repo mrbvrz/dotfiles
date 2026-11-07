@@ -2125,6 +2125,20 @@
         </div>
       </div>
 
+      <!-- Section 5: Maintenance & Storage -->
+      <div class="settings-section-card">
+        <div class="settings-section-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+          <span>Maintenance & Storage Cache</span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+          <span style="font-size: 0.74rem; color: var(--text-muted);">Clear cached bookmarks, feeds, avatars, and force fresh browser sync</span>
+          <button type="button" class="reset-yt-btn" id="clearAllCacheBtn" style="color: #ef4444; border-color: rgba(239,68,68,0.25);">
+            <span>Clear Cache & Reload</span>
+          </button>
+        </div>
+      </div>
+
       <button class="modal-save-btn" id="saveSettingsBtn">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"></polyline></svg>
         <span>Save & Apply Preferences</span>
@@ -2170,6 +2184,28 @@
   </div>
 
   <script>
+    // Automatic Cache Cleaner & Reset (Version v5_clean)
+    const CACHE_VERSION = 'v5_clean';
+    if (localStorage.getItem('cukup_cache_version') !== CACHE_VERSION) {
+      const savedWp = localStorage.getItem('cukup_wallpaper');
+      const savedRadius = localStorage.getItem('cukup_card_radius');
+      const savedDepth = localStorage.getItem('cukup_3d_depth');
+      const savedOpacity = localStorage.getItem('cukup_opacity_v3');
+      const savedBlur = localStorage.getItem('cukup_blur');
+      const savedUser = localStorage.getItem('cukup_github_user');
+
+      localStorage.clear();
+
+      if (savedWp) localStorage.setItem('cukup_wallpaper', savedWp);
+      if (savedRadius) localStorage.setItem('cukup_card_radius', savedRadius);
+      if (savedDepth) localStorage.setItem('cukup_3d_depth', savedDepth);
+      if (savedOpacity) localStorage.setItem('cukup_opacity_v3', savedOpacity);
+      if (savedBlur) localStorage.setItem('cukup_blur', savedBlur);
+      if (savedUser) localStorage.setItem('cukup_github_user', savedUser);
+
+      localStorage.setItem('cukup_cache_version', CACHE_VERSION);
+    }
+
     // Search Engines Configuration with Dedicated Icons
     const SEARCH_ENGINES = {
       google: {
@@ -3455,6 +3491,30 @@
       loadGitHubData(currentUsername);
       modal.classList.remove('open');
     });
+
+    const clearAllCacheBtn = document.getElementById('clearAllCacheBtn');
+    if (clearAllCacheBtn) {
+      clearAllCacheBtn.addEventListener('click', () => {
+        const savedWp = localStorage.getItem('cukup_wallpaper');
+        const savedRadius = localStorage.getItem('cukup_card_radius');
+        const savedDepth = localStorage.getItem('cukup_3d_depth');
+        const savedOpacity = localStorage.getItem('cukup_opacity_v3');
+        const savedBlur = localStorage.getItem('cukup_blur');
+        const savedUser = localStorage.getItem('cukup_github_user');
+
+        localStorage.clear();
+
+        if (savedWp) localStorage.setItem('cukup_wallpaper', savedWp);
+        if (savedRadius) localStorage.setItem('cukup_card_radius', savedRadius);
+        if (savedDepth) localStorage.setItem('cukup_3d_depth', savedDepth);
+        if (savedOpacity) localStorage.setItem('cukup_opacity_v3', savedOpacity);
+        if (savedBlur) localStorage.setItem('cukup_blur', savedBlur);
+        if (savedUser) localStorage.setItem('cukup_github_user', savedUser);
+
+        localStorage.setItem('cukup_cache_version', CACHE_VERSION);
+        location.reload();
+      });
+    }
 
     // 10. Modals Trigger
     const modal = document.getElementById('modalOverlay');
