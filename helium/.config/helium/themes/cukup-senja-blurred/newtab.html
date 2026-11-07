@@ -1898,23 +1898,13 @@
       </div>
     </section>
 
-    <!-- Section 2: Bookmarks Dock (Enhanced Hallmark Cards) -->
+    <!-- Section 2: Bookmarks Dock (Direct Browser Bookmark Bar) -->
     <section class="bookmarks-section motion-enter delay-2">
       <div class="bookmarks-top-controls">
         <div class="category-tabs-wrapper" id="categoryTabsWrapper">
           <div class="tab-slider-pill" id="tabSliderPill"></div>
           <button class="category-tab active" data-category="all">All</button>
-          <button class="category-tab" data-category="dev">Development</button>
-          <button class="category-tab" data-category="ai">AI</button>
-          <button class="category-tab" data-category="social">Social</button>
         </div>
-        <button class="add-bm-btn" id="openAddBookmark">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          <span>Add Bookmark</span>
-        </button>
       </div>
 
       <div class="bookmarks-grid" id="bookmarksGrid">
@@ -2146,46 +2136,9 @@
     </div>
   </div>
 
-  <!-- Add Bookmark Modal -->
-  <div class="modal-overlay" id="bookmarkModalOverlay">
-    <div class="modal-sheet">
-      <div class="modal-header">
-        <div class="modal-title">Add New Bookmark</div>
-        <button class="close-btn" id="closeBookmarkModal">&times;</button>
-      </div>
-
-      <div class="setting-group">
-        <div class="setting-label">
-          <span>Bookmark Name</span>
-        </div>
-        <input type="text" id="bmTitleInput" placeholder="e.g., Supabase / Resend">
-      </div>
-
-      <div class="setting-group">
-        <div class="setting-label">
-          <span>Website URL</span>
-        </div>
-        <input type="text" id="bmUrlInput" placeholder="https://example.com">
-      </div>
-
-      <div class="setting-group">
-        <div class="setting-label">
-          <span>Category</span>
-        </div>
-        <select id="bmCategorySelect">
-          <option value="dev">Development</option>
-          <option value="ai">AI & Intelligence</option>
-          <option value="social">Social & Media</option>
-        </select>
-      </div>
-
-      <button class="modal-save-btn" id="saveBookmarkBtn">Add Bookmark</button>
-    </div>
-  </div>
-
   <script>
-    // Automatic Cache Cleaner & Reset (Version v5_clean)
-    const CACHE_VERSION = 'v5_clean';
+    // Automatic Cache Cleaner & Reset (Version v6_browser_only)
+    const CACHE_VERSION = 'v6_browser_only';
     if (localStorage.getItem('cukup_cache_version') !== CACHE_VERSION) {
       const savedWp = localStorage.getItem('cukup_wallpaper');
       const savedRadius = localStorage.getItem('cukup_card_radius');
@@ -2240,21 +2193,8 @@
       }
     };
 
-    // Curated Bookmarks (Localhost Removed)
-    const DEFAULT_BOOKMARKS = [
-      { id: 'gh', title: 'GitHub', url: 'https://github.com', category: 'dev', hint: 'github.com', icon: 'github' },
-      { id: 'ln', title: 'Linear', url: 'https://linear.app', category: 'dev', hint: 'linear.app', icon: 'linear' },
-      { id: 'v0', title: 'Vercel', url: 'https://vercel.com/dashboard', category: 'dev', hint: 'vercel.com', icon: 'triangle' },
-      { id: 'fg', title: 'Figma', url: 'https://figma.com', category: 'dev', hint: 'figma.com', icon: 'figma' },
-      { id: 'tw', title: 'Tailwind CSS', url: 'https://tailwindcss.com/docs', category: 'dev', hint: 'tailwindcss.com', icon: 'tailwind' },
-      { id: 'cl', title: 'Claude', url: 'https://claude.ai', category: 'ai', hint: 'claude.ai', icon: 'star' },
-      { id: 'cg', title: 'ChatGPT', url: 'https://chatgpt.com', category: 'ai', hint: 'chatgpt.com', icon: 'sparkle' },
-      { id: 'px', title: 'Perplexity', url: 'https://perplexity.ai', category: 'ai', hint: 'perplexity.ai', icon: 'search' },
-      { id: 'gm', title: 'Gemini', url: 'https://gemini.google.com', category: 'ai', hint: 'gemini.google', icon: 'sparkle' },
-      { id: 'yt', title: 'YouTube', url: 'https://youtube.com', category: 'social', hint: 'youtube.com', icon: 'youtube' },
-      { id: 'th', title: 'Threads', url: 'https://threads.net', category: 'social', hint: 'threads.net', icon: 'loop' },
-      { id: 'x', title: 'X / Twitter', url: 'https://x.com', category: 'social', hint: 'x.com', icon: 'twitter' }
-    ];
+    // No dummy bookmarks: Loaded directly from browser Bookmark Bar
+    const DEFAULT_BOOKMARKS = [];
 
     // Minimal Vector Icons
     const ICONS = {
@@ -2664,16 +2604,49 @@
       return a;
     }
 
-    // Browser Bookmarks Bar Integration (Primary Source of Truth)
+    // Browser Bookmarks Bar Integration (Direct from Browser)
     let bookmarkBarItems = [];
     let bookmarkBarFolders = [];
+
+    function extractBookmarkBarItems(barNode) {
+      const items = [];
+      const folders = new Set();
+
+      function scan(node, currentFolder) {
+        if (!node) return;
+        const nodeTitle = node.title || node.name || '';
+        if (node.url) {
+          if (!node.url.startsWith('chrome://') && !node.url.startsWith('helium://') && !node.url.startsWith('javascript:')) {
+            items.push({
+              id: 'bb_' + node.id,
+              title: nodeTitle || extractDomain(node.url),
+              url: node.url,
+              category: currentFolder ? currentFolder.toLowerCase() : 'all',
+              folder: currentFolder || '',
+              hint: extractDomain(node.url)
+            });
+          }
+        } else if (node.children) {
+          const folderTitle = (node.id === '1' || node === barNode) ? '' : nodeTitle;
+          if (folderTitle) {
+            folders.add(folderTitle);
+          }
+          for (const child of node.children) {
+            scan(child, folderTitle || currentFolder);
+          }
+        }
+      }
+
+      scan(barNode, '');
+      return { items, folders: Array.from(folders) };
+    }
 
     function initBookmarkBarCache() {
       const cached = localStorage.getItem('cukup_bookmark_bar_cache');
       if (cached) {
         try {
           const parsed = jsonParseSafe(cached);
-          if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0) {
+          if (parsed && Array.isArray(parsed.items)) {
             bookmarkBarItems = parsed.items;
             if (Array.isArray(parsed.folders)) bookmarkBarFolders = parsed.folders;
             updateBookmarkCategoryTabs();
@@ -2688,54 +2661,18 @@
           chrome.bookmarks.getTree(function(tree) {
             if (!tree || !tree[0] || !tree[0].children) return;
 
-            // In Chromium:
-            // tree[0].children[0] is typically the Bookmarks Bar (id: "1")
             const rootChildren = tree[0].children;
-            const barNode = rootChildren.find(n => n.id === '1' || (n.title && n.title.toLowerCase().includes('bar'))) || rootChildren[0];
+            const barNode = rootChildren.find(n => n.id === '1' || (n.title && n.title.toLowerCase().includes('bar')) || (n.name && n.name.toLowerCase().includes('bar'))) || rootChildren[0];
 
-            if (!barNode || !barNode.children) return;
+            if (!barNode) return;
 
-            const items = [];
-            const folders = new Set();
+            const res = extractBookmarkBarItems(barNode);
+            bookmarkBarItems = res.items;
+            bookmarkBarFolders = res.folders;
 
-            barNode.children.forEach(node => {
-              // Direct bookmark on Bookmarks Bar
-              if (node.url && !node.url.startsWith('chrome://') && !node.url.startsWith('helium://') && !node.url.startsWith('javascript:')) {
-                items.push({
-                  id: 'bb_' + node.id,
-                  title: node.title || extractDomain(node.url),
-                  url: node.url,
-                  category: 'direct',
-                  folder: '',
-                  hint: extractDomain(node.url)
-                });
-              }
-              // Folder inside Bookmarks Bar
-              else if (node.children && node.children.length > 0) {
-                const folderName = node.title || 'Folder';
-                folders.add(folderName);
-                node.children.forEach(sub => {
-                  if (sub.url && !sub.url.startsWith('chrome://') && !sub.url.startsWith('helium://') && !sub.url.startsWith('javascript:')) {
-                    items.push({
-                      id: 'bb_' + sub.id,
-                      title: sub.title || extractDomain(sub.url),
-                      url: sub.url,
-                      category: folderName.toLowerCase(),
-                      folder: folderName,
-                      hint: extractDomain(sub.url)
-                    });
-                  }
-                });
-              }
-            });
-
-            if (items.length > 0) {
-              bookmarkBarItems = items;
-              bookmarkBarFolders = Array.from(folders);
-              localStorage.setItem('cukup_bookmark_bar_cache', JSON.stringify({ items, folders: bookmarkBarFolders }));
-              updateBookmarkCategoryTabs();
-              renderBookmarks();
-            }
+            localStorage.setItem('cukup_bookmark_bar_cache', JSON.stringify({ items: bookmarkBarItems, folders: bookmarkBarFolders }));
+            updateBookmarkCategoryTabs();
+            renderBookmarks();
           });
         } catch (err) {
           console.warn('Could not read Bookmarks Bar:', err);
@@ -2753,15 +2690,6 @@
       } catch (e) {}
     }
 
-    function getStoredBookmarks() {
-      const stored = localStorage.getItem('cukup_bookmarks');
-      if (stored) {
-        const parsed = jsonParseSafe(stored);
-        if (parsed && Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-      return DEFAULT_BOOKMARKS;
-    }
-
     function getActiveBookmarkList() {
       if (bookmarkBarItems && bookmarkBarItems.length > 0) {
         return bookmarkBarItems;
@@ -2777,7 +2705,7 @@
           }
         } catch (e) {}
       }
-      return getStoredBookmarks();
+      return [];
     }
 
     let activeCategory = 'all';
@@ -2796,36 +2724,20 @@
 
       wrapper.innerHTML = '<div class="tab-slider-pill" id="tabSliderPill"></div>';
 
-      if (bookmarkBarItems && bookmarkBarItems.length > 0) {
-        const allBtn = document.createElement('button');
-        allBtn.className = 'category-tab' + (activeCategory === 'all' ? ' active' : '');
-        allBtn.dataset.category = 'all';
-        allBtn.textContent = 'All (' + bookmarkBarItems.length + ')';
-        wrapper.appendChild(allBtn);
+      const allBtn = document.createElement('button');
+      allBtn.className = 'category-tab' + (activeCategory === 'all' ? ' active' : '');
+      allBtn.dataset.category = 'all';
+      allBtn.textContent = 'All (' + bookmarkBarItems.length + ')';
+      wrapper.appendChild(allBtn);
 
-        if (bookmarkBarFolders && bookmarkBarFolders.length > 0) {
-          bookmarkBarFolders.forEach(folder => {
-            const catKey = folder.toLowerCase();
-            const count = bookmarkBarItems.filter(b => b.category === catKey || (b.folder && b.folder.toLowerCase() === catKey)).length;
-            const btn = document.createElement('button');
-            btn.className = 'category-tab' + (activeCategory === catKey ? ' active' : '');
-            btn.dataset.category = catKey;
-            btn.textContent = folder + (count > 0 ? ' (' + count + ')' : '');
-            wrapper.appendChild(btn);
-          });
-        }
-      } else {
-        const defaultCats = [
-          { id: 'all', label: 'All' },
-          { id: 'dev', label: 'Development' },
-          { id: 'ai', label: 'AI' },
-          { id: 'social', label: 'Social' }
-        ];
-        defaultCats.forEach(c => {
+      if (bookmarkBarFolders && bookmarkBarFolders.length > 0) {
+        bookmarkBarFolders.forEach(folder => {
+          const catKey = folder.toLowerCase();
+          const count = bookmarkBarItems.filter(b => b.category === catKey || (b.folder && b.folder.toLowerCase() === catKey)).length;
           const btn = document.createElement('button');
-          btn.className = 'category-tab' + (activeCategory === c.id ? ' active' : '');
-          btn.dataset.category = c.id;
-          btn.textContent = c.label;
+          btn.className = 'category-tab' + (activeCategory === catKey ? ' active' : '');
+          btn.dataset.category = catKey;
+          btn.textContent = folder + (count > 0 ? ' (' + count + ')' : '');
           wrapper.appendChild(btn);
         });
       }
@@ -2848,8 +2760,8 @@
       if (list.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'mono';
-        empty.style.cssText = 'grid-column: 1 / -1; padding: 28px; text-align: center; color: var(--text-muted); font-size: 0.8rem;';
-        empty.textContent = 'No bookmarks found in this section.';
+        empty.style.cssText = 'grid-column: 1 / -1; padding: 32px; text-align: center; color: var(--text-muted); font-size: 0.8rem;';
+        empty.textContent = 'No bookmarks found on your Bookmarks Bar.';
         grid.appendChild(empty);
         setTimeout(updateTabSliderPill, 20);
         return;
@@ -3525,60 +3437,6 @@
     document.getElementById('closeSettings').addEventListener('click', () => modal.classList.remove('open'));
     modal.addEventListener('click', (e) => {
       if (e.target === modal) modal.classList.remove('open');
-    });
-
-    // 11. Add Custom Bookmark Modal Controls
-    const bmModal = document.getElementById('bookmarkModalOverlay');
-    const openBmBtn = document.getElementById('openAddBookmark');
-    const closeBmBtn = document.getElementById('closeBookmarkModal');
-    const saveBmBtn = document.getElementById('saveBookmarkBtn');
-    const bmTitle = document.getElementById('bmTitleInput');
-    const bmUrl = document.getElementById('bmUrlInput');
-    const bmCat = document.getElementById('bmCategorySelect');
-
-    openBmBtn.addEventListener('click', () => bmModal.classList.add('open'));
-    closeBmBtn.addEventListener('click', () => bmModal.classList.remove('open'));
-    bmModal.addEventListener('click', (e) => {
-      if (e.target === bmModal) bmModal.classList.remove('open');
-    });
-
-    saveBmBtn.addEventListener('click', () => {
-      const title = bmTitle.value.trim();
-      let url = bmUrl.value.trim();
-      if (!title || !url) return;
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        url = 'https://' + url;
-      }
-
-      const bookmarks = getStoredBookmarks();
-      const newBm = {
-        id: 'user_' + Date.now(),
-        title: title,
-        url: url,
-        category: bmCat.value,
-        hint: extractDomain(url),
-        icon: 'globe'
-      };
-
-      bookmarks.push(newBm);
-      localStorage.setItem('cukup_bookmarks', JSON.stringify(bookmarks));
-      renderBookmarks();
-
-      if (typeof chrome !== 'undefined' && chrome.bookmarks && chrome.bookmarks.create) {
-        try {
-          chrome.bookmarks.create({
-            parentId: '1',
-            title: title,
-            url: url
-          }, () => {
-            loadBookmarkBar();
-          });
-        } catch (e) {}
-      }
-
-      bmTitle.value = '';
-      bmUrl.value = '';
-      bmModal.classList.remove('open');
     });
 
     // Initial Boot & Window Listeners
