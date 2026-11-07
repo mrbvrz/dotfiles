@@ -84,7 +84,7 @@
       color: #fff;
     }
 
-    /* Minimal refined scrollbar */
+    /* Minimal refined scrollbar (Visible on hover only) */
     ::-webkit-scrollbar {
       width: 5px;
       height: 5px;
@@ -93,11 +93,15 @@
       background: transparent;
     }
     ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.10);
+      background: transparent;
       border-radius: 4px;
+      transition: background 0.25s ease;
+    }
+    *:hover::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.16);
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: rgba(var(--accent-rgb), 0.35);
+      background: var(--accent) !important;
     }
 
     .mono {
@@ -923,6 +927,14 @@
       flex-shrink: 0;
       transition: all 0.2s ease;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+
+    .card-favicon {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      object-fit: contain;
     }
 
     .bookmark-card:hover .card-icon-box {
@@ -1101,7 +1113,15 @@
       border-radius: 4px;
       background: rgba(255, 255, 255, 0.05);
       color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.3px;
     }
+
+    .news-source-tag.hn { color: #ff6600; background: rgba(255, 102, 0, 0.12); }
+    .news-source-tag.dev { color: #a78bfa; background: rgba(167, 139, 250, 0.12); }
+    .news-source-tag.verge { color: #f43f5e; background: rgba(244, 63, 94, 0.12); }
+    .news-source-tag.android { color: #3ddc84; background: rgba(61, 220, 132, 0.12); }
 
     .news-score {
       font-size: 0.72rem;
@@ -1274,13 +1294,13 @@
       text-decoration: underline;
     }
 
-    /* Settings & Wallpaper Modal */
+    /* Settings & Customization Modal */
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.65);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      background: rgba(8, 6, 5, 0.76);
+      backdrop-filter: blur(24px) saturate(140%);
+      -webkit-backdrop-filter: blur(24px) saturate(140%);
       z-index: 100;
       display: flex;
       align-items: center;
@@ -1288,7 +1308,7 @@
       padding: 20px;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.22s var(--spring-ease);
+      transition: opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .modal-overlay.open {
@@ -1297,30 +1317,50 @@
     }
 
     .modal-sheet {
-      background: rgba(22, 18, 16, 0.96);
-      border: 1px solid var(--accent-border);
-      border-radius: var(--card-radius);
-      padding: 26px;
-      max-width: 480px;
+      background: linear-gradient(165deg, rgba(28, 22, 19, 0.96) 0%, rgba(15, 12, 10, 0.98) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 20px;
+      padding: 26px 30px;
+      max-width: 580px;
       width: 100%;
-      box-shadow: 0 24px 50px rgba(0, 0, 0, 0.6), var(--card-bevel);
+      box-shadow: 0 32px 80px -15px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.12);
       display: flex;
       flex-direction: column;
       gap: 18px;
-      max-height: 90vh;
+      max-height: 88vh;
       overflow-y: auto;
+      transform: scale(0.96) translateY(12px);
+      transition: transform 0.28s var(--spring-ease), opacity 0.28s ease;
+    }
+
+    .modal-overlay.open .modal-sheet {
+      transform: scale(1) translateY(0);
     }
 
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .modal-title-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
     }
 
     .modal-title {
-      font-size: 1.05rem;
-      font-weight: 600;
+      font-size: 1.15rem;
+      font-weight: 700;
       color: var(--text-primary);
+      letter-spacing: -0.2px;
+    }
+
+    .modal-subtitle {
+      font-size: 0.72rem;
+      color: var(--text-muted);
     }
 
     .close-btn {
@@ -1339,6 +1379,43 @@
       color: var(--text-primary);
     }
 
+    /* Structured Settings Sections */
+    .settings-section-card {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 14px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .settings-section-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 0.2px;
+    }
+
+    .settings-section-title svg {
+      color: var(--accent);
+    }
+
+    .settings-grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 500px) {
+      .settings-grid-2col {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .setting-group {
       display: flex;
       flex-direction: column;
@@ -1348,7 +1425,7 @@
     .setting-label {
       display: flex;
       justify-content: space-between;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 500;
       color: var(--text-secondary);
     }
@@ -1357,11 +1434,24 @@
       color: var(--accent);
     }
 
-    /* Wallpaper Dropzone */
+    .cache-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.7rem;
+      color: #4ade80;
+      background: rgba(74, 222, 128, 0.08);
+      border: 1px solid rgba(74, 222, 128, 0.18);
+      padding: 3px 8px;
+      border-radius: 6px;
+      align-self: flex-start;
+    }
+
+    /* Wallpaper Dropzone with Integrated In-Image Preview & Remove Button */
     .upload-dropzone {
-      border: 1px dashed rgba(255, 255, 255, 0.15);
+      border: 1px dashed rgba(255, 255, 255, 0.16);
       border-radius: 12px;
-      padding: 16px;
+      min-height: 105px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -1371,19 +1461,38 @@
       background: rgba(255, 255, 255, 0.02);
       transition: all 0.2s ease;
       text-align: center;
+      position: relative;
+      overflow: hidden;
+      background-size: cover !important;
+      background-position: center !important;
     }
 
-    .upload-dropzone:hover, .upload-dropzone.dragover {
+    .upload-dropzone:hover {
       border-color: var(--accent);
-      background: var(--accent-soft);
+      background-color: var(--accent-soft);
     }
 
-    .upload-dropzone svg {
+    .upload-dropzone.has-wallpaper {
+      border-style: solid;
+      border-color: rgba(255, 255, 255, 0.18);
+      min-height: 130px;
+    }
+
+    .dropzone-empty-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 14px;
+      pointer-events: none;
+    }
+
+    .dropzone-empty-content svg {
       color: var(--accent);
     }
 
     .upload-hint {
-      font-size: 0.75rem;
+      font-size: 0.76rem;
       color: var(--text-secondary);
     }
 
@@ -1392,25 +1501,179 @@
       color: var(--text-muted);
     }
 
-    .wallpaper-preview-bar {
-      display: none;
+    .dropzone-active-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(12, 10, 8, 0.55);
+      backdrop-filter: blur(2px);
+      display: flex;
       align-items: center;
       justify-content: space-between;
-      background: rgba(255, 255, 255, 0.04);
+      padding: 12px 16px;
+      transition: background 0.2s ease;
+    }
+
+    .dropzone-active-overlay:hover {
+      background: rgba(12, 10, 8, 0.65);
+    }
+
+    .dropzone-active-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.74rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      background: rgba(0, 0, 0, 0.65);
+      padding: 5px 10px;
+      border-radius: 7px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .dropzone-remove-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(220, 38, 38, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
       padding: 6px 12px;
       border-radius: 8px;
       font-size: 0.74rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     }
 
-    .reset-wp-btn {
+    .dropzone-remove-btn:hover {
+      background: #ef4444;
+      transform: translateY(-1px);
+    }
+
+    .dropzone-remove-btn svg {
+      stroke: #fff;
+    }
+
+    /* YouTube Custom Watchlist Form & Items */
+    .yt-settings-form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .yt-inputs-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .add-yt-action-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .add-yt-btn {
+      background: var(--accent);
+      border: none;
+      color: #120f0d;
+      font-weight: 600;
+      font-size: 0.78rem;
+      padding: 7px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+
+    .add-yt-btn:hover {
+      background: #ff8c53;
+    }
+
+    .reset-yt-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+      font-size: 0.74rem;
+      padding: 7px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .reset-yt-btn:hover {
+      color: var(--text-primary);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .yt-settings-items-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 150px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .yt-settings-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 0.76rem;
+    }
+
+    .yt-settings-item-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+    .yt-settings-thumb {
+      width: 38px;
+      height: 24px;
+      border-radius: 4px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: #1a1614;
+    }
+
+    .yt-settings-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text-primary);
+      max-width: 320px;
+    }
+
+    .yt-delete-btn {
       background: none;
       border: none;
       color: #ef4444;
-      font-size: 0.72rem;
       cursor: pointer;
-      text-decoration: underline;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 5px;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
     }
 
+    .yt-delete-btn:hover {
+      background: rgba(239, 68, 68, 0.15);
+    }
+
+    /* Sliders & Inputs */
     input[type="range"] {
       -webkit-appearance: none;
       width: 100%;
@@ -1451,18 +1714,23 @@
       border: none;
       color: #120f0d;
       font-weight: 600;
-      padding: 11px;
-      border-radius: 10px;
+      padding: 12px;
+      border-radius: 11px;
       cursor: pointer;
       font-family: var(--font-sans);
       font-size: 0.9rem;
       transition: all 0.2s var(--spring-ease);
       margin-top: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
 
     .modal-save-btn:hover {
       background: #ff8c53;
-      box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.3);
+      box-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.35);
+      transform: translateY(-1px);
     }
   </style>
 </head>
@@ -1487,13 +1755,6 @@
           <span class="colon">·</span>
           <span class="clock-nums mono" id="clockNums">00:00:00</span>
         </div>
-        <button class="icon-btn" id="openWallpaperBtn" title="Customize Wallpaper">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-            <polyline points="21 15 16 10 5 21"></polyline>
-          </svg>
-        </button>
         <button class="icon-btn" id="openSettings" title="Cockpit Settings">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"></circle>
@@ -1626,9 +1887,10 @@
         <div class="category-tabs-wrapper" id="categoryTabsWrapper">
           <div class="tab-slider-pill" id="tabSliderPill"></div>
           <button class="category-tab active" data-category="all">All</button>
+          <button class="category-tab" data-category="browser">Browser</button>
           <button class="category-tab" data-category="dev">Development</button>
-          <button class="category-tab" data-category="ai">AI & Intelligence</button>
-          <button class="category-tab" data-category="social">Social & Media</button>
+          <button class="category-tab" data-category="ai">AI</button>
+          <button class="category-tab" data-category="social">Social</button>
         </div>
         <button class="add-bm-btn" id="openAddBookmark">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1644,9 +1906,9 @@
       </div>
     </section>
 
-    <!-- Section 3: Dual Developer Feeds (Expanded Hacker News + Dev.to) -->
+    <!-- Section 3: Dual Developer Feeds (Multi-Source Tech News & YouTube) -->
     <section class="feeds-row motion-enter delay-3">
-      <!-- Live Hacker News & Dev.to Tech Feed -->
+      <!-- Live Hacker News, Dev.to, The Verge & Android News Feed -->
       <div class="feed-panel">
         <div class="feed-header">
           <div class="feed-title">
@@ -1662,6 +1924,8 @@
             <button class="news-tab-btn active" data-source="all">All</button>
             <button class="news-tab-btn" data-source="hn">HN</button>
             <button class="news-tab-btn" data-source="dev">DEV</button>
+            <button class="news-tab-btn" data-source="verge">The Verge</button>
+            <button class="news-tab-btn" data-source="android">Android</button>
           </div>
         </div>
 
@@ -1712,88 +1976,143 @@
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal-sheet">
       <div class="modal-header">
-        <div class="modal-title">Cockpit & Visual Customization</div>
+        <div class="modal-title-wrap">
+          <div class="modal-title">Cockpit Settings & Customization</div>
+          <span class="modal-subtitle">Configure visual ambiance, telemetry, feeds and bookmarks</span>
+        </div>
         <button class="close-btn" id="closeSettings">&times;</button>
       </div>
 
-      <!-- Wallpaper Upload Dropzone -->
-      <div class="setting-group">
-        <div class="setting-label">
-          <span>Custom Background / Wallpaper</span>
+      <!-- Section 1: Profile & Identity -->
+      <div class="settings-section-card">
+        <div class="settings-section-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          <span>Identity & GitHub Profile</span>
         </div>
+        <div class="setting-group">
+          <div class="setting-label">
+            <span>GitHub Username</span>
+          </div>
+          <input type="text" id="githubUserInput" placeholder="mrbvrz" autocomplete="off">
+        </div>
+        <div class="cache-status-pill mono">
+          <span>⚡ Instant Local Avatar Cache Active</span>
+        </div>
+      </div>
+
+      <!-- Section 2: Wallpaper & Atmosphere -->
+      <div class="settings-section-card">
+        <div class="settings-section-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          <span>Background & Wallpaper</span>
+        </div>
+        <!-- In-Dropzone Preview with Embedded Remove Icon -->
         <div class="upload-dropzone" id="uploadDropzone">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-            <polyline points="21 15 16 10 5 21"></polyline>
-          </svg>
-          <span class="upload-hint">Click to upload or drag an image here</span>
-          <span class="upload-subhint">Supports JPG, PNG, WebP (Stored locally)</span>
+          <div class="dropzone-empty-content" id="dropzoneEmptyContent">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="upload-hint">Click to choose image or drag & drop here</span>
+            <span class="upload-subhint">Supports JPG, PNG, WebP (Stored locally)</span>
+          </div>
+          <div class="dropzone-active-overlay" id="dropzoneActiveOverlay" style="display: none;">
+            <span class="dropzone-active-badge">Active Wallpaper</span>
+            <button type="button" class="dropzone-remove-btn" id="removeWpBtn" title="Remove Wallpaper">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              <span>Remove</span>
+            </button>
+          </div>
         </div>
-        <div class="wallpaper-preview-bar" id="wpPreviewBar">
-          <span>Active Wallpaper</span>
-          <button class="reset-wp-btn" id="resetWpBtn">Remove Wallpaper</button>
+
+        <div class="settings-grid-2col">
+          <div class="setting-group">
+            <div class="setting-label">
+              <span>Dimming</span>
+              <span class="mono" id="wpDimVal">65%</span>
+            </div>
+            <input type="range" id="wpDimRange" min="10" max="100" value="65">
+          </div>
+          <div class="setting-group">
+            <div class="setting-label">
+              <span>Blur</span>
+              <span class="mono" id="wpBlurVal">0px</span>
+            </div>
+            <input type="range" id="wpBlurRange" min="0" max="32" value="0">
+          </div>
         </div>
       </div>
 
-      <!-- Card Border Radius Configuration -->
-      <div class="setting-group">
-        <div class="setting-label">
-          <span>Card Corner Radius</span>
-          <span class="mono" id="cardRadiusVal">18px</span>
+      <!-- Section 3: Interface & 3D Glass Physics -->
+      <div class="settings-section-card">
+        <div class="settings-section-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+          <span>Interface & 3D Glass Physics</span>
         </div>
-        <input type="range" id="cardRadiusRange" min="4" max="32" value="18">
+        <div class="settings-grid-2col">
+          <div class="setting-group">
+            <div class="setting-label">
+              <span>Card Radius</span>
+              <span class="mono" id="cardRadiusVal">18px</span>
+            </div>
+            <input type="range" id="cardRadiusRange" min="4" max="32" value="18">
+          </div>
+          <div class="setting-group">
+            <div class="setting-label">
+              <span>3D Depth Tilt</span>
+              <span class="mono" id="depthVal">50%</span>
+            </div>
+            <input type="range" id="depthRange" min="0" max="100" value="50">
+          </div>
+          <div class="setting-group">
+            <div class="setting-label">
+              <span>Transparency</span>
+              <span class="mono" id="opacityVal">22%</span>
+            </div>
+            <input type="range" id="opacityRange" min="5" max="90" value="22">
+          </div>
+          <div class="setting-group">
+            <div class="setting-label">
+              <span>Glass Blur</span>
+              <span class="mono" id="blurVal">24px</span>
+            </div>
+            <input type="range" id="blurRange" min="0" max="64" value="24">
+          </div>
+        </div>
       </div>
 
-      <!-- 3D Depth & Tilt Intensity -->
-      <div class="setting-group">
-        <div class="setting-label">
-          <span>3D Depth & Perspective Tilt</span>
-          <span class="mono" id="depthVal">50%</span>
+      <!-- Section 4: YouTube Watchlist Configuration -->
+      <div class="settings-section-card">
+        <div class="settings-section-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+          <span>YouTube Custom Watchlist</span>
         </div>
-        <input type="range" id="depthRange" min="0" max="100" value="50">
+        <div class="yt-settings-form">
+          <div class="yt-inputs-row">
+            <input type="text" id="customYtUrl" placeholder="Video URL or ID (e.g. cuED1m_j_n8)" autocomplete="off">
+            <input type="text" id="customYtTitle" placeholder="Title (e.g. Modern CSS Tricks)" autocomplete="off">
+          </div>
+          <div class="yt-inputs-row">
+            <input type="text" id="customYtChannel" placeholder="Channel (e.g. Web Dev Simplified)" autocomplete="off">
+            <div class="add-yt-action-row">
+              <button type="button" class="add-yt-btn" id="addYtVideoBtn">+ Add Video</button>
+              <button type="button" class="reset-yt-btn" id="resetYtBtn">Reset Default</button>
+            </div>
+          </div>
+        </div>
+        <div class="yt-settings-items-list" id="ytSettingsItemsList">
+          <!-- Populated dynamically via JS -->
+        </div>
       </div>
 
-      <div class="setting-group">
-        <div class="setting-label">
-          <span>Wallpaper Blur</span>
-          <span class="mono" id="wpBlurVal">0px</span>
-        </div>
-        <input type="range" id="wpBlurRange" min="0" max="32" value="0">
-      </div>
-
-      <div class="setting-group">
-        <div class="setting-label">
-          <span>Wallpaper Dimming</span>
-          <span class="mono" id="wpDimVal">65%</span>
-        </div>
-        <input type="range" id="wpDimRange" min="10" max="100" value="65">
-      </div>
-
-      <div class="setting-group">
-        <div class="setting-label">
-          <span>GitHub Username</span>
-        </div>
-        <input type="text" id="githubUserInput" placeholder="mrbvrz">
-      </div>
-
-      <div class="setting-group">
-        <div class="setting-label">
-          <span>Glass Transparency</span>
-          <span class="mono" id="opacityVal">22%</span>
-        </div>
-        <input type="range" id="opacityRange" min="5" max="90" value="22">
-      </div>
-
-      <div class="setting-group">
-        <div class="setting-label">
-          <span>Frosted Blur Radius</span>
-          <span class="mono" id="blurVal">24px</span>
-        </div>
-        <input type="range" id="blurRange" min="0" max="64" value="24">
-      </div>
-
-      <button class="modal-save-btn" id="saveSettingsBtn">Save Preferences</button>
+      <button class="modal-save-btn" id="saveSettingsBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span>Save & Apply Preferences</span>
+      </button>
     </div>
   </div>
 
@@ -2060,7 +2379,25 @@
       }
     });
 
-    // 3. GitHub Profile & Telemetry Fetcher
+    // 3. GitHub Profile & Telemetry Fetcher with Instant Base64 Avatar Cache
+    async function cacheAvatarAsBase64(url) {
+      if (!url) return;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const blob = await res.blob();
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (reader.result) {
+            localStorage.setItem('cukup_gh_avatar_data', reader.result);
+          }
+        };
+        reader.readAsDataURL(blob);
+      } catch (e) {
+        console.warn('Avatar cache warning:', e);
+      }
+    }
+
     async function loadGitHubData(username) {
       const handleEl = document.getElementById('profileHandle');
       const bioEl = document.getElementById('profileBio');
@@ -2073,6 +2410,12 @@
 
       handleEl.textContent = '@' + username;
       handleEl.href = 'https://github.com/' + username;
+
+      // 0ms instant load from local cached avatar
+      const cachedAvatarData = localStorage.getItem('cukup_gh_avatar_data');
+      if (cachedAvatarData) {
+        avatarEl.src = cachedAvatarData;
+      }
 
       const cacheKey = 'cukup_gh_' + username;
       const cached = localStorage.getItem(cacheKey);
@@ -2099,7 +2442,12 @@
       function renderDashboardData(data) {
         let displayName = username;
         if (data.user) {
-          avatarEl.src = data.user.avatar_url || avatarEl.src;
+          if (!cachedAvatarData) {
+            avatarEl.src = data.user.avatar_url || avatarEl.src;
+          }
+          if (data.user.avatar_url) {
+            cacheAvatarAsBase64(data.user.avatar_url);
+          }
           const loc = data.user.location ? ' · ' + data.user.location : '';
           const repoCount = data.user.public_repos !== undefined ? data.user.public_repos : 0;
           bioEl.innerHTML = `
@@ -2164,7 +2512,48 @@
       try { return JSON.parse(s); } catch (e) { return null; }
     }
 
-    // 4. Bookmarks Dock Manager
+    // 4. Bookmarks Dock Manager with High-Res Favicons & Browser Bookmarks
+    function getFaviconUrl(url) {
+      try {
+        const u = new URL(url);
+        return 'https://www.google.com/s2/favicons?domain=' + u.hostname + '&sz=64';
+      } catch (e) {
+        return '';
+      }
+    }
+
+    let browserBookmarks = [];
+    function fetchBrowserBookmarks() {
+      if (typeof chrome !== 'undefined' && chrome.bookmarks && chrome.bookmarks.getTree) {
+        try {
+          chrome.bookmarks.getTree(function(tree) {
+            const list = [];
+            function traverse(nodes) {
+              for (const node of nodes) {
+                if (node.url && !node.url.startsWith('chrome://') && !node.url.startsWith('helium://') && !node.url.startsWith('javascript:')) {
+                  list.push({
+                    id: 'bm_' + node.id,
+                    title: node.title || node.url,
+                    url: node.url,
+                    category: 'browser',
+                    hint: node.url.replace(/^https?:\/\//, '').replace(/\/.*$/, '')
+                  });
+                }
+                if (node.children) traverse(node.children);
+              }
+            }
+            traverse(tree);
+            browserBookmarks = list;
+            if (activeCategory === 'browser') {
+              renderBookmarks();
+            }
+          });
+        } catch (err) {
+          console.warn('Could not read browser bookmarks:', err);
+        }
+      }
+    }
+
     function getStoredBookmarks() {
       const stored = localStorage.getItem('cukup_bookmarks');
       if (stored) {
@@ -2186,28 +2575,48 @@
 
     function renderBookmarks() {
       const grid = document.getElementById('bookmarksGrid');
-      const bookmarks = getStoredBookmarks();
+      const stored = getStoredBookmarks();
       grid.innerHTML = '';
 
-      const filtered = activeCategory === 'all'
-        ? bookmarks
-        : bookmarks.filter(b => b.category === activeCategory);
+      let list = [];
+      if (activeCategory === 'all') {
+        list = stored;
+      } else if (activeCategory === 'browser') {
+        list = browserBookmarks;
+      } else {
+        list = stored.filter(b => b.category === activeCategory);
+      }
 
-      filtered.forEach(bm => {
+      if (list.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'mono';
+        empty.style.cssText = 'grid-column: 1 / -1; padding: 28px; text-align: center; color: var(--text-muted); font-size: 0.8rem;';
+        empty.textContent = activeCategory === 'browser'
+          ? (typeof chrome !== 'undefined' && chrome.bookmarks ? 'No browser bookmarks found.' : 'Browser Bookmarks API active in Chromium/Helium extension mode.')
+          : 'No bookmarks found in this category.';
+        grid.appendChild(empty);
+        setTimeout(updateTabSliderPill, 20);
+        return;
+      }
+
+      list.forEach(bm => {
         const a = document.createElement('a');
         a.className = 'bookmark-card card-3d';
         a.href = bm.url;
 
-        const iconSvg = ICONS[bm.icon] || ICONS.globe;
+        const favUrl = getFaviconUrl(bm.url);
+        const domainHint = bm.hint || bm.url.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
 
         a.innerHTML = `
-          <div class="card-icon-box">${iconSvg}</div>
+          <div class="card-icon-box">
+            <img class="card-favicon" src="${favUrl}" alt="${bm.title}" loading="lazy" onerror="this.onerror=null; this.src='https://icons.duckduckgo.com/ip3/' + '${domainHint}' + '.ico'; this.onerror=function(){this.parentElement.innerHTML='${ICONS.globe}';};">
+          </div>
           <div class="card-info">
             <div class="card-title-row">
               <span class="card-title">${bm.title}</span>
               <span class="card-arrow">↗</span>
             </div>
-            <span class="card-domain mono">${bm.hint || bm.url.replace(/^https?:\/\//, '')}</span>
+            <span class="card-domain mono">${domainHint}</span>
           </div>
         `;
         grid.appendChild(a);
@@ -2301,22 +2710,24 @@
       }
     });
 
-    // 6. Multi-Source Developer Tech Feed (Hacker News + Dev.to)
+    // 6. Multi-Source Developer Tech Feed (HN, DEV, The Verge, Android)
     let currentNewsSource = 'all';
     let cachedAllNews = [];
 
     const FALLBACK_NEWS = [
-      { id: 'hn_1', source: 'HN', title: 'The $8 Linux Computer: Minimalist RISC-V Hardware', url: 'https://news.ycombinator.com', score: '▲ 142', by: 'antirez', comments: 48, domain: 'blogspot.com' },
-      { id: 'dev_1', source: 'DEV', title: 'Why 50 Years of Senior Craft Lives in Context, Not Code', url: 'https://dev.to', score: '❤️ 89', by: 'Randal Schwartz', comments: 24, domain: 'dev.to' },
-      { id: 'hn_2', source: 'HN', title: 'SQLite in the Browser with WebAssembly & OPFS', url: 'https://news.ycombinator.com', score: '▲ 285', by: 'drh', comments: 92, domain: 'sqlite.org' },
-      { id: 'dev_2', source: 'DEV', title: 'Building Resilient Micro-Frontends in 2026', url: 'https://dev.to', score: '❤️ 142', by: 'Sarah Dayan', comments: 38, domain: 'dev.to' },
-      { id: 'hn_3', source: 'HN', title: 'Why Framer Motion & Spring Physics Feel Natural', url: 'https://news.ycombinator.com', score: '▲ 98', by: 'mattgperry', comments: 34, domain: 'framer.com' },
-      { id: 'dev_3', source: 'DEV', title: 'TypeScript 5.8: What You Need to Know in Practice', url: 'https://dev.to', score: '❤️ 67', by: 'Alex MacArthur', comments: 15, domain: 'dev.to' }
+      { id: 'hn_1', source: 'HN', sourceClass: 'hn', title: 'The $8 Linux Computer: Minimalist RISC-V Hardware', url: 'https://news.ycombinator.com', score: '▲ 142', by: 'antirez', comments: 48, domain: 'blogspot.com' },
+      { id: 'dev_1', source: 'DEV', sourceClass: 'dev', title: 'Why 50 Years of Senior Craft Lives in Context, Not Code', url: 'https://dev.to', score: '❤️ 89', by: 'Randal Schwartz', comments: 24, domain: 'dev.to' },
+      { id: 'verge_1', source: 'The Verge', sourceClass: 'verge', title: 'Next-gen silicon architectures push boundaries of consumer computing', url: 'https://theverge.com/tech', score: '⚡ Tech', by: 'Verge Staff', comments: 31, domain: 'theverge.com' },
+      { id: 'android_1', source: 'Android', sourceClass: 'android', title: 'Android 16 Developer Preview: Predictive Back, Architecture & APIs', url: 'https://developer.android.com', score: '⚡ Android', by: 'Android Devs', comments: 45, domain: 'android.com' },
+      { id: 'hn_2', source: 'HN', sourceClass: 'hn', title: 'SQLite in the Browser with WebAssembly & OPFS', url: 'https://news.ycombinator.com', score: '▲ 285', by: 'drh', comments: 92, domain: 'sqlite.org' },
+      { id: 'dev_2', source: 'DEV', sourceClass: 'dev', title: 'Building Resilient Micro-Frontends in 2026', url: 'https://dev.to', score: '❤️ 142', by: 'Sarah Dayan', comments: 38, domain: 'dev.to' },
+      { id: 'verge_2', source: 'The Verge', sourceClass: 'verge', title: 'Open-weights AI models challenge proprietary benchmarks in real tests', url: 'https://theverge.com/ai', score: '⚡ AI', by: 'The Verge', comments: 64, domain: 'theverge.com' },
+      { id: 'android_2', source: 'Android', sourceClass: 'android', title: 'Jetpack Compose performance optimizations for 120Hz micro-interactions', url: 'https://android-developers.googleblog.com', score: '⚡ Kotlin', by: 'Android Team', comments: 28, domain: 'googleblog.com' }
     ];
 
     async function loadTechNews() {
       const listEl = document.getElementById('newsList');
-      const cache = localStorage.getItem('cukup_news_multi_cache');
+      const cache = localStorage.getItem('cukup_news_multi_cache_v2');
       if (cache) {
         try {
           const parsed = jsonParseSafe(cache);
@@ -2331,19 +2742,19 @@
       }
 
       try {
-        // Fetch HN Top 6 & Dev.to Top 6 in parallel
-        const [hnRes, devRes] = await Promise.all([
+        const [hnRes, devRes, vergeRes, androidRes] = await Promise.allSettled([
           fetch('https://hacker-news.firebaseio.com/v0/topstories.json').then(r => r.ok ? r.json() : []),
-          fetch('https://dev.to/api/articles?tag=programming&per_page=6').then(r => r.ok ? r.json() : [])
+          fetch('https://dev.to/api/articles?tag=programming&per_page=6').then(r => r.ok ? r.json() : []),
+          fetch('https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.theverge.com%2Frss%2Findex.xml').then(r => r.ok ? r.json() : null),
+          fetch('https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.androidpolice.com%2Ffeed%2F').then(r => r.ok ? r.json() : null)
         ]);
 
         let hnStories = [];
-        if (Array.isArray(hnRes) && hnRes.length > 0) {
-          const slice = hnRes.slice(0, 6);
+        if (hnRes.status === 'fulfilled' && Array.isArray(hnRes.value) && hnRes.value.length > 0) {
+          const slice = hnRes.value.slice(0, 5);
           const rawItems = await Promise.all(slice.map(id =>
             fetch('https://hacker-news.firebaseio.com/v0/item/' + id + '.json').then(r => r.json())
           ));
-
           hnStories = rawItems.filter(Boolean).map(it => {
             let domain = 'news.ycombinator.com';
             try {
@@ -2352,6 +2763,7 @@
             return {
               id: 'hn_' + it.id,
               source: 'HN',
+              sourceClass: 'hn',
               title: it.title,
               url: it.url || ('https://news.ycombinator.com/item?id=' + it.id),
               score: '▲ ' + (it.score || 0),
@@ -2363,10 +2775,11 @@
         }
 
         let devStories = [];
-        if (Array.isArray(devRes) && devRes.length > 0) {
-          devStories = devRes.map(it => ({
+        if (devRes.status === 'fulfilled' && Array.isArray(devRes.value) && devRes.value.length > 0) {
+          devStories = devRes.value.slice(0, 5).map(it => ({
             id: 'dev_' + it.id,
             source: 'DEV',
+            sourceClass: 'dev',
             title: it.title,
             url: it.url,
             score: '❤️ ' + (it.positive_reactions_count || 0),
@@ -2376,17 +2789,48 @@
           }));
         }
 
-        // Interleave stories
+        let vergeStories = [];
+        if (vergeRes.status === 'fulfilled' && vergeRes.value && Array.isArray(vergeRes.value.items)) {
+          vergeStories = vergeRes.value.items.slice(0, 5).map(it => ({
+            id: 'verge_' + Math.random().toString(36).slice(2, 7),
+            source: 'The Verge',
+            sourceClass: 'verge',
+            title: it.title,
+            url: it.link,
+            score: '⚡ Tech',
+            by: it.author || 'The Verge',
+            comments: 'Read',
+            domain: 'theverge.com'
+          }));
+        }
+
+        let androidStories = [];
+        if (androidRes.status === 'fulfilled' && androidRes.value && Array.isArray(androidRes.value.items)) {
+          androidStories = androidRes.value.items.slice(0, 5).map(it => ({
+            id: 'android_' + Math.random().toString(36).slice(2, 7),
+            source: 'Android',
+            sourceClass: 'android',
+            title: it.title,
+            url: it.link,
+            score: '⚡ Android',
+            by: it.author || 'Android Police',
+            comments: 'Read',
+            domain: 'androidpolice.com'
+          }));
+        }
+
         const combined = [];
-        const maxLen = Math.max(hnStories.length, devStories.length);
+        const maxLen = Math.max(hnStories.length, devStories.length, vergeStories.length, androidStories.length);
         for (let i = 0; i < maxLen; i++) {
           if (hnStories[i]) combined.push(hnStories[i]);
           if (devStories[i]) combined.push(devStories[i]);
+          if (vergeStories[i]) combined.push(vergeStories[i]);
+          if (androidStories[i]) combined.push(androidStories[i]);
         }
 
         if (combined.length > 0) {
           cachedAllNews = combined;
-          localStorage.setItem('cukup_news_multi_cache', JSON.stringify(combined));
+          localStorage.setItem('cukup_news_multi_cache_v2', JSON.stringify(combined));
           renderFilteredNews();
         }
       } catch (err) {
@@ -2400,7 +2844,7 @@
 
       const items = currentNewsSource === 'all'
         ? cachedAllNews
-        : cachedAllNews.filter(it => it.source.toLowerCase() === currentNewsSource);
+        : cachedAllNews.filter(it => (it.sourceClass === currentNewsSource) || (it.source.toLowerCase().includes(currentNewsSource)));
 
       items.forEach(item => {
         const a = document.createElement('a');
@@ -2409,9 +2853,11 @@
         a.target = '_blank';
         a.rel = 'noreferrer';
 
+        const tagClass = item.sourceClass ? 'news-source-tag ' + item.sourceClass : 'news-source-tag';
+
         a.innerHTML = `
           <div class="news-badge-col mono">
-            <span class="news-source-tag">${item.source}</span>
+            <span class="${tagClass}">${item.source}</span>
             <span class="news-score">${item.score}</span>
           </div>
           <div class="news-content">
@@ -2438,12 +2884,35 @@
       renderFilteredNews();
     });
 
-    // 7. YouTube Developer Updates Feed
+    // 7. YouTube Developer Watchlist Manager (Customizable from Settings)
+    function getCustomYtVideos() {
+      const stored = localStorage.getItem('cukup_custom_yt_videos');
+      if (stored) {
+        const parsed = jsonParseSafe(stored);
+        if (parsed && Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      return DEFAULT_YT_VIDEOS;
+    }
+
+    function saveCustomYtVideos(list) {
+      localStorage.setItem('cukup_custom_yt_videos', JSON.stringify(list));
+    }
+
+    function parseYouTubeId(input) {
+      if (!input) return '';
+      input = input.trim();
+      if (/^[a-zA-Z0-9_-]{11}$/.test(input)) return input;
+      const match = input.match(/(?:youtu.be/|youtube.com/(?:watch?(?:.*&)?v=|shorts/|embed/))([a-zA-Z0-9_-]{11})/);
+      return match ? match[1] : '';
+    }
+
     function renderYouTubeFeed() {
       const ytBox = document.getElementById('ytList');
+      if (!ytBox) return;
       ytBox.innerHTML = '';
+      const videos = getCustomYtVideos();
 
-      DEFAULT_YT_VIDEOS.forEach(v => {
+      videos.forEach(v => {
         const a = document.createElement('a');
         a.className = 'yt-card';
         a.href = 'https://www.youtube.com/watch?v=' + v.id;
@@ -2453,18 +2922,101 @@
         a.innerHTML = `
           <div class="yt-thumb-box">
             <img class="yt-thumb-img" src="https://img.youtube.com/vi/${v.id}/mqdefault.jpg" alt="${v.title}" loading="lazy">
-            <span class="yt-duration mono">${v.duration}</span>
+            <span class="yt-duration mono">${v.duration || 'Watch'}</span>
           </div>
           <div class="yt-info">
             <div class="yt-video-title">${v.title}</div>
             <div class="yt-channel-meta mono">
-              <span>${v.channel}</span>
+              <span>${v.channel || 'YouTube'}</span>
               <span>·</span>
-              <span>${v.views}</span>
+              <span>${v.views || 'Watch'}</span>
             </div>
           </div>
         `;
         ytBox.appendChild(a);
+      });
+    }
+
+    function renderYtSettingsList() {
+      const container = document.getElementById('ytSettingsItemsList');
+      if (!container) return;
+      container.innerHTML = '';
+      const videos = getCustomYtVideos();
+
+      videos.forEach((v, idx) => {
+        const div = document.createElement('div');
+        div.className = 'yt-settings-item';
+        div.innerHTML = `
+          <div class="yt-settings-item-info">
+            <img class="yt-settings-thumb" src="https://img.youtube.com/vi/${v.id}/mqdefault.jpg" alt="${v.title}">
+            <span class="yt-settings-title" title="${v.title}">${v.title}</span>
+          </div>
+          <button type="button" class="yt-delete-btn" data-index="${idx}" title="Delete video">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    const addYtVideoBtn = document.getElementById('addYtVideoBtn');
+    const resetYtBtn = document.getElementById('resetYtBtn');
+    const customYtUrl = document.getElementById('customYtUrl');
+    const customYtTitle = document.getElementById('customYtTitle');
+    const customYtChannel = document.getElementById('customYtChannel');
+    const ytSettingsItemsList = document.getElementById('ytSettingsItemsList');
+
+    if (addYtVideoBtn) {
+      addYtVideoBtn.addEventListener('click', () => {
+        const rawUrl = customYtUrl.value.trim();
+        const id = parseYouTubeId(rawUrl);
+        if (!id) {
+          alert('Please enter a valid YouTube video URL or 11-character video ID.');
+          return;
+        }
+
+        const title = customYtTitle.value.trim() || ('Video ' + id);
+        const channel = customYtChannel.value.trim() || 'YouTube';
+
+        const list = getCustomYtVideos();
+        list.unshift({
+          id: id,
+          title: title,
+          channel: channel,
+          duration: 'Custom',
+          views: 'Watch'
+        });
+
+        saveCustomYtVideos(list);
+        renderYouTubeFeed();
+        renderYtSettingsList();
+
+        customYtUrl.value = '';
+        customYtTitle.value = '';
+        customYtChannel.value = '';
+      });
+    }
+
+    if (resetYtBtn) {
+      resetYtBtn.addEventListener('click', () => {
+        localStorage.removeItem('cukup_custom_yt_videos');
+        renderYouTubeFeed();
+        renderYtSettingsList();
+      });
+    }
+
+    if (ytSettingsItemsList) {
+      ytSettingsItemsList.addEventListener('click', (e) => {
+        const btn = e.target.closest('.yt-delete-btn');
+        if (!btn) return;
+        const idx = parseInt(btn.dataset.index, 10);
+        const list = getCustomYtVideos();
+        if (idx >= 0 && idx < list.length) {
+          list.splice(idx, 1);
+          saveCustomYtVideos(list);
+          renderYouTubeFeed();
+          renderYtSettingsList();
+        }
       });
     }
 
@@ -2515,11 +3067,12 @@
       });
     }
 
-    // 9. Wallpaper Uploader & Modal Settings Manager
+    // 9. Wallpaper Uploader & Settings Modal Manager
     const bgFileInput = document.getElementById('bgFileInput');
     const uploadDropzone = document.getElementById('uploadDropzone');
-    const wpPreviewBar = document.getElementById('wpPreviewBar');
-    const resetWpBtn = document.getElementById('resetWpBtn');
+    const dropzoneEmptyContent = document.getElementById('dropzoneEmptyContent');
+    const dropzoneActiveOverlay = document.getElementById('dropzoneActiveOverlay');
+    const removeWpBtn = document.getElementById('removeWpBtn');
     const wallpaperBg = document.getElementById('wallpaperBg');
 
     const cardRadiusRange = document.getElementById('cardRadiusRange');
@@ -2575,16 +3128,34 @@
       if (wpData) {
         wallpaperBg.style.backgroundImage = 'url("' + wpData + '")';
         wallpaperBg.style.display = 'block';
-        wpPreviewBar.style.display = 'flex';
+        uploadDropzone.classList.add('has-wallpaper');
+        uploadDropzone.style.backgroundImage = 'url("' + wpData + '")';
+        if (dropzoneEmptyContent) dropzoneEmptyContent.style.display = 'none';
+        if (dropzoneActiveOverlay) dropzoneActiveOverlay.style.display = 'flex';
       } else {
         wallpaperBg.style.display = 'none';
-        wpPreviewBar.style.display = 'none';
+        uploadDropzone.classList.remove('has-wallpaper');
+        uploadDropzone.style.backgroundImage = 'none';
+        if (dropzoneEmptyContent) dropzoneEmptyContent.style.display = 'flex';
+        if (dropzoneActiveOverlay) dropzoneActiveOverlay.style.display = 'none';
       }
     }
 
     applyVisuals(savedRadius, savedDepth, savedOpacity, savedBlur, savedWpBlur, savedWpDim, savedWallpaper);
 
-    uploadDropzone.addEventListener('click', () => bgFileInput.click());
+    uploadDropzone.addEventListener('click', (e) => {
+      if (e.target.closest('#removeWpBtn')) return;
+      bgFileInput.click();
+    });
+
+    if (removeWpBtn) {
+      removeWpBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        localStorage.removeItem('cukup_wallpaper');
+        bgFileInput.value = '';
+        applyVisuals(cardRadiusRange.value, depthRange.value, opacityRange.value, blurRange.value, wpBlurRange.value, wpDimRange.value, '');
+      });
+    }
 
     bgFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
@@ -2625,12 +3196,6 @@
       };
       reader.readAsDataURL(file);
     }
-
-    resetWpBtn.addEventListener('click', () => {
-      localStorage.removeItem('cukup_wallpaper');
-      bgFileInput.value = '';
-      applyVisuals(cardRadiusRange.value, depthRange.value, opacityRange.value, blurRange.value, wpBlurRange.value, wpDimRange.value, '');
-    });
 
     cardRadiusRange.addEventListener('input', () => {
       applyVisuals(cardRadiusRange.value, depthRange.value, opacityRange.value, blurRange.value, wpBlurRange.value, wpDimRange.value, localStorage.getItem('cukup_wallpaper') || '');
@@ -2673,8 +3238,10 @@
 
     // 10. Modals Trigger
     const modal = document.getElementById('modalOverlay');
-    document.getElementById('openSettings').addEventListener('click', () => modal.classList.add('open'));
-    document.getElementById('openWallpaperBtn').addEventListener('click', () => modal.classList.add('open'));
+    document.getElementById('openSettings').addEventListener('click', () => {
+      renderYtSettingsList();
+      modal.classList.add('open');
+    });
     document.getElementById('closeSettings').addEventListener('click', () => modal.classList.remove('open'));
     modal.addEventListener('click', (e) => {
       if (e.target === modal) modal.classList.remove('open');
@@ -2728,9 +3295,11 @@
     updateClockAndGreeting(currentUsername, currentUsername);
     setInterval(() => updateClockAndGreeting(currentUsername), 1000);
     renderBookmarks();
+    fetchBrowserBookmarks();
     loadGitHubData(currentUsername);
     loadTechNews();
     renderYouTubeFeed();
+    renderYtSettingsList();
   </script>
 </body>
 </html>
