@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard · Cukup Malam</title>
   <style>
+    /* 1. Typography Fonts */
     @font-face {
       font-family: "Uncut Sans";
       src: local("Uncut Sans"), local("UncutSans-Regular"), local("UncutSans-Medium"), local("UncutSans-Semibold");
@@ -12,23 +13,42 @@
       font-display: swap;
     }
 
+    @font-face {
+      font-family: "CommitMono";
+      src: local("CommitMono"),
+           local("Commit Mono"),
+           url("https://cdn.jsdelivr.net/gh/eigilnikolajsen/commit-mono@main/src/fonts/fontlab/CommitMonoV143-VF.woff2") format("woff2");
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: swap;
+    }
+
     :root {
       --canvas-rgb: 19, 23, 24;
       --panel-rgb: 14, 18, 19;
       --accent-rgb: 230, 168, 84;
-      --opacity: 0.20;
-      --blur: 28px;
-      --aura-intensity: 0.95;
-      --text-primary: #D6E0DD;
-      --text-secondary: #B8C7C3;
-      --text-muted: #6A7875;
+      --opacity: 0.22;
+      --blur: 24px;
+      --aura-intensity: 0.50;
+
+      /* Refined, quiet color hierarchy (no harsh saturated blinding tones) */
+      --text-primary: #F3ECE4;
+      --text-secondary: #A89A8D;
+      --text-muted: #6E6257;
+
       --accent: #E6A854;
-      --accent-hover: #ff915b;
-      --accent-subtle: rgba(var(--accent-rgb), 0.15);
-      --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-highlight: rgba(255, 255, 255, 0.16);
-      --border-focus: #E6A854;
-      --font-family: "Uncut Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --accent-soft: rgba(var(--accent-rgb), 0.12);
+      --accent-border: rgba(var(--accent-rgb), 0.22);
+      --accent-glow: rgba(var(--accent-rgb), 0.18);
+
+      --card-bg: rgba(var(--panel-rgb), 0.38);
+      --card-bg-hover: rgba(var(--panel-rgb), 0.58);
+      --card-border: rgba(255, 255, 255, 0.055);
+      --card-border-hover: rgba(var(--accent-rgb), 0.30);
+      --card-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+      --font-sans: "Uncut Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: "CommitMono", "JetBrains Mono", "Fira Code", "SF Mono", Menlo, Consolas, monospace;
     }
 
     * {
@@ -36,49 +56,62 @@
       margin: 0;
       padding: 0;
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
     html, body {
       width: 100%;
       height: 100%;
-      font-family: var(--font-family);
+      font-family: var(--font-sans);
       color: var(--text-primary);
-      background-color: #0c0b0a;
+      background-color: #0e0c0a;
       overflow-x: hidden;
       overflow-y: auto;
+      selection-background-color: rgba(var(--accent-rgb), 0.3);
     }
 
-    /* Custom Minimal Scrollbar */
+    ::selection {
+      background: rgba(var(--accent-rgb), 0.28);
+      color: #fff;
+    }
+
+    /* Minimal refined scrollbar */
     ::-webkit-scrollbar {
-      width: 6px;
+      width: 5px;
     }
     ::-webkit-scrollbar-track {
       background: transparent;
     }
     ::-webkit-scrollbar-thumb {
-      background: rgba(var(--accent-rgb), 0.25);
-      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 4px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: rgba(var(--accent-rgb), 0.45);
+      background: rgba(var(--accent-rgb), 0.35);
     }
 
-    /* Ambient Lighting Layer for Realistic Translucent Glass Depth */
+    .mono {
+      font-family: var(--font-mono);
+      font-feature-settings: "ss01", "ss03", "ss04", "ss05";
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Whisper-soft atmospheric warmth (deeply diffused, quiet, smooth) */
     .ambient-glow {
       position: fixed;
-      inset: -30%;
-      width: 160%;
-      height: 160%;
+      inset: -20%;
+      width: 140%;
+      height: 140%;
       pointer-events: none;
       z-index: 0;
       opacity: var(--aura-intensity);
       background:
-        radial-gradient(circle at 18% 22%, rgba(230, 168, 84, 0.42) 0%, transparent 45%),
-        radial-gradient(circle at 82% 60%, rgba(160, 85, 45, 0.40) 0%, transparent 50%),
-        radial-gradient(circle at 50% 90%, rgba(230, 168, 84, 0.25) 0%, transparent 45%),
-        radial-gradient(circle at 85% 15%, rgba(95, 55, 38, 0.48) 0%, transparent 45%);
-      filter: blur(70px);
-      transition: opacity 0.3s ease;
+        radial-gradient(circle at 20% 18%, rgba(230, 168, 84, 0.14) 0%, transparent 55%),
+        radial-gradient(circle at 80% 55%, rgba(150, 80, 42, 0.10) 0%, transparent 60%),
+        radial-gradient(circle at 50% 90%, rgba(230, 168, 84, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 85% 15%, rgba(100, 50, 30, 0.12) 0%, transparent 45%);
+      filter: blur(90px);
+      transition: opacity 0.4s ease;
     }
 
     /* Custom Wallpaper Layer */
@@ -102,24 +135,23 @@
       height: 100%;
       z-index: 1;
       background-color: rgba(var(--canvas-rgb), var(--opacity));
-      backdrop-filter: blur(var(--blur)) saturate(160%);
-      -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
+      backdrop-filter: blur(var(--blur)) saturate(125%);
+      -webkit-backdrop-filter: blur(var(--blur)) saturate(125%);
       pointer-events: none;
-      transition: background-color 0.2s ease, backdrop-filter 0.2s ease;
-      box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.3);
+      transition: background-color 0.25s ease, backdrop-filter 0.25s ease;
     }
 
-    /* Main Dashboard Shell */
+    /* Dashboard Shell */
     .dashboard-layout {
       position: relative;
       z-index: 10;
       width: 100%;
-      max-width: 1160px;
+      max-width: 1120px;
       margin: 0 auto;
-      padding: 36px 24px 60px;
+      padding: 40px 24px 64px;
       display: flex;
       flex-direction: column;
-      gap: 28px;
+      gap: 32px;
     }
 
     /* Top Navigation Bar */
@@ -130,7 +162,7 @@
       width: 100%;
     }
 
-    .brand-group {
+    .brand-meta {
       display: flex;
       align-items: center;
       gap: 12px;
@@ -140,389 +172,119 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 14px;
-      border-radius: 24px;
-      background: rgba(var(--panel-rgb), 0.35);
-      border: 1px solid var(--border-subtle);
-      color: var(--accent);
-      font-size: 0.85rem;
-      font-weight: 600;
-      letter-spacing: 0.3px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      background: rgba(var(--panel-rgb), 0.3);
+      border: 1px solid var(--card-border);
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.2px;
       backdrop-filter: blur(16px);
-      box-shadow: inset 0 1px 1px var(--border-highlight);
+      box-shadow: var(--card-bevel);
     }
 
     .brand-badge .pulse-dot {
-      width: 7px;
-      height: 7px;
+      width: 6px;
+      height: 6px;
       border-radius: 50%;
       background: var(--accent);
-      box-shadow: 0 0 8px var(--accent);
-      animation: pulse 2.4s infinite;
+      box-shadow: 0 0 6px rgba(var(--accent-rgb), 0.6);
+      animation: gentle-pulse 3s infinite ease-in-out;
     }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.85); }
+    @keyframes gentle-pulse {
+      0%, 100% { opacity: 0.9; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.9); }
     }
 
     .topbar-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
-    .date-pill {
-      font-size: 0.85rem;
+    .time-date-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
       color: var(--text-secondary);
-      padding: 6px 14px;
+      padding: 5px 14px;
       border-radius: 20px;
-      background: rgba(var(--panel-rgb), 0.25);
-      border: 1px solid var(--border-subtle);
+      background: rgba(var(--panel-rgb), 0.3);
+      border: 1px solid var(--card-border);
       backdrop-filter: blur(14px);
+      box-shadow: var(--card-bevel);
     }
 
-    .icon-btn {
-      background: rgba(var(--panel-rgb), 0.25);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-muted);
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.22s ease;
-      backdrop-filter: blur(16px);
-      box-shadow: inset 0 1px 1px var(--border-highlight);
-    }
-
-    .icon-btn:hover {
-      color: var(--accent);
-      border-color: var(--accent);
-      background: rgba(var(--panel-rgb), 0.55);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.25), inset 0 1px 1px var(--border-highlight);
-    }
-
-    /* Grid Row 1: Profile & Greeting (Left) + GitHub Commit Chart (Right) */
-    .dashboard-hero-row {
-      display: grid;
-      grid-template-columns: 1fr 1.35fr;
-      gap: 22px;
-      width: 100%;
-    }
-
-    @media (max-width: 880px) {
-      .dashboard-hero-row {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .glass-card {
-      background: rgba(var(--panel-rgb), 0.25);
-      border: 1px solid var(--border-subtle);
-      border-radius: 20px;
-      padding: 24px;
-      backdrop-filter: blur(24px) saturate(150%);
-      -webkit-backdrop-filter: blur(24px) saturate(150%);
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25), inset 0 1px 1px var(--border-highlight);
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: border-color 0.25s ease, box-shadow 0.25s ease;
-    }
-
-    .glass-card:hover {
-      border-color: rgba(var(--accent-rgb), 0.4);
-      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.32), 0 0 20px rgba(var(--accent-rgb), 0.12), inset 0 1px 1px var(--border-highlight);
-    }
-
-    /* Profile Greeting Card */
-    .profile-card {
-      gap: 20px;
-    }
-
-    .profile-header {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .avatar-wrapper {
-      position: relative;
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      padding: 2px;
-      background: linear-gradient(135deg, var(--accent), rgba(var(--accent-rgb), 0.2));
-    }
-
-    .profile-avatar {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-      background: #1e1b18;
-      display: block;
-    }
-
-    .avatar-online-dot {
-      position: absolute;
-      bottom: 2px;
-      right: 2px;
-      width: 12px;
-      height: 12px;
-      background: #22c55e;
-      border: 2px solid #161413;
-      border-radius: 50%;
-      box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
-    }
-
-    .profile-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      overflow: hidden;
-    }
-
-    .greeting-text {
-      font-size: 1.35rem;
-      font-weight: 600;
+    .time-date-pill .clock-nums {
       color: var(--text-primary);
-      letter-spacing: -0.3px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .profile-sub {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .profile-sub a {
-      color: var(--accent);
-      text-decoration: none;
       font-weight: 500;
     }
-    .profile-sub a:hover {
-      text-decoration: underline;
-    }
 
-    /* Clock in Profile Card */
-    .clock-display {
-      margin-top: auto;
-      padding-top: 14px;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-    }
-
-    .clock-time-huge {
-      font-size: 3.2rem;
-      font-weight: 300;
-      letter-spacing: -1.5px;
-      line-height: 1;
-      color: var(--text-primary);
-    }
-
-    .clock-time-huge span.colon {
+    .time-date-pill .colon {
       color: var(--accent);
       animation: blink 2s infinite;
     }
 
     @keyframes blink {
       0%, 100% { opacity: 1; }
-      50% { opacity: 0.2; }
+      50% { opacity: 0.25; }
     }
 
-    .quick-status-pill {
-      font-size: 0.8rem;
+    .icon-btn {
+      background: rgba(var(--panel-rgb), 0.3);
+      border: 1px solid var(--card-border);
       color: var(--text-muted);
-      background: rgba(255, 255, 255, 0.04);
-      padding: 6px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--border-subtle);
-    }
-
-    /* GitHub Commit Activity Card */
-    .chart-card {
-      gap: 16px;
-    }
-
-    .chart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .chart-title-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .chart-title {
-      font-size: 1.05rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .chart-title svg {
-      color: var(--accent);
-    }
-
-    .commit-total-pill {
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--accent);
-      background: var(--accent-subtle);
-      border: 1px solid rgba(var(--accent-rgb), 0.35);
-      padding: 4px 10px;
-      border-radius: 14px;
-    }
-
-    /* SVG Chart Canvas */
-    .bar-chart-container {
-      width: 100%;
-      height: 120px;
-      position: relative;
-      display: flex;
-      align-items: flex-end;
-      gap: 8px;
-      padding: 10px 0 24px;
-    }
-
-    .bar-col {
-      flex: 1;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      align-items: center;
-      position: relative;
-    }
-
-    .bar-fill {
-      width: 100%;
-      max-width: 24px;
-      border-radius: 6px 6px 2px 2px;
-      background: linear-gradient(180deg, var(--accent) 0%, rgba(130, 65, 35, 0.6) 100%);
-      transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, transform 0.2s ease;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
       cursor: pointer;
-      position: relative;
-    }
-
-    .bar-fill:hover {
-      background: linear-gradient(180deg, var(--accent-hover) 0%, var(--accent) 100%);
-      transform: scaleY(1.05);
-      box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.6);
-    }
-
-    .bar-day-label {
-      position: absolute;
-      bottom: -20px;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      font-weight: 500;
-      white-space: nowrap;
-    }
-
-    .bar-tooltip {
-      position: absolute;
-      top: -34px;
-      background: #1a1715;
-      border: 1px solid var(--accent);
-      color: var(--text-primary);
-      font-size: 0.72rem;
-      padding: 3px 8px;
-      border-radius: 6px;
-      pointer-events: none;
-      opacity: 0;
-      transform: translateY(4px);
-      transition: all 0.15s ease;
-      white-space: nowrap;
-      z-index: 20;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
-    }
-
-    .bar-col:hover .bar-tooltip {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    /* Chart Stats Footer */
-    .chart-stats-footer {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      padding-top: 12px;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .stat-tile {
       display: flex;
-      flex-direction: column;
-      gap: 2px;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(14px);
+      box-shadow: var(--card-bevel);
     }
 
-    .stat-tile-label {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .stat-tile-value {
-      font-size: 1.05rem;
-      font-weight: 600;
+    .icon-btn:hover {
       color: var(--text-primary);
+      border-color: rgba(255, 255, 255, 0.15);
+      background: rgba(var(--panel-rgb), 0.5);
+      transform: translateY(-1px);
     }
 
-    .stat-tile-value.accent {
-      color: var(--accent);
-    }
-
-    /* Search Bar */
+    /* Floating Command Omnibar */
     .search-section {
       width: 100%;
       display: flex;
       justify-content: center;
+      margin-top: 4px;
     }
 
     .search-box {
       width: 100%;
-      max-width: 680px;
+      max-width: 640px;
       position: relative;
-      background: rgba(var(--panel-rgb), 0.25);
-      border: 1px solid var(--border-subtle);
-      border-radius: 18px;
-      padding: 4px 18px;
+      background: rgba(var(--panel-rgb), 0.42);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 4px 16px;
       display: flex;
       align-items: center;
-      gap: 14px;
-      backdrop-filter: blur(28px) saturate(160%);
-      -webkit-backdrop-filter: blur(28px) saturate(160%);
-      box-shadow: 0 10px 36px rgba(0, 0, 0, 0.25), inset 0 1px 1px var(--border-highlight);
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      gap: 12px;
+      backdrop-filter: blur(28px) saturate(130%);
+      -webkit-backdrop-filter: blur(28px) saturate(130%);
+      box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.35), var(--card-bevel);
+      transition: all 0.22s ease;
     }
 
     .search-box:focus-within {
-      border-color: var(--accent);
-      box-shadow: 0 12px 42px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--accent), inset 0 1px 1px var(--border-highlight);
-      background: rgba(var(--panel-rgb), 0.45);
+      border-color: var(--accent-border);
+      background: rgba(var(--panel-rgb), 0.60);
+      box-shadow: 0 20px 44px -8px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--accent-border), var(--card-bevel);
     }
 
     .search-icon {
@@ -541,23 +303,23 @@
       border: none;
       outline: none;
       color: var(--text-primary);
-      font-size: 1.05rem;
-      font-family: var(--font-family);
-      padding: 12px 0;
+      font-size: 0.95rem;
+      font-family: var(--font-sans);
+      padding: 11px 0;
     }
 
     .search-input::placeholder {
       color: var(--text-muted);
-      opacity: 0.75;
+      font-weight: 400;
     }
 
     .search-engine-badge {
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: var(--text-muted);
-      padding: 4px 10px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.05);
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      padding: 4px 9px;
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.04);
       cursor: pointer;
       flex-shrink: 0;
       transition: all 0.2s ease;
@@ -565,10 +327,293 @@
 
     .search-engine-badge:hover {
       color: var(--accent);
-      background: rgba(var(--accent-rgb), 0.15);
+      border-color: var(--accent-border);
+      background: var(--accent-soft);
     }
 
-    /* Bookmarks Section */
+    .search-shortcut-hint {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      padding: 3px 6px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+
+    /* Developer Telemetry & GitHub Pulse (Unified Glass Card) */
+    .telemetry-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 24px 28px;
+      backdrop-filter: blur(var(--blur)) saturate(125%);
+      -webkit-backdrop-filter: blur(var(--blur)) saturate(125%);
+      box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.4), var(--card-bevel);
+      display: grid;
+      grid-template-columns: 290px 1fr;
+      gap: 32px;
+      align-items: center;
+      transition: border-color 0.25s ease, background-color 0.25s ease;
+    }
+
+    .telemetry-card:hover {
+      border-color: rgba(255, 255, 255, 0.09);
+      background: var(--card-bg-hover);
+    }
+
+    @media (max-width: 860px) {
+      .telemetry-card {
+        grid-template-columns: 1fr;
+        gap: 24px;
+        padding: 20px;
+      }
+    }
+
+    /* Profile Side */
+    .profile-pane {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      border-right: 1px solid rgba(255, 255, 255, 0.05);
+      padding-right: 28px;
+    }
+
+    @media (max-width: 860px) {
+      .profile-pane {
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-right: 0;
+        padding-bottom: 20px;
+      }
+    }
+
+    .profile-identity {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .avatar-wrapper {
+      position: relative;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .profile-avatar {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #181513;
+      display: block;
+    }
+
+    .avatar-dot {
+      position: absolute;
+      bottom: 0px;
+      right: 0px;
+      width: 10px;
+      height: 10px;
+      background: #4ade80;
+      border: 2px solid #14110e;
+      border-radius: 50%;
+    }
+
+    .profile-names {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+    }
+
+    .greeting-text {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      letter-spacing: -0.2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .profile-sub {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .profile-sub a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .profile-sub a:hover {
+      text-decoration: underline;
+    }
+
+    /* Key Micro Metrics */
+    .metric-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding-top: 6px;
+    }
+
+    .metric-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .metric-label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      font-weight: 500;
+    }
+
+    .metric-value {
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+
+    .metric-value.highlight {
+      color: var(--accent);
+    }
+
+    /* Activity Chart Side */
+    .chart-pane {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .chart-meta-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chart-heading {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chart-heading svg {
+      color: var(--accent);
+    }
+
+    .chart-scope-pill {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    /* Micro-bar histogram */
+    .bar-chart-container {
+      width: 100%;
+      height: 80px;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      padding-bottom: 20px;
+      position: relative;
+    }
+
+    .bar-col {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      position: relative;
+    }
+
+    .bar-fill {
+      width: 100%;
+      max-width: 20px;
+      border-radius: 4px 4px 1px 1px;
+      background: rgba(255, 255, 255, 0.06);
+      transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, opacity 0.2s ease;
+      cursor: pointer;
+    }
+
+    .bar-fill.active {
+      background: linear-gradient(180deg, var(--accent) 0%, rgba(var(--accent-rgb), 0.35) 100%);
+    }
+
+    .bar-col:hover .bar-fill.active {
+      background: linear-gradient(180deg, #ff8c53 0%, var(--accent) 100%);
+      opacity: 0.95;
+    }
+
+    .bar-day-label {
+      position: absolute;
+      bottom: -18px;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .bar-tooltip {
+      position: absolute;
+      top: -30px;
+      background: #171412;
+      border: 1px solid var(--accent-border);
+      color: var(--text-primary);
+      font-size: 0.68rem;
+      padding: 3px 7px;
+      border-radius: 5px;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(3px);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      z-index: 20;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+    }
+
+    .bar-col:hover .bar-tooltip {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .chart-summary-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      padding-top: 8px;
+    }
+
+    .chart-summary-line span b {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* Bookmarks Deck */
     .bookmarks-section {
       display: flex;
       flex-direction: column;
@@ -576,155 +621,185 @@
       width: 100%;
     }
 
-    .bookmarks-header {
+    .bookmarks-top-controls {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
     }
 
     .category-tabs {
       display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 2px;
+      gap: 6px;
+      background: rgba(var(--panel-rgb), 0.25);
+      padding: 3px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
     }
 
     .category-tab {
-      background: rgba(var(--panel-rgb), 0.22);
-      border: 1px solid var(--border-subtle);
+      background: transparent;
+      border: none;
       color: var(--text-muted);
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       font-weight: 500;
-      padding: 6px 14px;
-      border-radius: 14px;
+      font-family: var(--font-sans);
+      padding: 5px 12px;
+      border-radius: 9px;
       cursor: pointer;
-      transition: all 0.2s ease;
-      backdrop-filter: blur(12px);
+      transition: all 0.18s ease;
     }
 
     .category-tab:hover {
       color: var(--text-primary);
-      border-color: rgba(255, 255, 255, 0.18);
     }
 
     .category-tab.active {
-      color: var(--accent);
-      background: var(--accent-subtle);
-      border-color: rgba(var(--accent-rgb), 0.4);
-      font-weight: 600;
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.06);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
     }
 
-    .add-bookmark-btn {
+    .category-tab.active span.cat-dot {
+      background: var(--accent);
+    }
+
+    .add-bm-btn {
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 0.8rem;
+      font-size: 0.76rem;
       font-weight: 500;
+      font-family: var(--font-sans);
       color: var(--text-secondary);
-      background: rgba(var(--panel-rgb), 0.22);
-      border: 1px solid var(--border-subtle);
+      background: rgba(var(--panel-rgb), 0.28);
+      border: 1px solid var(--card-border);
       padding: 6px 12px;
-      border-radius: 12px;
+      border-radius: 10px;
       cursor: pointer;
       transition: all 0.2s ease;
       backdrop-filter: blur(12px);
+      box-shadow: var(--card-bevel);
     }
 
-    .add-bookmark-btn:hover {
-      color: var(--accent);
-      border-color: var(--accent);
+    .add-bm-btn:hover {
+      color: var(--text-primary);
+      border-color: rgba(255, 255, 255, 0.12);
       background: rgba(var(--panel-rgb), 0.45);
     }
 
-    /* Bookmarks Grid */
+    /* Bookmarks Grid (Sleek Compact Cards) */
     .bookmarks-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-      gap: 14px;
+      grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+      gap: 12px;
       width: 100%;
     }
 
     .bookmark-card {
-      background: rgba(var(--panel-rgb), 0.18);
-      border: 1px solid var(--border-subtle);
-      border-radius: 16px;
-      padding: 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 14px 16px;
       text-decoration: none;
       display: flex;
-      flex-direction: column;
+      align-items: center;
       gap: 12px;
-      backdrop-filter: blur(20px) saturate(150%);
-      -webkit-backdrop-filter: blur(20px) saturate(150%);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18), inset 0 1px 1px var(--border-highlight);
-      transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+      backdrop-filter: blur(var(--blur)) saturate(125%);
+      -webkit-backdrop-filter: blur(var(--blur)) saturate(125%);
+      box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.25), var(--card-bevel);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
+      overflow: hidden;
     }
 
     .bookmark-card:hover {
-      background: rgba(var(--panel-rgb), 0.42);
-      border-color: var(--accent);
-      transform: translateY(-4px);
-      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28), 0 0 18px rgba(var(--accent-rgb), 0.18), inset 0 1px 1px var(--border-highlight);
-    }
-
-    .card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background: var(--card-bg-hover);
+      border-color: var(--card-border-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px -6px rgba(0, 0, 0, 0.35), var(--card-bevel);
     }
 
     .card-icon-box {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--accent);
-      transition: transform 0.2s ease, background 0.2s ease;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
     }
 
     .bookmark-card:hover .card-icon-box {
-      transform: scale(1.08);
-      background: rgba(var(--accent-rgb), 0.18);
-    }
-
-    .card-category-badge {
-      font-size: 0.68rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-      font-weight: 500;
+      background: var(--accent-soft);
+      border-color: var(--accent-border);
+      color: #ff8c53;
     }
 
     .card-info {
       display: flex;
       flex-direction: column;
       gap: 2px;
+      overflow: hidden;
+      min-width: 0;
     }
 
     .card-title {
-      font-size: 0.95rem;
-      font-weight: 600;
+      font-size: 0.86rem;
+      font-weight: 500;
       color: var(--text-primary);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      transition: color 0.2s ease;
+      transition: color 0.18s ease;
     }
 
     .bookmark-card:hover .card-title {
-      color: var(--accent);
+      color: #fff;
     }
 
-    .card-url-hint {
-      font-size: 0.74rem;
+    .card-domain {
+      font-size: 0.68rem;
       color: var(--text-muted);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    /* Footer Statusline */
+    .dashboard-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .footer-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .footer-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      opacity: 0.5;
     }
 
     /* Settings Modal */
@@ -732,8 +807,8 @@
       position: fixed;
       inset: 0;
       background: rgba(0, 0, 0, 0.65);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       z-index: 100;
       display: flex;
       align-items: center;
@@ -741,7 +816,7 @@
       padding: 20px;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.25s ease;
+      transition: opacity 0.22s ease;
     }
 
     .modal-overlay.open {
@@ -750,18 +825,18 @@
     }
 
     .modal-sheet {
-      background: rgba(22, 20, 19, 0.88);
-      border: 1px solid rgba(var(--accent-rgb), 0.35);
-      border-radius: 24px;
-      padding: 28px;
-      max-width: 480px;
+      background: rgba(22, 18, 16, 0.92);
+      border: 1px solid var(--accent-border);
+      border-radius: 20px;
+      padding: 26px;
+      max-width: 460px;
       width: 100%;
-      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 32px rgba(var(--accent-rgb), 0.15), inset 0 1px 1px var(--border-highlight);
-      backdrop-filter: blur(32px);
-      -webkit-backdrop-filter: blur(32px);
+      box-shadow: 0 24px 50px rgba(0, 0, 0, 0.6), var(--card-bevel);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 18px;
       max-height: 90vh;
       overflow-y: auto;
     }
@@ -773,7 +848,7 @@
     }
 
     .modal-title {
-      font-size: 1.15rem;
+      font-size: 1.05rem;
       font-weight: 600;
       color: var(--text-primary);
     }
@@ -782,100 +857,93 @@
       background: none;
       border: none;
       color: var(--text-muted);
-      font-size: 1.4rem;
+      font-size: 1.3rem;
       cursor: pointer;
       line-height: 1;
       padding: 4px;
       border-radius: 6px;
-      transition: all 0.2s ease;
+      transition: color 0.18s ease;
     }
 
     .close-btn:hover {
-      color: var(--accent);
-      background: rgba(var(--accent-rgb), 0.15);
+      color: var(--text-primary);
     }
 
     .setting-group {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 7px;
     }
 
     .setting-label {
       display: flex;
       justify-content: space-between;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 500;
       color: var(--text-secondary);
     }
 
     .setting-label span:last-child {
       color: var(--accent);
-      font-weight: 600;
     }
 
     input[type="range"] {
       -webkit-appearance: none;
       width: 100%;
-      height: 6px;
+      height: 5px;
       border-radius: 3px;
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.1);
       outline: none;
     }
 
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       border-radius: 50%;
       background: var(--accent);
       cursor: pointer;
-      box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.6);
-      transition: transform 0.1s ease;
-    }
-
-    input[type="range"]::-webkit-slider-thumb:hover {
-      transform: scale(1.15);
+      box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.4);
     }
 
     input[type="text"], select {
-      background: rgba(var(--canvas-rgb), 0.8);
-      border: 1px solid var(--border-subtle);
+      background: rgba(var(--canvas-rgb), 0.7);
+      border: 1px solid var(--card-border);
       color: var(--text-primary);
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-family: var(--font-family);
-      font-size: 0.88rem;
+      padding: 9px 12px;
+      border-radius: 9px;
+      font-family: var(--font-sans);
+      font-size: 0.86rem;
       outline: none;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      transition: border-color 0.2s ease;
     }
 
     input[type="text"]:focus, select:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px var(--accent);
+      border-color: var(--accent-border);
     }
 
     .modal-save-btn {
       background: var(--accent);
       border: none;
-      color: #12100e;
+      color: #120f0d;
       font-weight: 600;
-      padding: 12px;
-      border-radius: 12px;
+      padding: 11px;
+      border-radius: 10px;
       cursor: pointer;
-      font-family: var(--font-family);
-      font-size: 0.95rem;
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
       transition: all 0.2s ease;
+      margin-top: 4px;
     }
 
     .modal-save-btn:hover {
-      background: var(--accent-hover);
-      box-shadow: 0 4px 18px rgba(var(--accent-rgb), 0.35);
+      background: #ff8c53;
+      box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.3);
     }
   </style>
 </head>
 <body>
-  <!-- Ambient & Glass Backdrop Layers -->
+  <!-- Atmospheric & Glass Backdrop Layers -->
   <div class="wallpaper-bg" id="wallpaperBg"></div>
   <div class="ambient-glow" id="ambientGlow"></div>
   <div class="glass-backdrop" id="glassBackdrop"></div>
@@ -883,16 +951,20 @@
   <main class="dashboard-layout">
     <!-- Top Bar -->
     <header class="dashboard-topbar">
-      <div class="brand-group">
+      <div class="brand-meta">
         <div class="brand-badge">
           <span class="pulse-dot"></span>
-          <span>☕ Cukup Dashboard</span>
+          <span>☕ cukup-kopi</span>
         </div>
       </div>
       <div class="topbar-actions">
-        <div class="date-pill" id="datePill">Memuat tanggal...</div>
+        <div class="time-date-pill">
+          <span id="datePill">Memuat tanggal...</span>
+          <span class="colon">·</span>
+          <span class="clock-nums mono" id="clockNums">00:00:00</span>
+        </div>
         <button class="icon-btn" id="openSettings" title="Pengaturan Dashboard">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
@@ -900,18 +972,31 @@
       </div>
     </header>
 
-    <!-- Row 1: Profile & Greeting Card + GitHub Commit Chart -->
-    <section class="dashboard-hero-row">
-      <!-- Profile Card -->
-      <div class="glass-card profile-card">
-        <div class="profile-header">
+    <!-- Floating Command Omnibar -->
+    <section class="search-section">
+      <form class="search-box" id="searchForm">
+        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" class="search-input" id="searchInput" placeholder="Cari di web atau ketik perintah... (tekan /)" autofocus autocomplete="off">
+        <div class="search-engine-badge mono" id="searchEngineBadge" title="Klik untuk berganti mesin pencari">Google ▾</div>
+        <div class="search-shortcut-hint mono">/</div>
+      </form>
+    </section>
+
+    <!-- Unified Telemetry & GitHub Pulse -->
+    <section class="telemetry-card">
+      <!-- Profile & Key Metrics -->
+      <div class="profile-pane">
+        <div class="profile-identity">
           <div class="avatar-wrapper">
             <img class="profile-avatar" id="profileAvatar" src="https://avatars.githubusercontent.com/u/3890123?v=4" alt="Profile Avatar">
-            <span class="avatar-online-dot" title="Aktif"></span>
+            <span class="avatar-dot" title="Aktif"></span>
           </div>
-          <div class="profile-meta">
+          <div class="profile-names">
             <h1 class="greeting-text" id="greetingText">Selamat datang ☕</h1>
-            <div class="profile-sub">
+            <div class="profile-sub mono">
               <span id="profileBio">Developer</span>
               <span>·</span>
               <a href="https://github.com/mrbvrz" target="_blank" id="profileHandle">@mrbvrz</a>
@@ -919,72 +1004,56 @@
           </div>
         </div>
 
-        <div class="clock-display">
-          <div class="clock-time-huge" id="clockTimeHuge">12<span class="colon">:</span>00</div>
-          <div class="quick-status-pill" id="statusPill">Fokus berkarya ⚡</div>
+        <div class="metric-strip">
+          <div class="metric-item">
+            <span class="metric-label">Setahun</span>
+            <span class="metric-value mono highlight" id="totalYearVal">-</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Streak</span>
+            <span class="metric-value mono" id="streakVal">-</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Rata-rata</span>
+            <span class="metric-value mono" id="avgVal">-</span>
+          </div>
         </div>
       </div>
 
-      <!-- GitHub Commit Chart Card -->
-      <div class="glass-card chart-card">
-        <div class="chart-header">
-          <div class="chart-title-group">
-            <div class="chart-title">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
-              </svg>
-              <span>Aktivitas Commit GitHub</span>
-            </div>
-            <span class="commit-total-pill" id="commitTotalPill">Memuat...</span>
+      <!-- Activity Histogram -->
+      <div class="chart-pane">
+        <div class="chart-meta-bar">
+          <div class="chart-heading">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            <span>Aktivitas Commit GitHub</span>
           </div>
-          <div style="font-size: 0.76rem; color: var(--text-muted);">14 Hari Terakhir</div>
+          <span class="chart-scope-pill mono">14 Hari Terakhir</span>
         </div>
 
-        <!-- 14-day Dynamic SVG Bar Chart -->
         <div class="bar-chart-container" id="barChartContainer">
-          <!-- Filled dynamically via JS -->
+          <!-- Populated dynamically via JS -->
         </div>
 
-        <div class="chart-stats-footer">
-          <div class="stat-tile">
-            <span class="stat-tile-label">Streak Aktif</span>
-            <span class="stat-tile-value accent" id="streakVal">-</span>
-          </div>
-          <div class="stat-tile">
-            <span class="stat-tile-label">Rata-rata Harian</span>
-            <span class="stat-tile-value" id="avgVal">-</span>
-          </div>
-          <div class="stat-tile">
-            <span class="stat-tile-label">Rekor Harian</span>
-            <span class="stat-tile-value" id="peakVal">-</span>
-          </div>
+        <div class="chart-summary-line mono">
+          <span>Hari Ini: <b id="todayVal">0 commit</b></span>
+          <span>Puncak 14H: <b id="peakVal">-</b></span>
         </div>
       </div>
     </section>
 
-    <!-- Row 2: Search Omnibar -->
-    <section class="search-section">
-      <form class="search-box" id="searchForm">
-        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        <input type="text" class="search-input" id="searchInput" placeholder="Cari di web atau ketik URL..." autofocus autocomplete="off">
-        <div class="search-engine-badge" id="searchEngineBadge" title="Klik untuk ganti mesin pencari">Google ▾</div>
-      </form>
-    </section>
-
-    <!-- Row 3: Bookmarks & Quick Access -->
+    <!-- Bookmarks Deck -->
     <section class="bookmarks-section">
-      <div class="bookmarks-header">
+      <div class="bookmarks-top-controls">
         <div class="category-tabs" id="categoryTabs">
           <button class="category-tab active" data-category="all">Semua</button>
           <button class="category-tab" data-category="dev">Development</button>
           <button class="category-tab" data-category="ai">AI & LLM</button>
           <button class="category-tab" data-category="social">Sosial & Media</button>
         </div>
-        <button class="add-bookmark-btn" id="openAddBookmark">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button class="add-bm-btn" id="openAddBookmark">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
@@ -996,6 +1065,18 @@
         <!-- Rendered dynamically via JS -->
       </div>
     </section>
+
+    <!-- Footer Statusline -->
+    <footer class="dashboard-footer mono">
+      <div class="footer-left">
+        <span>cukup-kopi-blurred v3.2</span>
+        <span class="footer-dot"></span>
+        <span>CommitMono & Uncut Sans</span>
+      </div>
+      <div class="footer-right">
+        <span>Helium Browser</span>
+      </div>
+    </footer>
   </main>
 
   <!-- Settings Modal -->
@@ -1015,26 +1096,26 @@
 
       <div class="setting-group">
         <div class="setting-label">
-          <span>Opasitas Kaca (Transparansi Kuat)</span>
-          <span id="opacityVal">20%</span>
+          <span>Opasitas Kaca Transparan</span>
+          <span class="mono" id="opacityVal">22%</span>
         </div>
-        <input type="range" id="opacityRange" min="5" max="90" value="20">
+        <input type="range" id="opacityRange" min="5" max="90" value="22">
       </div>
 
       <div class="setting-group">
         <div class="setting-label">
           <span>Radius Frosted Blur</span>
-          <span id="blurVal">28px</span>
+          <span class="mono" id="blurVal">24px</span>
         </div>
-        <input type="range" id="blurRange" min="0" max="64" value="28">
+        <input type="range" id="blurRange" min="0" max="64" value="24">
       </div>
 
       <div class="setting-group">
         <div class="setting-label">
-          <span>Intensitas Aura Cahaya Kaca</span>
-          <span id="auraVal">95%</span>
+          <span>Aura Hangat Kaca</span>
+          <span class="mono" id="auraVal">50%</span>
         </div>
-        <input type="range" id="auraRange" min="0" max="100" value="95">
+        <input type="range" id="auraRange" min="0" max="100" value="50">
       </div>
 
       <div class="setting-group">
@@ -1100,36 +1181,36 @@
   </div>
 
   <script>
-    // Initial Constants & Built-in Bookmarks
+    // Built-in Curated Bookmarks
     const DEFAULT_BOOKMARKS = [
       { id: 'gh', title: 'GitHub', url: 'https://github.com', category: 'dev', hint: 'github.com', icon: 'github' },
-      { id: 'l3', title: 'Localhost:3000', url: 'http://localhost:3000', category: 'dev', hint: 'localhost:3000', icon: 'code' },
-      { id: 'l5', title: 'Localhost:5173', url: 'http://localhost:5173', category: 'dev', hint: 'Vite Dev Server', icon: 'bolt' },
+      { id: 'l3', title: 'Localhost:3000', url: 'http://localhost:3000', category: 'dev', hint: '3000', icon: 'code' },
+      { id: 'l5', title: 'Localhost:5173', url: 'http://localhost:5173', category: 'dev', hint: '5173 · Vite', icon: 'bolt' },
       { id: 'v0', title: 'Vercel', url: 'https://vercel.com/dashboard', category: 'dev', hint: 'vercel.com', icon: 'triangle' },
-      { id: 'fg', title: 'Figma', url: 'https://figma.com', category: 'dev', hint: 'Design & Canvas', icon: 'figma' },
-      { id: 'cg', title: 'ChatGPT', url: 'https://chatgpt.com', category: 'ai', hint: 'OpenAI GPT-4o', icon: 'sparkle' },
-      { id: 'cl', title: 'Claude', url: 'https://claude.ai', category: 'ai', hint: 'Anthropic Claude', icon: 'star' },
-      { id: 'px', title: 'Perplexity', url: 'https://perplexity.ai', category: 'ai', hint: 'AI Search Engine', icon: 'search' },
-      { id: 'gm', title: 'Gemini', url: 'https://gemini.google.com', category: 'ai', hint: 'Google DeepMind', icon: 'sparkle' },
+      { id: 'fg', title: 'Figma', url: 'https://figma.com', category: 'dev', hint: 'figma.com', icon: 'figma' },
+      { id: 'cg', title: 'ChatGPT', url: 'https://chatgpt.com', category: 'ai', hint: 'chatgpt.com', icon: 'sparkle' },
+      { id: 'cl', title: 'Claude', url: 'https://claude.ai', category: 'ai', hint: 'claude.ai', icon: 'star' },
+      { id: 'px', title: 'Perplexity', url: 'https://perplexity.ai', category: 'ai', hint: 'perplexity.ai', icon: 'search' },
+      { id: 'gm', title: 'Gemini', url: 'https://gemini.google.com', category: 'ai', hint: 'gemini.google', icon: 'sparkle' },
       { id: 'yt', title: 'YouTube', url: 'https://youtube.com', category: 'social', hint: 'youtube.com', icon: 'youtube' },
       { id: 'th', title: 'Threads', url: 'https://threads.net', category: 'social', hint: 'threads.net', icon: 'loop' },
       { id: 'tw', title: 'X / Twitter', url: 'https://x.com', category: 'social', hint: 'x.com', icon: 'twitter' }
     ];
 
-    // SVG Icons Map
+    // Minimal SVG Icons
     const ICONS = {
-      github: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>',
-      code: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>',
-      bolt: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>',
-      triangle: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L24 22H0L12 1Z"/></svg>',
-      figma: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm-3 0a3 3 0 1 1-3-3 3 3 0 0 1 3 3zm0 6a3 3 0 1 1-3-3 3 3 0 0 1 3 3zm6-6a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm-3-6a3 3 0 1 1-3-3 3 3 0 0 1 3 3z"/></svg>',
-      sparkle: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"></path></svg>',
-      star: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>',
-      search: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>',
-      youtube: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>',
-      loop: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4a8 8 0 0 1 7.9 6.8A6 6 0 0 1 12 22a6 6 0 0 1-5.9-4.8A8 8 0 0 1 12 4z"></path></svg>',
-      twitter: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
-      globe: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>'
+      github: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>',
+      code: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>',
+      bolt: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>',
+      triangle: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L24 22H0L12 1Z"/></svg>',
+      figma: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm-3 0a3 3 0 1 1-3-3 3 3 0 0 1 3 3zm0 6a3 3 0 1 1-3-3 3 3 0 0 1 3 3zm6-6a3 3 0 1 1 3-3 3 3 0 0 1-3 3zm-3-6a3 3 0 1 1-3-3 3 3 0 0 1 3 3z"/></svg>',
+      sparkle: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"></path></svg>',
+      star: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>',
+      search: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>',
+      youtube: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>',
+      loop: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4a8 8 0 0 1 7.9 6.8A6 6 0 0 1 12 22a6 6 0 0 1-5.9-4.8A8 8 0 0 1 12 4z"></path></svg>',
+      twitter: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+      globe: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>'
     };
 
     // 1. Clock, Date & Greeting Manager
@@ -1137,39 +1218,32 @@
       const now = new Date();
       const hrs = now.getHours();
       const mins = String(now.getMinutes()).padStart(2, '0');
+      const secs = String(now.getSeconds()).padStart(2, '0');
       const hrsStr = String(hrs).padStart(2, '0');
 
-      document.getElementById('clockTimeHuge').innerHTML = hrsStr + '<span class="colon">:</span>' + mins;
+      document.getElementById('clockNums').innerHTML = hrsStr + '<span class="colon">:</span>' + mins + '<span class="colon">:</span>' + secs;
 
-      // Indonesian Date
-      const dateOpts = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+      const dateOpts = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
       document.getElementById('datePill').textContent = now.toLocaleDateString('id-ID', dateOpts);
 
-      // Time-based Greeting
       let greeting = 'Selamat datang';
       let icon = '☕';
-      let status = 'Fokus berkarya ⚡';
 
       if (hrs >= 4 && hrs < 11) {
         greeting = 'Selamat pagi';
         icon = '☕';
-        status = 'Secangkir kopi & kode baru ☕';
       } else if (hrs >= 11 && hrs < 15) {
         greeting = 'Selamat siang';
         icon = '☀️';
-        status = 'Mode produktif aktif 🚀';
       } else if (hrs >= 15 && hrs < 18) {
         greeting = 'Selamat sore';
         icon = '🌅';
-        status = 'Finishing & push commit 🌿';
       } else {
         greeting = 'Selamat malam';
         icon = '🌙';
-        status = 'Deep work & refactoring 🌙';
       }
 
       document.getElementById('greetingText').textContent = greeting + ', ' + username + ' ' + icon;
-      document.getElementById('statusPill').textContent = status;
     }
 
     // 2. GitHub Profile & Commit Activity Chart
@@ -1177,16 +1251,16 @@
       const handleEl = document.getElementById('profileHandle');
       const bioEl = document.getElementById('profileBio');
       const avatarEl = document.getElementById('profileAvatar');
-      const totalPill = document.getElementById('commitTotalPill');
+      const totalYearEl = document.getElementById('totalYearVal');
       const streakEl = document.getElementById('streakVal');
       const avgEl = document.getElementById('avgVal');
       const peakEl = document.getElementById('peakVal');
+      const todayEl = document.getElementById('todayVal');
       const chartBox = document.getElementById('barChartContainer');
 
       handleEl.textContent = '@' + username;
       handleEl.href = 'https://github.com/' + username;
 
-      // Try local cache first for instant rendering
       const cacheKey = 'cukup_gh_' + username;
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
@@ -1196,7 +1270,6 @@
         } catch (e) {}
       }
 
-      // Fetch fresh data in background
       try {
         const [userRes, contribRes] = await Promise.all([
           fetch('https://api.github.com/users/' + username).then(r => r.ok ? r.json() : null),
@@ -1207,33 +1280,30 @@
         localStorage.setItem(cacheKey, JSON.stringify(combined));
         renderDashboardData(combined);
       } catch (err) {
-        console.warn('GitHub fetch error (using cache if available):', err);
+        console.warn('GitHub fetch warning (using cache):', err);
       }
 
       function renderDashboardData(data) {
         if (data.user) {
           avatarEl.src = data.user.avatar_url || avatarEl.src;
           const loc = data.user.location ? ' · ' + data.user.location : '';
-          bioEl.textContent = (data.user.public_repos || 0) + ' Repos' + loc;
+          bioEl.textContent = (data.user.public_repos || 0) + ' repos' + loc;
         }
 
         if (data.contrib && data.contrib.contributions) {
           const contribs = data.contrib.contributions;
           const totalCommits = data.contrib.total ? (data.contrib.total.lastYear || 0) : contribs.reduce((a, b) => a + b.count, 0);
-          totalPill.textContent = totalCommits.toLocaleString('id-ID') + ' commit setahun';
+          totalYearEl.textContent = totalCommits.toLocaleString('id-ID');
 
-          // Last 14 days slice
           const recent14 = contribs.slice(-14);
           let peak = 0;
           let sum14 = 0;
           let currentStreak = 0;
 
-          // Calculate current active streak from today backwards
           for (let i = contribs.length - 1; i >= 0; i--) {
             if (contribs[i].count > 0) {
               currentStreak++;
             } else if (i === contribs.length - 1) {
-              // today might not have commits yet
               continue;
             } else {
               break;
@@ -1245,35 +1315,36 @@
             sum14 += d.count;
           });
 
-          const maxBarVal = Math.max(peak, 20);
-          const avg14 = Math.round(sum14 / 14);
+          const todayCount = recent14.length > 0 ? recent14[recent14.length - 1].count : 0;
+          const maxBarVal = Math.max(peak, 18);
+          const avg14 = (sum14 / 14).toFixed(1);
 
-          streakEl.textContent = currentStreak + ' Hari 🔥';
-          avgEl.textContent = avg14 + ' commit/hari';
-          peakEl.textContent = peak + ' commit';
+          streakEl.textContent = currentStreak + 'd';
+          avgEl.textContent = avg14 + '/d';
+          peakEl.textContent = peak + ' commits';
+          todayEl.textContent = todayCount + ' commit';
 
-          // Days labels in ID
           const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
           chartBox.innerHTML = '';
           recent14.forEach(d => {
             const dateObj = new Date(d.date + 'T00:00:00');
             const dayName = dayNames[dateObj.getDay()];
-            const heightPercent = Math.max(Math.round((d.count / maxBarVal) * 100), 6);
+            const heightPercent = d.count > 0 ? Math.max(Math.round((d.count / maxBarVal) * 100), 12) : 5;
 
             const col = document.createElement('div');
             col.className = 'bar-col';
 
             const fill = document.createElement('div');
-            fill.className = 'bar-fill';
+            fill.className = 'bar-fill' + (d.count > 0 ? ' active' : '');
             fill.style.height = heightPercent + '%';
 
             const tooltip = document.createElement('div');
-            tooltip.className = 'bar-tooltip';
+            tooltip.className = 'bar-tooltip mono';
             tooltip.textContent = d.date + ': ' + d.count + ' commit';
 
             const label = document.createElement('div');
-            label.className = 'bar-day-label';
+            label.className = 'bar-day-label mono';
             label.textContent = dayName;
 
             col.appendChild(tooltip);
@@ -1318,13 +1389,10 @@
         const iconSvg = ICONS[bm.icon] || ICONS.globe;
 
         a.innerHTML = `
-          <div class="card-top">
-            <div class="card-icon-box">${iconSvg}</div>
-            <span class="card-category-badge">${bm.category || 'web'}</span>
-          </div>
+          <div class="card-icon-box">${iconSvg}</div>
           <div class="card-info">
             <div class="card-title">${bm.title}</div>
-            <div class="card-url-hint">${bm.hint || bm.url.replace(/^https?:\/\//, '')}</div>
+            <div class="card-domain mono">${bm.hint || bm.url.replace(/^https?:\/\//, '')}</div>
           </div>
         `;
         grid.appendChild(a);
@@ -1365,7 +1433,6 @@
       const q = searchInput.value.trim();
       if (!q) return;
 
-      // GitHub quick jump shortcut: "gh repo"
       if (q.startsWith('gh ')) {
         location.href = 'https://github.com/' + encodeURIComponent(q.slice(3).trim());
         return;
@@ -1378,7 +1445,6 @@
       }
     });
 
-    // Toggle search engines by clicking the badge
     engineBadge.addEventListener('click', () => {
       const keys = Object.keys(ENGINES);
       const idx = (keys.indexOf(currentEngine) + 1) % keys.length;
@@ -1388,7 +1454,6 @@
       engineBadge.textContent = ENGINES[currentEngine] + ' ▾';
     });
 
-    // Press '/' anywhere to focus search
     window.addEventListener('keydown', (e) => {
       if (e.key === '/' && document.activeElement !== searchInput && document.activeElement.tagName !== 'INPUT') {
         e.preventDefault();
@@ -1410,9 +1475,9 @@
     let currentUsername = localStorage.getItem('cukup_github_user') || 'mrbvrz';
     githubUserInput.value = currentUsername;
 
-    const savedOpacity = localStorage.getItem('cukup_opacity_v3') || '20';
-    const savedBlur = localStorage.getItem('cukup_blur') || '28';
-    const savedAura = localStorage.getItem('cukup_aura') || '95';
+    const savedOpacity = localStorage.getItem('cukup_opacity_v3') || '22';
+    const savedBlur = localStorage.getItem('cukup_blur') || '24';
+    const savedAura = localStorage.getItem('cukup_aura') || '50';
     const savedWallpaper = localStorage.getItem('cukup_wallpaper') || '';
 
     function applyVisuals(op, bl, au, wp) {
