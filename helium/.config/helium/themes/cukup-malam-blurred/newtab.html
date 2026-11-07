@@ -2901,8 +2901,26 @@
     function parseYouTubeId(input) {
       if (!input) return '';
       input = input.trim();
-      if (/^[a-zA-Z0-9_-]{11}$/.test(input)) return input;
-      const match = input.match(/(?:youtu.be/|youtube.com/(?:watch?(?:.*&)?v=|shorts/|embed/))([a-zA-Z0-9_-]{11})/);
+      if (input.length === 11 && !input.includes('/') && !input.includes('.')) return input;
+      try {
+        if (input.includes('youtu.be/')) {
+          const parts = input.split('youtu.be/')[1];
+          return parts.split(/[?#&]/)[0];
+        }
+        if (input.includes('youtube.com/watch')) {
+          const url = new URL(input.startsWith('http') ? input : 'https://' + input);
+          return url.searchParams.get('v') || '';
+        }
+        if (input.includes('youtube.com/shorts/')) {
+          const parts = input.split('youtube.com/shorts/')[1];
+          return parts.split(/[?#&]/)[0];
+        }
+        if (input.includes('youtube.com/embed/')) {
+          const parts = input.split('youtube.com/embed/')[1];
+          return parts.split(/[?#&]/)[0];
+        }
+      } catch (e) {}
+      const match = input.match(/([a-zA-Z0-9_-]{11})/);
       return match ? match[1] : '';
     }
 
