@@ -261,6 +261,54 @@
       animation: blink 2s infinite;
     }
 
+    .weather-widget {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: color var(--transition-fast), transform var(--transition-fast);
+      user-select: none;
+    }
+
+    .weather-widget:hover {
+      color: var(--text-primary);
+    }
+
+    .weather-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      transition: transform 0.3s ease;
+    }
+
+    .weather-widget:hover .weather-icon {
+      transform: scale(1.15);
+    }
+
+    .weather-widget.refreshing .weather-icon {
+      animation: weatherSpin 0.8s linear infinite;
+    }
+
+    @keyframes weatherSpin {
+      100% { transform: rotate(360deg); }
+    }
+
+    .weather-temp {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .weather-city {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      max-width: 90px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     @keyframes blink {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.25; }
@@ -1834,6 +1882,14 @@
           <span id="datePill">Loading date...</span>
           <span class="colon">·</span>
           <span class="clock-nums mono" id="clockNums">00:00:00</span>
+          <span class="colon">·</span>
+          <div class="weather-widget" id="weatherWidget" title="Loading weather... · Click to refresh">
+            <span class="weather-icon" id="weatherIcon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+            </span>
+            <span class="weather-temp mono" id="weatherTemp">--°C</span>
+            <span class="weather-city" id="weatherCity">Weather</span>
+          </div>
         </div>
         <button class="icon-btn" id="openSettings" title="Cockpit Settings">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2079,6 +2135,12 @@
           </div>
           <input type="text" id="githubUserInput" placeholder="mrbvrz" autocomplete="off">
         </div>
+        <div class="setting-group" style="margin-top: 12px;">
+          <div class="setting-label">
+            <span>Weather Location / City</span>
+          </div>
+          <input type="text" id="weatherCityInput" placeholder="Auto-detect (or type e.g. Pekanbaru, Tokyo)" autocomplete="off">
+        </div>
         <div class="cache-status-pill mono">
           <span>⚡ Instant Local Avatar Cache Active</span>
         </div>
@@ -2231,8 +2293,8 @@
   </div>
 
   <script>
-    // Automatic Cache Cleaner & Reset (Version v9_news_card_images)
-    const CACHE_VERSION = 'v9_news_card_images';
+    // Automatic Cache Cleaner & Reset (Version v10_weather_pill)
+    const CACHE_VERSION = 'v10_weather_pill';
     if (localStorage.getItem('cukup_cache_version') !== CACHE_VERSION) {
       const savedWp = localStorage.getItem('cukup_wallpaper');
       const savedRadius = localStorage.getItem('cukup_card_radius');
@@ -2240,6 +2302,7 @@
       const savedOpacity = localStorage.getItem('cukup_opacity_v3');
       const savedBlur = localStorage.getItem('cukup_blur');
       const savedUser = localStorage.getItem('cukup_github_user');
+      const savedCity = localStorage.getItem('cukup_custom_weather_city');
 
       localStorage.clear();
 
@@ -2249,6 +2312,7 @@
       if (savedOpacity) localStorage.setItem('cukup_opacity_v3', savedOpacity);
       if (savedBlur) localStorage.setItem('cukup_blur', savedBlur);
       if (savedUser) localStorage.setItem('cukup_github_user', savedUser);
+      if (savedCity) localStorage.setItem('cukup_custom_weather_city', savedCity);
 
       localStorage.setItem('cukup_cache_version', CACHE_VERSION);
     }
@@ -2323,7 +2387,7 @@
 
       document.getElementById('clockNums').innerHTML = hrsStr + '<span class="colon">:</span>' + mins + '<span class="colon">:</span>' + secs;
 
-      const dateOpts = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+      const dateOpts = { weekday: 'short', month: 'short', day: 'numeric' };
       document.getElementById('datePill').textContent = now.toLocaleDateString('en-US', dateOpts);
 
       let greeting = 'Welcome back';
@@ -2345,6 +2409,117 @@
 
       document.getElementById('greetingOverline').textContent = greeting + ' ' + icon;
       document.getElementById('profileDisplayName').textContent = displayName || username;
+    }
+
+    // 1b. Weather Manager (Open-Meteo & GeoJS)
+    const WEATHER_ICONS = {
+      sun: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>',
+      moon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>',
+      partlyCloud: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>',
+      cloud: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>',
+      rain: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg>',
+      thunder: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><polygon points="13 11 9 17 14 17 11 22 17 14 12 14"/></svg>',
+      snow: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><line x1="8" y1="15" x2="8" y2="15.01"/><line x1="8" y1="19" x2="8" y2="19.01"/><line x1="12" y1="17" x2="12" y2="17.01"/><line x1="16" y1="15" x2="16" y2="15.01"/><line x1="16" y1="19" x2="16" y2="19.01"/></svg>',
+      fog: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="4" y1="18" x2="20" y2="18"/></svg>'
+    };
+
+    function getWeatherInfo(code, isDay) {
+      if (code === 0) return { desc: isDay ? 'Clear' : 'Clear night', icon: isDay ? WEATHER_ICONS.sun : WEATHER_ICONS.moon };
+      if (code === 1 || code === 2) return { desc: 'Partly cloudy', icon: isDay ? WEATHER_ICONS.partlyCloud : WEATHER_ICONS.cloud };
+      if (code === 3) return { desc: 'Overcast', icon: WEATHER_ICONS.cloud };
+      if (code === 45 || code === 48) return { desc: 'Foggy', icon: WEATHER_ICONS.fog };
+      if (code >= 51 && code <= 55) return { desc: 'Drizzle', icon: WEATHER_ICONS.rain };
+      if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return { desc: 'Rain', icon: WEATHER_ICONS.rain };
+      if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return { desc: 'Snow', icon: WEATHER_ICONS.snow };
+      if (code >= 95 && code <= 99) return { desc: 'Thunderstorm', icon: WEATHER_ICONS.thunder };
+      return { desc: 'Fair', icon: isDay ? WEATHER_ICONS.sun : WEATHER_ICONS.moon };
+    }
+
+    function renderWeather(data) {
+      const widget = document.getElementById('weatherWidget');
+      const iconEl = document.getElementById('weatherIcon');
+      const tempEl = document.getElementById('weatherTemp');
+      const cityEl = document.getElementById('weatherCity');
+      if (!widget || !iconEl || !tempEl || !cityEl) return;
+
+      const info = getWeatherInfo(data.code, data.isDay);
+      iconEl.innerHTML = info.icon;
+      tempEl.textContent = data.temp;
+      cityEl.textContent = data.city || '';
+      widget.title = (data.city ? data.city + ': ' : '') + info.desc + ', ' + data.temp + (data.humidity ? ' (Humidity ' + data.humidity + '%)' : '') + ' · Click to refresh';
+    }
+
+    async function loadWeather(forceRefresh = false) {
+      const widget = document.getElementById('weatherWidget');
+      const cacheKey = 'cukup_weather_v2';
+      const stored = localStorage.getItem(cacheKey);
+
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          renderWeather(parsed);
+          if (!forceRefresh && (Date.now() - parsed.timestamp < 20 * 60 * 1000)) {
+            return;
+          }
+        } catch (e) {}
+      }
+
+      if (widget) widget.classList.add('refreshing');
+
+      try {
+        let lat = 0.5488;
+        let lon = 101.4155;
+        let city = 'Pekanbaru';
+
+        const customCity = (localStorage.getItem('cukup_custom_weather_city') || '').trim();
+        if (customCity) {
+          try {
+            const geoRes = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(customCity) + '&count=1&language=en&format=json');
+            if (geoRes.ok) {
+              const geoData = await geoRes.json();
+              if (geoData && geoData.results && geoData.results[0]) {
+                lat = geoData.results[0].latitude;
+                lon = geoData.results[0].longitude;
+                city = geoData.results[0].name;
+              }
+            }
+          } catch (e) {}
+        } else {
+          try {
+            const ipRes = await fetch('https://get.geojs.io/v1/ip/geo.json');
+            if (ipRes.ok) {
+              const ipData = await ipRes.json();
+              if (ipData && ipData.latitude && ipData.longitude) {
+                lat = parseFloat(ipData.latitude);
+                lon = parseFloat(ipData.longitude);
+                city = ipData.city || ipData.region || 'Local';
+              }
+            }
+          } catch (e) {}
+        }
+
+        const weatherRes = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current=temperature_2m,relative_humidity_2m,weather_code,is_day&timezone=auto');
+        if (weatherRes.ok) {
+          const wData = await weatherRes.json();
+          if (wData && wData.current) {
+            const cur = wData.current;
+            const weatherObj = {
+              temp: Math.round(cur.temperature_2m) + '°C',
+              city: city,
+              code: cur.weather_code,
+              isDay: cur.is_day === 1,
+              humidity: cur.relative_humidity_2m,
+              timestamp: Date.now()
+            };
+            localStorage.setItem(cacheKey, JSON.stringify(weatherObj));
+            renderWeather(weatherObj);
+          }
+        }
+      } catch (err) {
+        console.warn('Weather fetch warning:', err);
+      } finally {
+        if (widget) widget.classList.remove('refreshing');
+      }
     }
 
     // 2. AreaChart Engine with Awaiting Pulse & Anticipation Beacon
@@ -3646,6 +3821,14 @@
       const newU = githubUserInput.value.trim() || 'mrbvrz';
       localStorage.setItem('cukup_github_user', newU);
       currentUsername = newU;
+
+      const weatherCityInput = document.getElementById('weatherCityInput');
+      if (weatherCityInput) {
+        const newCity = weatherCityInput.value.trim();
+        localStorage.setItem('cukup_custom_weather_city', newCity);
+        loadWeather(true);
+      }
+
       updateClockAndGreeting(currentUsername, currentUsername);
       loadGitHubData(currentUsername);
       modal.classList.remove('open');
@@ -3660,6 +3843,7 @@
         const savedOpacity = localStorage.getItem('cukup_opacity_v3');
         const savedBlur = localStorage.getItem('cukup_blur');
         const savedUser = localStorage.getItem('cukup_github_user');
+        const savedCity = localStorage.getItem('cukup_custom_weather_city');
 
         localStorage.clear();
 
@@ -3669,6 +3853,7 @@
         if (savedOpacity) localStorage.setItem('cukup_opacity_v3', savedOpacity);
         if (savedBlur) localStorage.setItem('cukup_blur', savedBlur);
         if (savedUser) localStorage.setItem('cukup_github_user', savedUser);
+        if (savedCity) localStorage.setItem('cukup_custom_weather_city', savedCity);
 
         localStorage.setItem('cukup_cache_version', CACHE_VERSION);
         location.reload();
@@ -3707,6 +3892,10 @@
     // 10. Modals Trigger
     const modal = document.getElementById('modalOverlay');
     document.getElementById('openSettings').addEventListener('click', () => {
+      const weatherCityInput = document.getElementById('weatherCityInput');
+      if (weatherCityInput) {
+        weatherCityInput.value = localStorage.getItem('cukup_custom_weather_city') || '';
+      }
       renderYtSettingsList();
       modal.classList.add('open');
     });
@@ -3715,11 +3904,19 @@
       if (e.target === modal) modal.classList.remove('open');
     });
 
+    const weatherWidget = document.getElementById('weatherWidget');
+    if (weatherWidget) {
+      weatherWidget.addEventListener('click', () => {
+        loadWeather(true);
+      });
+    }
+
     // Initial Boot & Window Listeners
     window.addEventListener('resize', updateTabSliderPill);
     initEngineDropdown();
     updateClockAndGreeting(currentUsername, currentUsername);
     setInterval(() => updateClockAndGreeting(currentUsername), 1000);
+    loadWeather();
     initBookmarkBarCache();
     renderBookmarks();
     loadBookmarkBar();
@@ -3744,11 +3941,17 @@
       loadBookmarkBar();
     }, 5000);
 
-    // 4. Tab Focus & Visibility Reactive Sync
+    // 4. Weather poller (every 15 minutes)
+    setInterval(() => {
+      loadWeather(false);
+    }, 900000);
+
+    // 5. Tab Focus & Visibility Reactive Sync
     window.addEventListener('focus', () => {
       loadBookmarkBar(true);
       loadGitHubData(currentUsername);
       loadTechNews();
+      loadWeather(false);
     });
 
     document.addEventListener('visibilitychange', () => {
@@ -3756,6 +3959,7 @@
         loadBookmarkBar(true);
         loadGitHubData(currentUsername);
         loadTechNews();
+        loadWeather(false);
       }
     });
 
