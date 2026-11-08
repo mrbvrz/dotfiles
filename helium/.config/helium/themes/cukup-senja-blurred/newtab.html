@@ -862,28 +862,72 @@
       pointer-events: none;
     }
 
-    .add-bm-btn {
+    .bookmarks-actions {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
+    }
+
+    .dock-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 12px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      color: var(--text-secondary);
       font-size: 0.76rem;
       font-weight: 500;
       font-family: var(--font-sans);
-      color: var(--text-secondary);
-      background: rgba(var(--panel-rgb), 0.35);
-      border: 1px solid var(--card-border);
-      padding: 6px 12px;
-      border-radius: 10px;
       cursor: pointer;
-      transition: all 0.2s var(--spring-ease);
-      box-shadow: var(--card-bevel);
+      transition: all 0.18s ease;
+      text-decoration: none;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
     }
 
-    .add-bm-btn:hover {
+    .dock-action-btn:hover {
+      background: var(--card-bg-hover);
+      border-color: var(--accent-border);
       color: var(--text-primary);
-      border-color: rgba(255, 255, 255, 0.12);
-      background: rgba(var(--panel-rgb), 0.45);
       transform: translateY(-1px);
+    }
+
+    .dock-action-btn:active {
+      transform: translateY(0);
+    }
+
+    .dock-action-btn svg {
+      color: var(--accent);
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+
+    .dock-action-btn:hover svg {
+      transform: scale(1.08);
+    }
+
+    .dock-shortcut-badge {
+      font-size: 0.65rem;
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+
+    .dock-icon-only-btn {
+      padding: 6px 8px;
+    }
+
+    .dock-icon-only-btn.spinning svg {
+      animation: spinRefresh 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes spinRefresh {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
     /* Hallmark Bookmark Cards */
@@ -1905,6 +1949,24 @@
           <div class="tab-slider-pill" id="tabSliderPill"></div>
           <button class="category-tab active" data-category="all">All</button>
         </div>
+        <div class="bookmarks-actions">
+          <button type="button" class="dock-action-btn" id="openBookmarkManager" title="Open Bookmark Manager (⌘⌥B)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+              <line x1="12" y1="7" x2="12" y2="13"></line>
+              <line x1="9" y1="10" x2="15" y2="10"></line>
+            </svg>
+            <span>Bookmark Manager</span>
+            <span class="dock-shortcut-badge mono">⌘⌥B</span>
+          </button>
+          <button type="button" class="dock-action-btn dock-icon-only-btn" id="refreshBookmarksBtn" title="Sync & Refresh Bookmarks">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div class="bookmarks-grid" id="bookmarksGrid">
@@ -2695,7 +2757,7 @@
       }
     }
 
-    function loadBookmarkBar() {
+    function loadBookmarkBar(force = false) {
       if (typeof chrome !== 'undefined' && chrome.bookmarks && chrome.bookmarks.getTree) {
         try {
           chrome.bookmarks.getTree(function(tree) {
@@ -2708,12 +2770,16 @@
 
             const res = extractBookmarkBarItems(barNode);
             if (res.items && res.items.length > 0) {
-              bookmarkBarItems = res.items;
-              bookmarkBarFolders = res.folders;
+              const curJson = JSON.stringify(bookmarkBarItems.map(b => b.url));
+              const nextJson = JSON.stringify(res.items.map(b => b.url));
+              if (force || curJson !== nextJson) {
+                bookmarkBarItems = res.items;
+                bookmarkBarFolders = res.folders;
 
-              localStorage.setItem('cukup_bookmark_bar_cache', JSON.stringify({ items: bookmarkBarItems, folders: bookmarkBarFolders }));
-              updateBookmarkCategoryTabs();
-              renderBookmarks();
+                localStorage.setItem('cukup_bookmark_bar_cache', JSON.stringify({ items: bookmarkBarItems, folders: bookmarkBarFolders }));
+                updateBookmarkCategoryTabs();
+                renderBookmarks();
+              }
             }
           });
         } catch (err) {
@@ -2723,12 +2789,16 @@
     }
 
     // Reactive real-time sync with browser's Bookmarks Bar
-    if (typeof chrome !== 'undefined' && chrome.bookmarks && chrome.bookmarks.onCreated) {
+    if (typeof chrome !== 'undefined' && chrome.bookmarks) {
       try {
-        chrome.bookmarks.onCreated.addListener(loadBookmarkBar);
-        chrome.bookmarks.onRemoved.addListener(loadBookmarkBar);
-        chrome.bookmarks.onChanged.addListener(loadBookmarkBar);
-        chrome.bookmarks.onMoved.addListener(loadBookmarkBar);
+        const syncHandler = () => loadBookmarkBar(true);
+        if (chrome.bookmarks.onCreated) chrome.bookmarks.onCreated.addListener(syncHandler);
+        if (chrome.bookmarks.onRemoved) chrome.bookmarks.onRemoved.addListener(syncHandler);
+        if (chrome.bookmarks.onChanged) chrome.bookmarks.onChanged.addListener(syncHandler);
+        if (chrome.bookmarks.onMoved) chrome.bookmarks.onMoved.addListener(syncHandler);
+        if (chrome.bookmarks.onChildrenReordered) chrome.bookmarks.onChildrenReordered.addListener(syncHandler);
+        if (chrome.bookmarks.onImportBegan) chrome.bookmarks.onImportBegan.addListener(syncHandler);
+        if (chrome.bookmarks.onImportEnded) chrome.bookmarks.onImportEnded.addListener(syncHandler);
       } catch (e) {}
     }
 
@@ -3527,6 +3597,65 @@
     loadTechNews();
     renderYouTubeFeed();
     renderYtSettingsList();
+
+    // Real-Time Background Synchronization & Event Listeners
+    // 1. GitHub telemetry poller (every 60s)
+    setInterval(() => {
+      loadGitHubData(currentUsername);
+    }, 60000);
+
+    // 2. Tech news poller (every 2 minutes)
+    setInterval(() => {
+      loadTechNews();
+    }, 120000);
+
+    // 3. Bookmarks bar sync check (every 5 seconds)
+    setInterval(() => {
+      loadBookmarkBar();
+    }, 5000);
+
+    // 4. Tab Focus & Visibility Reactive Sync
+    window.addEventListener('focus', () => {
+      loadBookmarkBar(true);
+      loadGitHubData(currentUsername);
+      loadTechNews();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        loadBookmarkBar(true);
+        loadGitHubData(currentUsername);
+        loadTechNews();
+      }
+    });
+
+    // 5. Bookmark Manager & Refresh Action Handlers
+    const openBmBtn = document.getElementById('openBookmarkManager');
+    if (openBmBtn) {
+      openBmBtn.addEventListener('click', () => {
+        if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+          chrome.tabs.create({ url: 'chrome://bookmarks' });
+        } else {
+          try {
+            const win = window.open('chrome://bookmarks', '_blank');
+            if (!win) {
+              window.location.href = 'chrome://bookmarks';
+            }
+          } catch (e) {
+            window.location.href = 'chrome://bookmarks';
+          }
+        }
+      });
+    }
+
+    const refreshBmBtn = document.getElementById('refreshBookmarksBtn');
+    if (refreshBmBtn) {
+      refreshBmBtn.addEventListener('click', () => {
+        refreshBmBtn.classList.add('spinning');
+        setTimeout(() => refreshBmBtn.classList.remove('spinning'), 650);
+        loadBookmarkBar(true);
+      });
+    }
   </script>
 </body>
 </html>
