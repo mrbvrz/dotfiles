@@ -1218,8 +1218,25 @@
       border-radius: 8px;
       overflow: hidden;
       flex-shrink: 0;
-      background: #141110;
+      background: rgba(var(--panel-rgb), 0.85);
+      border: 1px solid rgba(var(--accent-rgb), 0.16);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    }
+
+    .news-thumb-box::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(var(--panel-rgb), 0.25) 0%, rgba(var(--canvas-rgb), 0.55) 100%),
+                  radial-gradient(circle at 85% 15%, rgba(var(--accent-rgb), 0.18) 0%, transparent 65%);
+      transition: all 0.25s ease;
+      z-index: 1;
+    }
+
+    .news-item:hover .news-thumb-box::after {
+      background: linear-gradient(180deg, rgba(var(--panel-rgb), 0.08) 0%, rgba(var(--canvas-rgb), 0.25) 100%),
+                  radial-gradient(circle at 85% 15%, rgba(var(--accent-rgb), 0.28) 0%, transparent 75%);
     }
 
     .news-thumb-img {
@@ -1240,11 +1257,13 @@
       font-size: 0.54rem;
       padding: 1px 5px;
       border-radius: 4px;
-      background: rgba(0, 0, 0, 0.78);
+      background: rgba(var(--canvas-rgb), 0.88);
+      border: 1px solid rgba(var(--accent-rgb), 0.20);
       backdrop-filter: blur(4px);
       text-transform: uppercase;
       font-weight: 600;
       letter-spacing: 0.3px;
+      z-index: 2;
     }
 
     .news-source-tag.hn { color: #ff6600; }
@@ -1327,7 +1346,25 @@
       aspect-ratio: 16 / 9;
       border-radius: 8px;
       overflow: hidden;
-      background: #181412;
+      background: rgba(var(--panel-rgb), 0.85);
+      border: 1px solid rgba(var(--accent-rgb), 0.16);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    .yt-thumb-box::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(var(--panel-rgb), 0.22) 0%, rgba(var(--canvas-rgb), 0.55) 100%),
+                  radial-gradient(circle at 50% 50%, rgba(var(--accent-rgb), 0.14) 0%, transparent 75%);
+      transition: all 0.25s ease;
+      z-index: 1;
+    }
+
+    .yt-card:hover .yt-thumb-box::after {
+      background: linear-gradient(180deg, rgba(var(--panel-rgb), 0.08) 0%, rgba(var(--canvas-rgb), 0.30) 100%),
+                  radial-gradient(circle at 50% 50%, rgba(var(--accent-rgb), 0.25) 0%, transparent 80%);
     }
 
     .yt-thumb-img {
@@ -1338,19 +1375,50 @@
     }
 
     .yt-card:hover .yt-thumb-img {
-      opacity: 0.95;
+      transform: scale(1.05);
+    }
+
+    .yt-play-btn {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: scale(0.85);
+      transition: all 0.25s var(--spring-ease);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .yt-play-btn svg {
+      width: 32px;
+      height: 32px;
+      padding: 7px;
+      border-radius: 50%;
+      background: rgba(var(--canvas-rgb), 0.88);
+      color: var(--accent);
+      border: 1px solid rgba(var(--accent-rgb), 0.40);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+    }
+
+    .yt-card:hover .yt-play-btn {
+      opacity: 1;
+      transform: scale(1);
     }
 
     .yt-duration {
       position: absolute;
       bottom: 4px;
       right: 4px;
-      background: rgba(0, 0, 0, 0.78);
-      color: #fff;
+      background: rgba(var(--canvas-rgb), 0.88);
+      border: 1px solid rgba(var(--accent-rgb), 0.20);
+      color: var(--text-primary);
       font-size: 0.62rem;
       padding: 2px 5px;
       border-radius: 4px;
       backdrop-filter: blur(4px);
+      z-index: 2;
     }
 
     .yt-info {
@@ -3512,6 +3580,9 @@
         a.innerHTML = `
           <div class="yt-thumb-box">
             <img class="yt-thumb-img" src="https://img.youtube.com/vi/${v.id}/mqdefault.jpg" alt="${v.title}" loading="lazy">
+            <div class="yt-play-btn">
+              <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+            </div>
             <span class="yt-duration mono">${v.duration || 'Watch'}</span>
           </div>
           <div class="yt-info">
