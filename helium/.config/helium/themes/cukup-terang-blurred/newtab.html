@@ -2153,8 +2153,8 @@
   </div>
 
   <script>
-    // Automatic Cache Cleaner & Reset (Version v7_helium_embedded)
-    const CACHE_VERSION = 'v7_helium_embedded';
+    // Automatic Cache Cleaner & Reset (Version v8_real_favicons)
+    const CACHE_VERSION = 'v8_real_favicons';
     if (localStorage.getItem('cukup_cache_version') !== CACHE_VERSION) {
       const savedWp = localStorage.getItem('cukup_wallpaper');
       const savedRadius = localStorage.getItem('cukup_card_radius');
@@ -2552,13 +2552,25 @@
       }
       iconBox.appendChild(fallbackHolder);
 
-      // Multi-tier favicon sources
+      // Multi-tier favicon sources prioritized by original website favicon
       const sources = [];
+      if (bm.favicon) {
+        sources.push(bm.favicon);
+      }
+      try {
+        const u = new URL(bm.url);
+        sources.push(u.origin + '/favicon.ico');
+        if (domainHint) {
+          sources.push('https://' + domainHint + '/favicon.ico');
+        }
+      } catch (e) {}
+
       if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
         sources.push('chrome-extension://' + chrome.runtime.id + '/_favicon/?pageUrl=' + encodeURIComponent(bm.url) + '&size=64');
       }
       sources.push('https://t3.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=' + encodeURIComponent(bm.url) + '&size=64');
       if (domainHint) {
+        sources.push('https://www.google.com/s2/favicons?domain=' + encodeURIComponent(domainHint) + '&sz=64');
         sources.push('https://icons.duckduckgo.com/ip3/' + domainHint + '.ico');
       }
 
@@ -2621,7 +2633,7 @@
     }
 
     // Browser Bookmarks Bar Integration (Direct from Browser)
-    const INITIAL_BROWSER_BOOKMARKS = {"items":[{"id":"bb_6","title":"Home • Threads","url":"https://www.threads.com/","category":"social","folder":"Social","hint":"threads.com"}],"folders":["Social"]};
+    const INITIAL_BROWSER_BOOKMARKS = {"items":[{"id":"bb_6","title":"Threads","url":"https://www.threads.com/","favicon":"data:image/png;base64,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","category":"social","folder":"Social","hint":"threads.com"},{"id":"bb_8","title":"Instagram","url":"https://www.instagram.com/","favicon":"data:image/png;base64,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","category":"social","folder":"Social","hint":"instagram.com"}],"folders":["Social"]};
     let bookmarkBarItems = (INITIAL_BROWSER_BOOKMARKS && Array.isArray(INITIAL_BROWSER_BOOKMARKS.items)) ? [...INITIAL_BROWSER_BOOKMARKS.items] : [];
     let bookmarkBarFolders = (INITIAL_BROWSER_BOOKMARKS && Array.isArray(INITIAL_BROWSER_BOOKMARKS.folders)) ? [...INITIAL_BROWSER_BOOKMARKS.folders] : [];
 
