@@ -1109,45 +1109,47 @@
       color: var(--accent);
     }
 
-    .news-source-tabs {
-      display: flex;
-      gap: 4px;
-      background: rgba(255, 255, 255, 0.03);
-      padding: 2px;
-      border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.04);
-    }
-
-    .news-tab-btn {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      font-size: 0.68rem;
+    .feed-live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: #34d399;
+      background: rgba(52, 211, 153, 0.08);
+      border: 1px solid rgba(52, 211, 153, 0.18);
       padding: 2px 7px;
       border-radius: 6px;
-      cursor: pointer;
-      font-family: var(--font-mono);
-      transition: all 0.15s ease;
+      letter-spacing: 0.5px;
     }
 
-    .news-tab-btn.active {
-      color: var(--text-primary);
-      background: rgba(255, 255, 255, 0.08);
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 8px #34d399;
+      animation: livePulse 2s infinite ease-in-out;
+    }
+
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
     }
 
     .news-scroll-container {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       overflow-y: auto;
       padding-right: 4px;
     }
 
     .news-item {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 12px;
-      padding: 10px 12px;
+      padding: 8px 10px;
       border-radius: 12px;
       text-decoration: none;
       background: rgba(255, 255, 255, 0.02);
@@ -1158,55 +1160,64 @@
     .news-item:hover {
       background: rgba(var(--panel-rgb), 0.65);
       border-color: rgba(255, 255, 255, 0.08);
+      transform: translateY(-1px);
     }
 
-    .news-badge-col {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
+    .news-thumb-box {
+      position: relative;
+      width: 90px;
+      height: 60px;
+      border-radius: 8px;
+      overflow: hidden;
       flex-shrink: 0;
+      background: #141110;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
     }
 
-    .news-source-tag {
-      font-size: 0.58rem;
-      padding: 2px 5px;
+    .news-thumb-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .news-item:hover .news-thumb-img {
+      transform: scale(1.06);
+    }
+
+    .news-thumb-box .news-source-tag {
+      position: absolute;
+      bottom: 3px;
+      left: 3px;
+      font-size: 0.54rem;
+      padding: 1px 5px;
       border-radius: 4px;
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--text-muted);
+      background: rgba(0, 0, 0, 0.78);
+      backdrop-filter: blur(4px);
       text-transform: uppercase;
       font-weight: 600;
       letter-spacing: 0.3px;
     }
 
-    .news-source-tag.hn { color: #ff6600; background: rgba(255, 102, 0, 0.12); }
-    .news-source-tag.dev { color: #a78bfa; background: rgba(167, 139, 250, 0.12); }
-    .news-source-tag.verge { color: #f43f5e; background: rgba(244, 63, 94, 0.12); }
-    .news-source-tag.android { color: #3ddc84; background: rgba(61, 220, 132, 0.12); }
-
-    .news-score {
-      font-size: 0.72rem;
-      color: var(--accent);
-      background: var(--accent-soft);
-      padding: 3px 6px;
-      border-radius: 6px;
-      min-width: 44px;
-      text-align: center;
-    }
+    .news-source-tag.hn { color: #ff6600; }
+    .news-source-tag.dev { color: #a78bfa; }
+    .news-source-tag.verge { color: #f43f5e; }
+    .news-source-tag.android { color: #3ddc84; }
 
     .news-content {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 4px;
       overflow: hidden;
       min-width: 0;
+      flex: 1;
     }
 
     .news-headline {
       font-size: 0.82rem;
       font-weight: 500;
       color: var(--text-primary);
-      line-height: 1.3;
+      line-height: 1.35;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
@@ -1219,6 +1230,14 @@
       gap: 8px;
       font-size: 0.68rem;
       color: var(--text-muted);
+    }
+
+    .news-score-badge {
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 0.65rem;
     }
 
     /* YouTube Updates Grid */
@@ -1988,12 +2007,9 @@
             <span>Tech & Engineering Pulse</span>
           </div>
 
-          <div class="news-source-tabs" id="newsSourceTabs">
-            <button class="news-tab-btn active" data-source="all">All</button>
-            <button class="news-tab-btn" data-source="hn">HN</button>
-            <button class="news-tab-btn" data-source="dev">DEV</button>
-            <button class="news-tab-btn" data-source="verge">The Verge</button>
-            <button class="news-tab-btn" data-source="android">Android</button>
+          <div class="feed-live-badge mono">
+            <span class="live-dot"></span>
+            <span>LIVE</span>
           </div>
         </div>
 
@@ -2215,8 +2231,8 @@
   </div>
 
   <script>
-    // Automatic Cache Cleaner & Reset (Version v8_real_favicons)
-    const CACHE_VERSION = 'v8_real_favicons';
+    // Automatic Cache Cleaner & Reset (Version v9_news_card_images)
+    const CACHE_VERSION = 'v9_news_card_images';
     if (localStorage.getItem('cukup_cache_version') !== CACHE_VERSION) {
       const savedWp = localStorage.getItem('cukup_wallpaper');
       const savedRadius = localStorage.getItem('cukup_card_radius');
@@ -2695,7 +2711,7 @@
     }
 
     // Browser Bookmarks Bar Integration (Direct from Browser)
-    const INITIAL_BROWSER_BOOKMARKS = {"items":[{"id":"bb_6","title":"Threads","url":"https://www.threads.com/","favicon":"data:image/png;base64,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","category":"social","folder":"Social","hint":"threads.com"},{"id":"bb_8","title":"Instagram","url":"https://www.instagram.com/","favicon":"data:image/png;base64,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","category":"social","folder":"Social","hint":"instagram.com"}],"folders":["Social"]};
+    const INITIAL_BROWSER_BOOKMARKS = {"items":[{"id":"bb_6","title":"Threads","url":"https://www.threads.com/","favicon":"data:image/png;base64,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","category":"social","folder":"Social","hint":"threads.com"},{"id":"bb_8","title":"Instagram","url":"https://www.instagram.com/","favicon":"data:image/png;base64,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","category":"social","folder":"Social","hint":"instagram.com"},{"id":"bb_9","title":"GitHub","url":"https://github.com/","favicon":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAADaklEQVR4nLSXS2yNQRTHz62qUkHTekVLlYZKvCJUJUJU0lhUQ4QIC7Gws7BA2ohSz2DlkUgXJCyFSFBEQmNDI94SGvrwKFpENVWv6vU7986Nz9eZ3tv2+if/nrlzZs75f/N9M3OaKDEiGAwmY4rgcjgZphsqPho+hWfhpUAg8D2WuIFoA0g8ErMbroEDJTa0w1NwO0I+SG8EkDgJsw1uhsnSO6iQfUqE/JZYBZA8DXMZzpb44AZchogvEk0AyfX9XoHjJL54Dhcj4pVTgHnfd+EY+T9QEXmI+BzpSPAkH4y56kteLeF3+EB6jsdwv4SXP4IceNHsqH8FSPhLn+4Lchi1pXAm7QL4wuNrhY/gHdji6X8JC5kzDZbQPuSLOQ9ujfwIvQIUZWFqYJJv8AyCPIz8MMpzYYN3GY1vCGY8rMfX6unPxtT64rbBbN2ikRUotyRXeFdI9HCB9/3Jja9VxXqTG/S3xNXXXRJKgEI9XFaKHbnSd0xy9K8jdz99wiVwgGVAE6yUvuMabLD0p8J8FbDUMbGM5WyRPoIY3zClDndRgGW4TSPP5+hQhUxukzjAHOv6MP67pFJXYJRlTlO8kiuI9RNTb3GNTeTPCIsjpqu0h7A9UKYKCFocaRJ/pFv6Qrug2eIYxntLlTjBbPVMi6tZBbxzzFsk8cN8sR9IjSqg2jFpo8QPWxz9t1TATYdzAUvXZxHE2CDhi8yGKj0HUmg0wqGOQWVwj6uk6iaxfuB6AO0Qe+X1CWYkEPgrjRMexzGoql+b3zthLQFL4GiJnjgDai1ZZ+a66s6K0OUWmSThakWvW73NVsF7Ev4+snwTL8BiJgctyc9gVkh0aLE6gRjvQ9ctjTeYg8ap9/p5Y4ul6wFy1JbcYK/Ehl2aPJRb/qrXvarFR47pOsmg9fTn0y40fVoHHKf/hy0qY/VWjXaKPoGzzPHcpSjVSlgvJ70fdMBqBp6THoAYvzCJDreWa3MjT99FgAkwBVMFh5suLS617ot8lOUE6BS3gE6xf3g6fyFz67ydrn9MJmKui/347E+QDnELsH0fz2AB8976HQm2IAzU6lcr5AqxX1au5P7jVs+OI3COLXkol0QPOhWzCa41Yga5DiXGajzdNSrkNDzA2Jru4kcV4AmudUMKAeujjNPSvJ1xTRID/gAAAP//eUeXVQAAAAZJREFUAwDeahm2jKtUkwAAAABJRU5ErkJggg==","category":"development","folder":"Development","hint":"github.com"},{"id":"bb_11","title":"Cloudflare: Build for the agent era","url":"https://www.cloudflare.com/","favicon":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAGcUlEQVR4nLRXSYgdVRQ9t6p+dzqdTtJpY0TjgDFOwVkTdeGIipDoRlCjOCHigODKheK0E8SNiiguXLhQQRxQDC6cJUIciBqiKGrUiCGdTnc6SXf/od713Pfq/ar6dkyQWFD9a3h177nnnnvf7Qw89MrscsxpPIHcHQ+RPnvmNOGBg3Ooc/5XRGl5N6/eR7N5l6zDqOgVWIGBgQ+R6gg6YZX/hr/h6mAAUI0X/qdPHJruQ2xurknQ338nUlmMHDlfH6yYZz+k4LQNoc/LsDw7NyGkZR5hCFnxfx6RCefoja6z7KiMUBLPTCDcLjzK2djXYCTc/Ft+gr3SRkymAfAsUBMJr7NcMgrEHopH5Z0HD1UNRFqkMIwqkN7D3ttppEYQMXKz6EGId8BTM79C/EOphlWNrzDiDXrHdmYZkGZ1QDlVnOddIBJBVBkIv7xn0JqSAYve0EALigoh9FIdo7LL/gGgOQWM7zFBhaPBc5B/BgaBVstKj86TEkRkIJJqL5IyBd1caYy4kuMaoJRORseB+f3QlRdDDj8urN22Bdj8GbB9AhgZIhMoQVTYDEEa/fzIpRoY6KG7VrYVipW0y8Qk9MI1wNX3AktPgM6dH95Pk42/fgLeeZ5t5lVgaJBBJmXqSnsmhOCI2LI6uBCvp4xC1awBYcTKSFi3kJ3j0KtvB254DDJyeEiHdsK3gwsghyyFHrkCcuhS4JUnoQYij02wFGeVkhoAS4DnxzqnRducBiZ3EwRfzvDbVecAtz4OGRqGNidDVXS/DamSBYugax8Bft4I+eoD6MKFkE4bauK09YnpwiGiyKrhh0YYFmF6Cto3hxGvRTJ8GPT7r4Fr7qbzEejeMQjflUkLzPn0Te+CzB2BW/sg8O1nkF1MWT+D6Z8LEIhViibSBZ/Vcm0gfBhEODAEvecpJCuv8sqWHX8Aw4up8D0V57O0hQbftcjaSecDy0+DbvkRavcTFO7Cfqayj2lhlWSpB5MF3iTk2awRqYztgrt0DeSSm7ioBZ+YJcfyeppUuq5QY1+piciLjgxOjEKPOxty3UN0vg36xbvAp28QIP00GoGBNCUAi1ZDnTomW3aOQSloLD+LSDuBUhOim2RqiJprtOiN2k2BlrpyOVOwCO7rV6DLTkeyanVYt3I1bRLQS4/6Tmw7QG4MqCahJ5rz3XugJ58NnLMacsalDIY5I90GQNKS9n0d5shU5Lb+gPZrz6Bxy0MFPAKkjnDtA9CxPyFvPkum58G0zc3Ihcj27gXOvAC462nIMacGcy0+Sxj9zB64LRtIfyeUk6naorC21bH22w4yYvTYvhXtz99Gvmkj8PLj7Jgz7BVDZGUIyYnnAdcTxKevQ2bGkFsKrCuLo5GBedA7nqTzU5iC0bAvGTCzPDMFN/o7jU2HpmI9vx3are/9rWnfUE1D+YZ1cOvXIx0Ote9Yjjq8BMlhxzAQpnHBEuiKVcD6t5AODlgnzHwX0/OvhCwj/a0pyMCCUIpRWIuOQOOiG/dDf2ji2RW3oXXfeUgvvh4pKUfRKb3GKGhJ6G/x0aFVJwm9myO7GTkCmNoVGpHf0erbraruN/8+PXSQnrgK6U2PBfqnJkLr9ygMRhO6ezwgopvMkc50TgPum4/hXnwYrs2PSL0g6rt0Ub2X6pu4cVIvsmMLZHwb8ufuZ/3v5X4TWo3TAEPYB5LvPvE+6UyzRHNfl+6XTWh/s8kkidgp6w7LVt4Npgg97qB20j67Hi82fAln5GpYU0jEn30L+WxwrulIMpFU/YQ0OA/Z/D4CcKXLOKQdwHQcG1NinihqGe73lWKTV2IjR7HRJbYFdkzAndCIvH3qIGmx6XTyoqHoATmtI4hMiJ83dSb3ztMili5zNhAnGoZSZQrE6kdFbSzIbCsQldlH0gMDEcc9b6NnyA+bbez9cSYs5MuKVUORxAHov6Dwm2mx0xUba4i6sJl0Z2WN22ExE3ZHVfIxC/lRjfWy+OcaV84UQUoS6Q9TXnQTFxINWc+dwO8HGgcyFAzU5tHK76z+pdILKmgrs2yhKxf2fP7viQ5nQjL2K0kQqxfmwMbSUi61Ua4+IvYe9TXSpSXcaxVm+OckJ5C881uStN0L6Ogok0EYzvUa7XUen/We+1pTB1zY99Wu72Gqsz6Rd9sb0W6v5YONZKAdP9VK4yjpK5/1nvtaUwvF510nte3WYaZ5s3yEzt8AAAD//16jHuMAAAAGSURBVAMAy0ZKif3LbxAAAAAASUVORK5CYII=","category":"development","folder":"Development","hint":"cloudflare.com"}],"folders":["Social","Development"]};
     let bookmarkBarItems = (INITIAL_BROWSER_BOOKMARKS && Array.isArray(INITIAL_BROWSER_BOOKMARKS.items)) ? [...INITIAL_BROWSER_BOOKMARKS.items] : [];
     let bookmarkBarFolders = (INITIAL_BROWSER_BOOKMARKS && Array.isArray(INITIAL_BROWSER_BOOKMARKS.folders)) ? [...INITIAL_BROWSER_BOOKMARKS.folders] : [];
 
@@ -2977,35 +2993,142 @@
       }
     });
 
-    // 6. Multi-Source Developer Tech Feed (HN, DEV, The Verge, Android)
-    let currentNewsSource = 'all';
+    // 6. Multi-Source Developer Tech Feed with Card Images
     let cachedAllNews = [];
 
+    function getTechCoverImage(title, domain) {
+      const t = (title || '').toLowerCase();
+      if (t.includes('ai') || t.includes('gpt') || t.includes('llm') || t.includes('model') || t.includes('neural') || t.includes('intelligence')) {
+        return 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&auto=format&fit=crop&q=80';
+      }
+      if (t.includes('linux') || t.includes('rust') || t.includes('kernel') || t.includes('hardware') || t.includes('cpu') || t.includes('chip') || t.includes('risc')) {
+        return 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&auto=format&fit=crop&q=80';
+      }
+      if (t.includes('web') || t.includes('js') || t.includes('react') || t.includes('css') || t.includes('html') || t.includes('frontend')) {
+        return 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=400&auto=format&fit=crop&q=80';
+      }
+      if (t.includes('security') || t.includes('hack') || t.includes('auth') || t.includes('crypto')) {
+        return 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=400&auto=format&fit=crop&q=80';
+      }
+      if (t.includes('android') || t.includes('mobile') || t.includes('phone') || t.includes('pixel')) {
+        return 'https://images.unsplash.com/photo-1607252650355-f7fd0460ccdb?w=400&auto=format&fit=crop&q=80';
+      }
+      return 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&auto=format&fit=crop&q=80';
+    }
+
     const FALLBACK_NEWS = [
-      { id: 'hn_1', source: 'HN', sourceClass: 'hn', title: 'The $8 Linux Computer: Minimalist RISC-V Hardware', url: 'https://news.ycombinator.com', score: '▲ 142', by: 'antirez', comments: 48, domain: 'blogspot.com' },
-      { id: 'dev_1', source: 'DEV', sourceClass: 'dev', title: 'Why 50 Years of Senior Craft Lives in Context, Not Code', url: 'https://dev.to', score: '❤️ 89', by: 'Randal Schwartz', comments: 24, domain: 'dev.to' },
-      { id: 'verge_1', source: 'The Verge', sourceClass: 'verge', title: 'Next-gen silicon architectures push boundaries of consumer computing', url: 'https://theverge.com/tech', score: '⚡ Tech', by: 'Verge Staff', comments: 31, domain: 'theverge.com' },
-      { id: 'android_1', source: 'Android', sourceClass: 'android', title: 'Android 16 Developer Preview: Predictive Back, Architecture & APIs', url: 'https://developer.android.com', score: '⚡ Android', by: 'Android Devs', comments: 45, domain: 'android.com' },
-      { id: 'hn_2', source: 'HN', sourceClass: 'hn', title: 'SQLite in the Browser with WebAssembly & OPFS', url: 'https://news.ycombinator.com', score: '▲ 285', by: 'drh', comments: 92, domain: 'sqlite.org' },
-      { id: 'dev_2', source: 'DEV', sourceClass: 'dev', title: 'Building Resilient Micro-Frontends in 2026', url: 'https://dev.to', score: '❤️ 142', by: 'Sarah Dayan', comments: 38, domain: 'dev.to' },
-      { id: 'verge_2', source: 'The Verge', sourceClass: 'verge', title: 'Open-weights AI models challenge proprietary benchmarks in real tests', url: 'https://theverge.com/ai', score: '⚡ AI', by: 'The Verge', comments: 64, domain: 'theverge.com' },
-      { id: 'android_2', source: 'Android', sourceClass: 'android', title: 'Jetpack Compose performance optimizations for 120Hz micro-interactions', url: 'https://android-developers.googleblog.com', score: '⚡ Kotlin', by: 'Android Team', comments: 28, domain: 'googleblog.com' }
+      {
+        id: 'hn_1',
+        source: 'HN',
+        sourceClass: 'hn',
+        title: 'The $8 Linux Computer: Minimalist RISC-V Hardware',
+        url: 'https://news.ycombinator.com',
+        image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&auto=format&fit=crop&q=80',
+        score: '▲ 142',
+        by: 'antirez',
+        comments: 48,
+        domain: 'blogspot.com'
+      },
+      {
+        id: 'dev_1',
+        source: 'DEV',
+        sourceClass: 'dev',
+        title: 'Why 50 Years of Senior Craft Lives in Context, Not Code',
+        url: 'https://dev.to',
+        image: 'https://media2.dev.to/dynamic/image/width=1000,height=420,fit=cover,gravity=auto,format=auto/https%3A%2F%2Fdev-to-uploads.s3.us-east-2.amazonaws.com%2Fuploads%2Farticles%2Fmc7bd0mpw7k0aq4vsqj4.jpg',
+        score: '❤️ 89',
+        by: 'Randal Schwartz',
+        comments: 24,
+        domain: 'dev.to'
+      },
+      {
+        id: 'verge_1',
+        source: 'The Verge',
+        sourceClass: 'verge',
+        title: 'Next-gen silicon architectures push boundaries of consumer computing',
+        url: 'https://theverge.com/tech',
+        image: 'https://platform.theverge.com/wp-content/uploads/sites/2/2026/10/268829_The90_Gem_SVasani_0002.jpg',
+        score: '⚡ Tech',
+        by: 'Verge Staff',
+        comments: 31,
+        domain: 'theverge.com'
+      },
+      {
+        id: 'android_1',
+        source: 'Android',
+        sourceClass: 'android',
+        title: 'Android 16 Developer Preview: Predictive Back, Architecture & APIs',
+        url: 'https://developer.android.com',
+        image: 'https://static0.anpoimages.com/wordpress/wp-content/uploads/wm/2026/11/nothing-phone-color-black-on-top-of-wooden-table.jpeg',
+        score: '⚡ Android',
+        by: 'Android Devs',
+        comments: 45,
+        domain: 'android.com'
+      },
+      {
+        id: 'hn_2',
+        source: 'HN',
+        sourceClass: 'hn',
+        title: 'SQLite in the Browser with WebAssembly & OPFS',
+        url: 'https://news.ycombinator.com',
+        image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&auto=format&fit=crop&q=80',
+        score: '▲ 285',
+        by: 'drh',
+        comments: 92,
+        domain: 'sqlite.org'
+      },
+      {
+        id: 'dev_2',
+        source: 'DEV',
+        sourceClass: 'dev',
+        title: 'Building Resilient Micro-Frontends in 2026',
+        url: 'https://dev.to',
+        image: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=400&auto=format&fit=crop&q=80',
+        score: '❤️ 142',
+        by: 'Sarah Dayan',
+        comments: 38,
+        domain: 'dev.to'
+      },
+      {
+        id: 'verge_2',
+        source: 'The Verge',
+        sourceClass: 'verge',
+        title: 'Open-weights AI models challenge proprietary benchmarks in real tests',
+        url: 'https://theverge.com/ai',
+        image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&auto=format&fit=crop&q=80',
+        score: '⚡ AI',
+        by: 'The Verge',
+        comments: 64,
+        domain: 'theverge.com'
+      },
+      {
+        id: 'android_2',
+        source: 'Android',
+        sourceClass: 'android',
+        title: 'Jetpack Compose performance optimizations for 120Hz micro-interactions',
+        url: 'https://android-developers.googleblog.com',
+        image: 'https://images.unsplash.com/photo-1607252650355-f7fd0460ccdb?w=400&auto=format&fit=crop&q=80',
+        score: '⚡ Kotlin',
+        by: 'Android Team',
+        comments: 28,
+        domain: 'googleblog.com'
+      }
     ];
 
     async function loadTechNews() {
       const listEl = document.getElementById('newsList');
-      const cache = localStorage.getItem('cukup_news_multi_cache_v2');
+      const cache = localStorage.getItem('cukup_news_cards_v3');
       if (cache) {
         try {
           const parsed = jsonParseSafe(cache);
           if (parsed && Array.isArray(parsed) && parsed.length > 0) {
             cachedAllNews = parsed;
-            renderFilteredNews();
+            renderNewsList();
           }
         } catch (e) {}
       } else {
         cachedAllNews = FALLBACK_NEWS;
-        renderFilteredNews();
+        renderNewsList();
       }
 
       try {
@@ -3033,6 +3156,7 @@
               sourceClass: 'hn',
               title: it.title,
               url: it.url || ('https://news.ycombinator.com/item?id=' + it.id),
+              image: getTechCoverImage(it.title, domain),
               score: '▲ ' + (it.score || 0),
               by: it.by || 'anon',
               comments: it.descendants || 0,
@@ -3049,6 +3173,7 @@
             sourceClass: 'dev',
             title: it.title,
             url: it.url,
+            image: it.cover_image || it.social_image || getTechCoverImage(it.title, 'dev.to'),
             score: '❤️ ' + (it.positive_reactions_count || 0),
             by: (it.user && it.user.name) || 'dev.to',
             comments: it.comments_count || 0,
@@ -3058,32 +3183,41 @@
 
         let vergeStories = [];
         if (vergeRes.status === 'fulfilled' && vergeRes.value && Array.isArray(vergeRes.value.items)) {
-          vergeStories = vergeRes.value.items.slice(0, 5).map(it => ({
-            id: 'verge_' + Math.random().toString(36).slice(2, 7),
-            source: 'The Verge',
-            sourceClass: 'verge',
-            title: it.title,
-            url: it.link,
-            score: '⚡ Tech',
-            by: it.author || 'The Verge',
-            comments: 'Read',
-            domain: 'theverge.com'
-          }));
+          vergeStories = vergeRes.value.items.slice(0, 5).map(it => {
+            const imgMatch = (it.content || it.description || '').match(/src=["'](https?://[^"']+.(?:jpg|png|webp|jpeg)[^"']*)["']/i);
+            return {
+              id: 'verge_' + Math.random().toString(36).slice(2, 7),
+              source: 'The Verge',
+              sourceClass: 'verge',
+              title: it.title,
+              url: it.link,
+              image: it.thumbnail || (imgMatch ? imgMatch[1] : null) || 'https://platform.theverge.com/wp-content/uploads/sites/2/2026/10/268829_The90_Gem_SVasani_0002.jpg',
+              score: '⚡ Tech',
+              by: it.author || 'The Verge',
+              comments: 'Read',
+              domain: 'theverge.com'
+            };
+          });
         }
 
         let androidStories = [];
         if (androidRes.status === 'fulfilled' && androidRes.value && Array.isArray(androidRes.value.items)) {
-          androidStories = androidRes.value.items.slice(0, 5).map(it => ({
-            id: 'android_' + Math.random().toString(36).slice(2, 7),
-            source: 'Android',
-            sourceClass: 'android',
-            title: it.title,
-            url: it.link,
-            score: '⚡ Android',
-            by: it.author || 'Android Police',
-            comments: 'Read',
-            domain: 'androidpolice.com'
-          }));
+          androidStories = androidRes.value.items.slice(0, 5).map(it => {
+            const imgMatch = (it.content || it.description || '').match(/src=["'](https?://[^"']+.(?:jpg|png|webp|jpeg)[^"']*)["']/i);
+            const enc = (it.enclosure && it.enclosure.link) ? it.enclosure.link : null;
+            return {
+              id: 'android_' + Math.random().toString(36).slice(2, 7),
+              source: 'Android',
+              sourceClass: 'android',
+              title: it.title,
+              url: it.link,
+              image: enc || it.thumbnail || (imgMatch ? imgMatch[1] : null) || 'https://static0.anpoimages.com/wordpress/wp-content/uploads/wm/2026/11/nothing-phone-color-black-on-top-of-wooden-table.jpeg',
+              score: '⚡ Android',
+              by: it.author || 'Android Police',
+              comments: 'Read',
+              domain: 'androidpolice.com'
+            };
+          });
         }
 
         const combined = [];
@@ -3097,23 +3231,20 @@
 
         if (combined.length > 0) {
           cachedAllNews = combined;
-          localStorage.setItem('cukup_news_multi_cache_v2', JSON.stringify(combined));
-          renderFilteredNews();
+          localStorage.setItem('cukup_news_cards_v3', JSON.stringify(combined));
+          renderNewsList();
         }
       } catch (err) {
         console.warn('Multi news fetch warning (using cache):', err);
       }
     }
 
-    function renderFilteredNews() {
+    function renderNewsList() {
       const listEl = document.getElementById('newsList');
+      if (!listEl) return;
       listEl.innerHTML = '';
 
-      const items = currentNewsSource === 'all'
-        ? cachedAllNews
-        : cachedAllNews.filter(it => (it.sourceClass === currentNewsSource) || (it.source.toLowerCase().includes(currentNewsSource)));
-
-      items.forEach(item => {
+      cachedAllNews.forEach(item => {
         const a = document.createElement('a');
         a.className = 'news-item';
         a.href = item.url;
@@ -3121,18 +3252,20 @@
         a.rel = 'noreferrer';
 
         const tagClass = item.sourceClass ? 'news-source-tag ' + item.sourceClass : 'news-source-tag';
+        const fallbackImg = 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&auto=format&fit=crop&q=80';
+        const imgSrc = item.image || fallbackImg;
 
         a.innerHTML = `
-          <div class="news-badge-col mono">
+          <div class="news-thumb-box">
+            <img class="news-thumb-img" src="${imgSrc}" alt="" loading="lazy" onerror="this.onerror=null; this.src='${fallbackImg}';">
             <span class="${tagClass}">${item.source}</span>
-            <span class="news-score">${item.score}</span>
           </div>
           <div class="news-content">
             <div class="news-headline">${item.title}</div>
             <div class="news-meta mono">
               <span>${item.domain}</span>
               <span>·</span>
-              <span>💬 ${item.comments}</span>
+              <span class="news-score-badge">${item.score}</span>
               <span>·</span>
               <span>by ${item.by}</span>
             </div>
@@ -3141,15 +3274,6 @@
         listEl.appendChild(a);
       });
     }
-
-    document.getElementById('newsSourceTabs').addEventListener('click', (e) => {
-      const btn = e.target.closest('.news-tab-btn');
-      if (!btn) return;
-      document.querySelectorAll('.news-tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentNewsSource = btn.dataset.source;
-      renderFilteredNews();
-    });
 
     // 7. YouTube Developer Watchlist Manager (Customizable from Settings)
     function getCustomYtVideos() {
