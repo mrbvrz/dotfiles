@@ -33,9 +33,9 @@ const STEM = 7; // From just under a 12px chevron, centred in a 28px row, to the
 // shortcut: icons resolve inside this mod, upgrade when the kit is copied into a second mod.
 const ICONS = "mods/better-changes/icons";
 
-export const codeFont = () => settings().font_family ?? "JetBrains Mono";
+export const codeFont = () => settings().font ?? settings().font_family ?? "CommitMono Nerd Font";
 // The terminals' size, which a layout can set. Rows and columns of code grow with it.
-export const codeSize = () => settings().font_size ?? 14;
+export const codeSize = () => settings().font_size ?? 12;
 
 export const Icon = (name, size = 14) => svg(`${ICONS}/${name}.svg`).size(size).flex_none();
 

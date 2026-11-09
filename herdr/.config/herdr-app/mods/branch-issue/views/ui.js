@@ -22,7 +22,7 @@ export const StateDot = (color, size = 10) =>
     .rounded(size / 2)
     .bg(color ?? theme().dim);
 
-export const codeFont = () => settings().font_family ?? "JetBrains Mono";
+export const codeFont = () => settings().font ?? settings().font_family ?? "CommitMono Nerd Font";
 
 export const Icon = (name, size = 14) =>
   svg(`mods/branch-issue/icons/${name}.svg`).size(size).flex_none();

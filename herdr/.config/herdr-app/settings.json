@@ -1,15 +1,16 @@
 {
-  "zoom": 1,
+  "zoom": 1.0,
   "sounds": {
     "enabled": true,
     "done": "sounds/success.mp3",
-    "blocked": "sounds/need.mp3",
-    "failed": "sounds/failed.mp3"
+    "blocked": "sounds/need.mp3"
   },
-  "font_size": 12,
+  "font": "CommitMono Nerd Font",
+  "font_family": "CommitMono Nerd Font",
+  "font_size": 12.0,
   "font_ligatures": false,
   "ui_font": "Uncut Sans",
   "telemetry": false,
-  "minimum_contrast": 1,
+  "minimum_contrast": 1.0,
   "pane_scrollbars": true
 }

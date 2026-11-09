@@ -14,7 +14,7 @@ export const SPIN_MS = 900;
 // can't serve: in some themes it's the same as the panel's own background.
 export const halfTone = (color) => `${color.slice(0, 7)}80`;
 
-export const codeFont = () => settings().font_family ?? "JetBrains Mono";
+export const codeFont = () => settings().font ?? settings().font_family ?? "CommitMono Nerd Font";
 
 export const Icon = (name, size = 14) =>
   svg(`mods/factory/icons/${name}.svg`).size(size).flex_none();

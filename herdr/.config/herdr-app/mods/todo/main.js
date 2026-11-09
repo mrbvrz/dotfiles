@@ -7,6 +7,11 @@ import { theme, settings, home, readTextFile, exec, notify } from "herdr";
 const NAME = "todo";
 const STORE_PATH = () => `${home()}/.config/herdr-app/agenda.json`;
 
+const uiSize = () => Number(settings()?.ui_font_size) || 13;
+const codeSize = () => Number(settings()?.font_size) || 12;
+const monoFont = () => String(settings()?.font ?? settings()?.font_family ?? "CommitMono Nerd Font");
+const uiFont = () => String(settings()?.ui_font ?? "Uncut Sans");
+
 function timeAgo(ts) {
   if (!ts) return "";
   const s = Math.floor((Date.now() - ts) / 1000);
@@ -195,6 +200,8 @@ AGENDA_EOF`;
       readonly: false,
       line_numbers: false,
       soft_wrap: true,
+      font_family: monoFont(),
+      font_size: codeSize(),
     });
     this.noteEditor.on("change", (_e, cx) => {
       const active = this.notes.find((x) => x.id === this.activeNoteId);
@@ -309,7 +316,7 @@ AGENDA_EOF`;
         .text_color(on ? t.foreground : t.dim)
         .hover((s) => s.bg(t.hover).text_color(t.foreground))
         .on_click((_e, cx) => this.setTab(id, cx))
-        .child(div().text_size(12).font_medium().child(label))
+        .child(div().text_size(uiSize() - 1).font_medium().child(label))
         .when(Boolean(count), (el) =>
           el.child(
             div()
@@ -317,7 +324,7 @@ AGENDA_EOF`;
               .h(16)
               .rounded(8)
               .bg(color ? color + "26" : t.raised)
-              .text_size(10)
+              .text_size(uiSize() - 3)
               .font_bold()
               .text_color(color ?? t.foreground)
               .flex()
@@ -359,7 +366,7 @@ AGENDA_EOF`;
         .px(6)
         .rounded(4)
         .cursor_pointer()
-        .text_size(11)
+        .text_size(uiSize() - 2)
         .font_medium()
         .when(on, (e) => e.bg(t.raised))
         .text_color(on ? t.foreground : t.dim)
@@ -374,7 +381,7 @@ AGENDA_EOF`;
         v_flex().p(10).gap(8).border_b(1).border_color(t.border).bg(t.chrome)
           .child(
             h_flex().h(30).px(8).gap(6).items_center().rounded(6).bg(t.background).border_1().border_color(t.border)
-              .child(Input.new(this.todoInput).flex_1().h_full().text_size(12).text_color(t.foreground))
+              .child(Input.new(this.todoInput).flex_1().h_full().text_size(uiSize() - 1).text_color(t.foreground))
               .child(
                 h_flex().h(22).px(6).gap(3).items_center().rounded(4).cursor_pointer()
                   .bg(this.todoPriority === "high" ? (t.blocked + "26") : t.raised)
@@ -383,13 +390,13 @@ AGENDA_EOF`;
                     this.todoPriority = this.todoPriority === "high" ? "normal" : "high";
                     cx.notify();
                   })
-                  .child(div().text_size(10).font_semibold().text_color(this.todoPriority === "high" ? t.blocked : t.dim).child(this.todoPriority === "high" ? "⚡ High" : "Normal")),
+                  .child(div().text_size(uiSize() - 3).font_semibold().text_color(this.todoPriority === "high" ? t.blocked : t.dim).child(this.todoPriority === "high" ? "⚡ High" : "Normal")),
               )
               .child(
                 div().h(22).px(8).flex().items_center().justify_center().rounded(4).cursor_pointer()
                   .bg(t.accent).hover((s) => s.opacity(0.85))
                   .on_click((_e, cx) => this.addTodo(cx))
-                  .child(div().text_size(11).font_bold().text_color(t.accent_foreground ?? "#131718").child("+ Add")),
+                  .child(div().text_size(uiSize() - 2).font_bold().text_color(t.accent_foreground ?? "#131718").child("+ Add")),
               ),
           )
           // Filters
@@ -403,7 +410,7 @@ AGENDA_EOF`;
               )
               .when(this.todos.some((x) => x.done), (el) =>
                 el.child(
-                  div().text_size(11).text_color(t.dim).cursor_pointer().hover((s) => s.text_color(t.ansi1 ?? "#e05252"))
+                  div().text_size(uiSize() - 2).text_color(t.dim).cursor_pointer().hover((s) => s.text_color(t.ansi1 ?? "#e05252"))
                     .on_click((_e, cx) => this.clearDoneTodos(cx)).child("Clear completed"),
                 ),
               ),
@@ -417,8 +424,8 @@ AGENDA_EOF`;
               .when(list.length === 0, (el) =>
                 el.child(
                   v_flex().items_center().justify_center().py(32).gap(6)
-                    .child(div().text_size(13).font_medium().text_color(t.muted).child("No tasks here"))
-                    .child(div().text_size(11).text_color(t.dim).child("Type a task above and press Enter to save")),
+                    .child(div().text_size(uiSize()).font_medium().text_color(t.muted).child("No tasks here"))
+                    .child(div().text_size(uiSize() - 2).text_color(t.dim).child("Type a task above and press Enter to save")),
                 ),
               )
               .children(
@@ -446,7 +453,7 @@ AGENDA_EOF`;
                         .items_center()
                         .justify_center()
                         .on_click((_e, cx) => this.toggleTodo(item.id, cx))
-                        .when(item.done, (e) => e.child(div().text_size(10).font_bold().text_color(t.done).child("✓"))),
+                        .when(item.done, (e) => e.child(div().text_size(uiSize() - 3).font_bold().text_color(t.done).child("✓"))),
                     )
                     // Text
                     .child(
@@ -454,7 +461,7 @@ AGENDA_EOF`;
                         .flex_1()
                         .min_w(0)
                         .truncate()
-                        .text_size(12)
+                        .text_size(uiSize() - 1)
                         .text_color(item.done ? t.dim : t.foreground)
                         .when(item.done, (e) => e.line_through())
                         .child(item.text),
@@ -463,11 +470,11 @@ AGENDA_EOF`;
                     .when(item.priority === "high" && !item.done, (el) =>
                       el.child(
                         div().px(4).h(16).rounded(3).bg(t.blocked + "26").flex().items_center().justify_center()
-                          .child(div().text_size(9).font_bold().text_color(t.blocked).child("HIGH")),
+                          .child(div().text_size(uiSize() - 4).font_bold().text_color(t.blocked).child("HIGH")),
                       ),
                     )
                     // Time
-                    .child(div().text_size(10).text_color(t.dim).child(timeAgo(item.createdAt)))
+                    .child(div().text_size(uiSize() - 3).text_color(t.dim).child(timeAgo(item.createdAt)))
                     // Delete
                     .child(
                       div()
@@ -508,7 +515,7 @@ AGENDA_EOF`;
           .rounded(4)
           .cursor_pointer()
           .when(on, (e) => e.bg(t.selected))
-          .text_size(11)
+          .text_size(uiSize() - 2)
           .font_medium()
           .text_color(on ? t.foreground : t.dim)
           .hover((s) => s.bg(t.hover).text_color(t.foreground))
@@ -528,7 +535,7 @@ AGENDA_EOF`;
           .justify_center()
           .rounded(3)
           .cursor_pointer()
-          .text_size(10.5)
+          .text_size(uiSize() - 2.5)
           .font_medium()
           .text_color(t.dim)
           .hover((s) => s.bg(t.hover).text_color(t.foreground))
@@ -543,7 +550,7 @@ AGENDA_EOF`;
               h_flex().h(24).px(8).gap(4).items_center().rounded(4).cursor_pointer().bg(t.raised)
                 .hover((s) => s.bg(t.hover))
                 .on_click((_e, cx) => this.closeNote(cx))
-                .child(div().text_size(11).font_medium().text_color(t.foreground).child("← Notes")),
+                .child(div().text_size(uiSize() - 2).font_medium().text_color(t.foreground).child("← Notes")),
             )
             // Mode Switcher: Edit, WYSIWYG Preview, Split
             .child(
@@ -557,13 +564,13 @@ AGENDA_EOF`;
               div().h(24).px(8).flex().items_center().rounded(4).cursor_pointer().bg(t.raised)
                 .hover((s) => s.bg(t.hover))
                 .on_click((_e, cx) => this.copyNoteContent(cx))
-                .child(div().text_size(11).text_color(t.dim).child("Copy Markdown")),
+                .child(div().text_size(uiSize() - 2).text_color(t.dim).child("Copy Markdown")),
             )
             .child(
               div().h(24).px(8).flex().items_center().rounded(4).cursor_pointer().bg(t.raised)
                 .hover((s) => s.bg(t.ansi1 + "26").text_color(t.ansi1))
                 .on_click((_e, cx) => this.deleteNote(active.id, cx))
-                .child(div().text_size(11).text_color(t.dim).child("Delete")),
+                .child(div().text_size(uiSize() - 2).text_color(t.dim).child("Delete")),
             ),
         )
         // Prominent Document Title & Meta Header
@@ -572,12 +579,12 @@ AGENDA_EOF`;
             .child(
               Input.new(this.noteTitleInput)
                 .h(28)
-                .text_size(16)
+                .text_size(uiSize() + 3)
                 .font_bold()
                 .text_color(t.foreground),
             )
             .child(
-              h_flex().gap(6).items_center().text_size(10.5).text_color(t.dim)
+              h_flex().gap(6).items_center().text_size(uiSize() - 2.5).text_color(t.dim)
                 .child(`Updated: ${timeAgo(active.updatedAt)}`)
                 .child("•")
                 .child(`${wordCount(active.content)} words`)
@@ -669,13 +676,13 @@ AGENDA_EOF`;
         h_flex().p(10).gap(8).items_center().bg(t.chrome).border_b(1).border_color(t.border)
           .child(
             h_flex().flex_1().h(28).px(8).gap(6).items_center().rounded(6).bg(t.background).border_1().border_color(t.border)
-              .child(Input.new(this.noteSearch).flex_1().h_full().text_size(12).text_color(t.foreground)),
+              .child(Input.new(this.noteSearch).flex_1().h_full().text_size(uiSize() - 1).text_color(t.foreground)),
           )
           .child(
             div().h(28).px(10).flex().items_center().rounded(6).cursor_pointer().bg(t.accent)
               .hover((s) => s.opacity(0.85))
               .on_click((_e, cx) => this.createNote(cx))
-              .child(div().text_size(11.5).font_bold().text_color(t.accent_foreground ?? "#131718").child("+ New Note")),
+              .child(div().text_size(uiSize() - 1.5).font_bold().text_color(t.accent_foreground ?? "#131718").child("+ New Note")),
           ),
       )
       // Notes list
@@ -686,8 +693,8 @@ AGENDA_EOF`;
               .when(list.length === 0, (el) =>
                 el.child(
                   v_flex().items_center().justify_center().py(32).gap(6)
-                    .child(div().text_size(13).font_medium().text_color(t.muted).child("No notes found"))
-                    .child(div().text_size(11).text_color(t.dim).child("Click '+ New Note' to start writing markdown notes")),
+                    .child(div().text_size(uiSize()).font_medium().text_color(t.muted).child("No notes found"))
+                    .child(div().text_size(uiSize() - 2).text_color(t.dim).child("Click '+ New Note' to start writing markdown notes")),
                 ),
               )
               .children(
@@ -704,10 +711,10 @@ AGENDA_EOF`;
                     .on_click((_e, cx) => this.openNote(note.id, cx))
                     .child(
                       h_flex().justify_between().items_center()
-                        .child(div().flex_1().truncate().font_semibold().text_size(12.5).text_color(t.foreground).child(note.title))
-                        .child(div().text_size(10).text_color(t.dim).child(timeAgo(note.updatedAt))),
+                        .child(div().flex_1().truncate().font_semibold().text_size(uiSize() - 0.5).text_color(t.foreground).child(note.title))
+                        .child(div().text_size(uiSize() - 3).text_color(t.dim).child(timeAgo(note.updatedAt))),
                     )
-                    .child(div().truncate().text_size(11.5).text_color(t.muted).child(firstLine));
+                    .child(div().truncate().text_size(uiSize() - 1.5).text_color(t.muted).child(firstLine));
                 }),
               ),
           )
@@ -727,17 +734,17 @@ AGENDA_EOF`;
         v_flex().p(10).gap(8).border_b(1).border_color(t.border).bg(t.chrome)
           .child(
             h_flex().h(30).px(8).gap(6).items_center().rounded(6).bg(t.background).border_1().border_color(t.border)
-              .child(Input.new(this.reminderInput).flex_1().h_full().text_size(12).text_color(t.foreground))
+              .child(Input.new(this.reminderInput).flex_1().h_full().text_size(uiSize() - 1).text_color(t.foreground))
               .child(
                 div().h(22).px(8).flex().items_center().rounded(4).cursor_pointer().bg(t.accent)
                   .hover((s) => s.opacity(0.85))
                   .on_click((_e, cx) => this.addReminder(cx))
-                  .child(div().text_size(11).font_bold().text_color(t.accent_foreground ?? "#131718").child("Set Reminder")),
+                  .child(div().text_size(uiSize() - 2).font_bold().text_color(t.accent_foreground ?? "#131718").child("Set Reminder")),
               ),
           )
           .child(
             h_flex().gap(4).items_center()
-              .child(div().text_size(11).text_color(t.dim).mr(4).child("In:"))
+              .child(div().text_size(uiSize() - 2).text_color(t.dim).mr(4).child("In:"))
               .children(
                 presets.map((mins) => {
                   const on = this.reminderPreset === mins;
@@ -748,7 +755,7 @@ AGENDA_EOF`;
                     .rounded(4)
                     .cursor_pointer()
                     .bg(on ? t.selected : t.raised)
-                    .text_size(10.5)
+                    .text_size(uiSize() - 2.5)
                     .font_medium()
                     .text_color(on ? t.accent : t.dim)
                     .hover((s) => s.text_color(t.foreground))
@@ -766,8 +773,8 @@ AGENDA_EOF`;
               .when(this.reminders.length === 0, (el) =>
                 el.child(
                   v_flex().items_center().justify_center().py(32).gap(6)
-                    .child(div().text_size(13).font_medium().text_color(t.muted).child("No active reminders"))
-                    .child(div().text_size(11).text_color(t.dim).child("Set a timer to get notified when tasks are due")),
+                    .child(div().text_size(uiSize()).font_medium().text_color(t.muted).child("No active reminders"))
+                    .child(div().text_size(uiSize() - 2).text_color(t.dim).child("Set a timer to get notified when tasks are due")),
                 ),
               )
               .children(
@@ -789,15 +796,15 @@ AGENDA_EOF`;
                         .flex()
                         .items_center()
                         .justify_center()
-                        .child(div().text_size(12).child(overdue ? "🔔" : "⏰")),
+                        .child(div().text_size(uiSize() - 1).child(overdue ? "🔔" : "⏰")),
                     )
                     .child(
                       v_flex().flex_1().min_w(0).gap(2)
-                        .child(div().truncate().text_size(12).font_medium().text_color(t.foreground).child(r.text))
+                        .child(div().truncate().text_size(uiSize() - 1).font_medium().text_color(t.foreground).child(r.text))
                         .child(
                           h_flex().gap(6).items_center()
                             .child(
-                              div().text_size(10.5).font_semibold()
+                              div().text_size(uiSize() - 2.5).font_semibold()
                                 .text_color(overdue ? t.blocked : t.accent)
                                 .child(overdue ? "Overdue / Fired" : `Due in: ${formatCountdown(r.dueAt)}`),
                             ),
@@ -808,14 +815,14 @@ AGENDA_EOF`;
                       div().h(22).px(6).flex().items_center().rounded(4).cursor_pointer().bg(t.chrome)
                         .hover((s) => s.bg(t.hover))
                         .on_click((_e, cx) => this.snoozeReminder(r.id, 10, cx))
-                        .child(div().text_size(10.5).text_color(t.dim).child("+10m")),
+                        .child(div().text_size(uiSize() - 2.5).text_color(t.dim).child("+10m")),
                     )
                     // Dismiss button
                     .child(
                       div().h(22).px(6).flex().items_center().rounded(4).cursor_pointer().bg(t.done + "26")
                         .hover((s) => s.opacity(0.85))
                         .on_click((_e, cx) => this.dismissReminder(r.id, cx))
-                        .child(div().text_size(10.5).font_bold().text_color(t.done).child("✓ Done")),
+                        .child(div().text_size(uiSize() - 2.5).font_bold().text_color(t.done).child("✓ Done")),
                     );
                 }),
               ),
@@ -834,6 +841,7 @@ AGENDA_EOF`;
       .id(NAME)
       .track_focus(this.handle)
       .size_full()
+      .font_family(uiFont())
       .bg(t.background)
       .text_color(t.foreground)
       .child(this.renderHeader(t))

@@ -249,6 +249,9 @@
   ],
   "background": "canvas",
   "theme": "cukup-malam",
+  "font": "CommitMono Nerd Font",
+  "font_size": 12,
+  "ui_font": "Uncut Sans",
   "terminal_padding": [
     14,
     12
