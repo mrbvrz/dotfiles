@@ -1,7 +1,36 @@
-import { spaces, panes, terminals, run, exec } from "herdr";
+import { spaces, panes, terminals, run, exec, playSound, settings } from "herdr";
 
 const cache = new Map(); // tid -> { time, title }
 const CACHE_TTL_MS = 3000;
+const seenFailed = new Set();
+const lastStates = new Map();
+
+function checkFailedSounds(terms) {
+  const cfg = settings()?.sounds;
+  if (cfg?.enabled === false) return;
+
+  for (const t of terms) {
+    const isAgent = Boolean(t.agent || t.status?.app || t.program?.agent);
+    if (!isAgent) continue;
+
+    const isFailed =
+      t.status === "error" ||
+      t.status?.state === "error" ||
+      (t.state === "finished" && typeof t.exit_code === "number" && t.exit_code !== 0);
+
+    const prev = lastStates.get(t.address);
+    lastStates.set(t.address, t.status?.state || t.status || t.state);
+
+    if (isFailed && !seenFailed.has(t.address)) {
+      seenFailed.add(t.address);
+      if (prev && prev !== "finished") {
+        try {
+          playSound(cfg?.failed ?? "sounds/failed.mp3");
+        } catch (_) {}
+      }
+    }
+  }
+}
 
 function cleanStr(s) {
   if (!s || typeof s !== "string") return "";
@@ -197,6 +226,8 @@ export async function autoRenameTabs() {
     const sps = spaces();
     const pns = panes();
     const terms = terminals();
+
+    checkFailedSounds(terms);
 
     for (const space of sps) {
       const tabs = space.tabs ?? [];

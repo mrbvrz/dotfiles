@@ -1,7 +1,10 @@
 {
   "zoom": 1,
   "sounds": {
-    "enabled": true
+    "enabled": true,
+    "done": "sounds/success.mp3",
+    "blocked": "sounds/need.mp3",
+    "failed": "sounds/failed.mp3"
   },
   "font_size": 12,
   "font_ligatures": false,
