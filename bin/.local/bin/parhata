@@ -1,0 +1,2 @@
+#!/bin/sh
+exec hc run parhata "$@"
