@@ -1,7 +1,7 @@
 // Todo, Notes & Reminders mod for Herdr.
 // Clean, fast, and keyboard-friendly personal productivity tool.
 import { View, div, svg } from "gpui-kit";
-import { v_flex, h_flex, Input, InputState, Editor, EditorState, Scrollbar } from "gpui-base";
+import { v_flex, h_flex, Input, InputState, Editor, EditorState, Scrollbar, TextView } from "gpui-base";
 import { theme, settings, home, readTextFile, exec, notify } from "herdr";
 
 const NAME = "todo";
@@ -14,6 +14,11 @@ function timeAgo(ts) {
   if (s < 3600) return `${Math.floor(s / 60)}m ago`;
   if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
   return `${Math.floor(s / 86400)}d ago`;
+}
+
+function wordCount(str) {
+  if (!str) return 0;
+  return str.trim().split(/\s+/).filter(Boolean).length;
 }
 
 function formatCountdown(dueAt) {
@@ -42,6 +47,7 @@ export default class TodoMod extends View {
 
     this.notes = [];
     this.activeNoteId = null;
+    this.noteViewMode = "edit";
     this.noteSearch = InputState.new({ placeholder: "Search notes..." });
     this.noteSearch.on("change", (_e, cx) => cx.notify());
     this.noteTitleInput = InputState.new({ placeholder: "Note title..." });
@@ -232,6 +238,24 @@ AGENDA_EOF`;
     if (!active) return;
     cx.write_to_clipboard(active.content);
     notify({ title: "Copied", body: "Note content copied to clipboard", level: "info", timeout: 2000 });
+  }
+
+  insertFormat(prefix, suffix = "", cx) {
+    if (!this.noteEditor) return;
+    const current = this.noteEditor.value();
+    const snippet = suffix ? `${prefix}text${suffix}` : `${prefix}`;
+    const updated = current ? `${current}\n${snippet}` : snippet;
+    this.noteEditor.set_value(updated);
+    const active = this.notes.find((x) => x.id === this.activeNoteId);
+    if (active) {
+      active.content = updated;
+      active.updatedAt = Date.now();
+      this.save(cx);
+    }
+    if (this.noteViewMode === "preview") {
+      this.noteViewMode = "edit";
+    }
+    cx.notify();
   }
 
   // ── Reminder Actions ─────────────────────────────────────────────────────
@@ -474,8 +498,45 @@ AGENDA_EOF`;
       const active = this.notes.find((x) => x.id === this.activeNoteId);
       if (!active) return div();
 
+      const modeBtn = (mode, label) => {
+        const on = this.noteViewMode === mode;
+        return h_flex()
+          .h(22)
+          .px(7)
+          .gap(4)
+          .items_center()
+          .rounded(4)
+          .cursor_pointer()
+          .when(on, (e) => e.bg(t.selected))
+          .text_size(11)
+          .font_medium()
+          .text_color(on ? t.foreground : t.dim)
+          .hover((s) => s.bg(t.hover).text_color(t.foreground))
+          .on_click((_e, cx) => {
+            this.noteViewMode = mode;
+            cx.notify();
+          })
+          .child(label);
+      };
+
+      const toolBtn = (label, fn) =>
+        div()
+          .h(20)
+          .px(6)
+          .flex()
+          .items_center()
+          .justify_center()
+          .rounded(3)
+          .cursor_pointer()
+          .text_size(10.5)
+          .font_medium()
+          .text_color(t.dim)
+          .hover((s) => s.bg(t.hover).text_color(t.foreground))
+          .on_click((_e, cx) => fn(cx))
+          .child(label);
+
       return v_flex().flex_1().min_h(0)
-        // Edit Header
+        // Header Toolbar
         .child(
           h_flex().h(36).px(10).gap(8).items_center().bg(t.chrome).border_b(1).border_color(t.border)
             .child(
@@ -484,15 +545,19 @@ AGENDA_EOF`;
                 .on_click((_e, cx) => this.closeNote(cx))
                 .child(div().text_size(11).font_medium().text_color(t.foreground).child("← Notes")),
             )
+            // Mode Switcher: Edit, WYSIWYG Preview, Split
             .child(
-              h_flex().flex_1().h(26).px(8).items_center().rounded(4).bg(t.background).border_1().border_color(t.border)
-                .child(Input.new(this.noteTitleInput).flex_1().h_full().text_size(12).font_medium().text_color(t.foreground)),
+              h_flex().gap(2).p(2).rounded(5).bg(t.raised).items_center()
+                .child(modeBtn("edit", "✎ Edit"))
+                .child(modeBtn("preview", "👁 Preview"))
+                .child(modeBtn("split", "◫ Split")),
             )
+            .child(div().flex_1())
             .child(
               div().h(24).px(8).flex().items_center().rounded(4).cursor_pointer().bg(t.raised)
                 .hover((s) => s.bg(t.hover))
                 .on_click((_e, cx) => this.copyNoteContent(cx))
-                .child(div().text_size(11).text_color(t.dim).child("Copy")),
+                .child(div().text_size(11).text_color(t.dim).child("Copy Markdown")),
             )
             .child(
               div().h(24).px(8).flex().items_center().rounded(4).cursor_pointer().bg(t.raised)
@@ -501,10 +566,97 @@ AGENDA_EOF`;
                 .child(div().text_size(11).text_color(t.dim).child("Delete")),
             ),
         )
-        // Editor
+        // Prominent Document Title & Meta Header
         .child(
-          div().flex_1().min_h(0).p(10).bg(t.background)
-            .child(this.noteEditor ? Editor.new(this.noteEditor).size_full() : div()),
+          v_flex().px(14).pt(10).pb(8).border_b(1).border_color(t.border).bg(t.chrome).gap(3)
+            .child(
+              Input.new(this.noteTitleInput)
+                .h(28)
+                .text_size(16)
+                .font_bold()
+                .text_color(t.foreground),
+            )
+            .child(
+              h_flex().gap(6).items_center().text_size(10.5).text_color(t.dim)
+                .child(`Updated: ${timeAgo(active.updatedAt)}`)
+                .child("•")
+                .child(`${wordCount(active.content)} words`)
+                .child("•")
+                .child(div().text_color(t.done).child("✓ Autosaved")),
+            ),
+        )
+        // Markdown Quick Formatting Toolbar (visible in Edit & Split mode)
+        .when(this.noteViewMode !== "preview", (el) =>
+          el.child(
+            h_flex().px(10).h(26).gap(4).items_center().border_b(1).border_color(t.border).bg(t.chrome)
+              .child(toolBtn("H1", (cx) => this.insertFormat("# ", "", cx)))
+              .child(toolBtn("H2", (cx) => this.insertFormat("## ", "", cx)))
+              .child(toolBtn("H3", (cx) => this.insertFormat("### ", "", cx)))
+              .child(div().w(1).h(12).bg(t.border))
+              .child(toolBtn("B", (cx) => this.insertFormat("**", "**", cx)))
+              .child(toolBtn("I", (cx) => this.insertFormat("*", "*", cx)))
+              .child(toolBtn("`code`", (cx) => this.insertFormat("`", "`", cx)))
+              .child(div().w(1).h(12).bg(t.border))
+              .child(toolBtn("• List", (cx) => this.insertFormat("- ", "", cx)))
+              .child(toolBtn("☑ Task", (cx) => this.insertFormat("- [ ] ", "", cx)))
+              .child(toolBtn("” Quote", (cx) => this.insertFormat("> ", "", cx))),
+          ),
+        )
+        // Note Content Area: Edit / WYSIWYG / Split
+        .child(
+          div().flex_1().min_h(0).bg(t.background)
+            .when(this.noteViewMode === "edit", (e) =>
+              e.child(div().size_full().p(12).child(this.noteEditor ? Editor.new(this.noteEditor).size_full() : div())),
+            )
+            .when(this.noteViewMode === "preview", (e) =>
+              e.child(
+                div().id("note-preview-wrap").size_full().relative()
+                  .child(
+                    v_flex().id("note-preview-scroll").size_full().p(16).overflow_y_scroll()
+                      .child(
+                        TextView.markdown(
+                          `note-md-${active.id}`,
+                          active.content.trim() ? active.content : "*No content yet. Click Edit or use the formatting toolbar above to write markdown...*",
+                        )
+                          .selectable(true)
+                          .scrollable(true)
+                          .on_link_click((url, cx) => cx.open_url(url)),
+                      ),
+                  )
+                  .child(
+                    v_flex().absolute().top(2).bottom(2).right(2).w(4).rounded(2).overflow_hidden()
+                      .child(Scrollbar.vertical("note-preview-scroll").mode("hover").size_full()),
+                  ),
+              ),
+            )
+            .when(this.noteViewMode === "split", (e) =>
+              e.child(
+                h_flex().size_full().min_h(0)
+                  .child(
+                    v_flex().flex_1().min_w(0).h_full().border_r(1).border_color(t.border).p(10)
+                      .child(this.noteEditor ? Editor.new(this.noteEditor).size_full() : div()),
+                  )
+                  .child(
+                    div().id("note-split-wrap").flex_1().min_w(0).h_full().relative()
+                      .child(
+                        v_flex().id("note-split-scroll").size_full().p(12).overflow_y_scroll()
+                          .child(
+                            TextView.markdown(
+                              `note-split-md-${active.id}`,
+                              active.content.trim() ? active.content : "*Preview...*",
+                            )
+                              .selectable(true)
+                              .scrollable(true)
+                              .on_link_click((url, cx) => cx.open_url(url)),
+                          ),
+                      )
+                      .child(
+                        v_flex().absolute().top(2).bottom(2).right(2).w(4).rounded(2).overflow_hidden()
+                          .child(Scrollbar.vertical("note-split-scroll").mode("hover").size_full()),
+                      ),
+                  ),
+              ),
+            ),
         );
     }
 
