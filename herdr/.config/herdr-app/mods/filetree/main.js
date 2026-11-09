@@ -45,6 +45,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 const dirOf = (rel) => (rel.includes("/") ? rel.slice(0, rel.lastIndexOf("/")) : "");
 const baseOf = (path) => path.replace(/[\\/]+$/, "").split(/[\\/]/).pop() || path;
 const join = (root, rel) => (rel ? (/[\\/]$/.test(root) ? root + rel : `${root}/${rel}`) : root);
+const dirOfAbs = (p) => p.replace(/[\\/][^\\/]+$/, "") || "/";
 function ancestors(rel) {
   const out = [];
   for (let d = dirOf(rel); d; d = dirOf(d)) out.push(d);
@@ -294,6 +295,11 @@ function sendToAgent(cx, abs) {
 export default class FileTree extends View {
   init(_props, cx) {
     this.menu = props()?.menu ?? null;
+    this.dialog = props()?.dialog ?? null;
+    if (this.dialog) {
+      this.initDialog(cx);
+      return;
+    }
     if (this.menu) return;
     this.handle = cx.focus_handle();
     this.scroll = VirtualListScrollHandle.new();
@@ -310,6 +316,7 @@ export default class FileTree extends View {
     this.sizes = new Map(); this.sizing = new Set(); this.visible = [];
     this.chip = null; this.branchFlash = null; this.width = 320; this.query = ""; this.hits = null; this.searchSeq = 0;
     this.seenAt = Date.now() - 2000; this.seenPreview = shared(`${NAME}.preview`)?.n ?? 0; this.seenView = shared(`${NAME}.view`)?.n ?? 0;
+    this.seenRefresh = shared(`${NAME}.refresh`) ?? 0;
     this.input = InputState.new({ placeholder: "Filter files" });
     this.input.on("change", (_e, cx) => this.search(this.input.value(), cx));
     this.input.on("submit", (_e, cx) => this.jump(cx));
@@ -683,6 +690,8 @@ export default class FileTree extends View {
 
   // Redraws only when a highlight changes state (bright → tinted → gone), not every second.
   tick(cx) {
+    const ref = shared(`${NAME}.refresh`);
+    if (ref && ref !== this.seenRefresh) { this.seenRefresh = ref; this.refresh(cx); }
     const now = Date.now();
     let dirty = false;
     for (const [p, v] of this.flashes) {
@@ -814,9 +823,201 @@ export default class FileTree extends View {
     this.show(rel, cx);
   }
 
+  initDialog(cx) {
+    const d = this.dialog;
+    const isDelete = d.action === "delete";
+    this.handle = cx.focus_handle();
+    this.error = null;
+    this.busy = false;
+
+    if (!isDelete) {
+      const initialVal = d.action === "rename" ? d.name : "";
+      this.dialogInput = InputState.new({ value: initialVal, placeholder: d.action === "new-file" ? "e.g. index.ts" : d.action === "new-folder" ? "e.g. components" : "name" });
+      this.dialogInputFocused = true;
+      this.dialogInput.on("change", () => { this.error = null; cx.notify(); });
+      this.dialogInput.on("submit", () => this.confirmDialog(cx));
+      this.dialogInput.on("focus", () => { this.dialogInputFocused = true; cx.notify(); });
+      this.dialogInput.on("blur", () => { this.dialogInputFocused = false; cx.notify(); });
+
+      if (initialVal) {
+        const lastDot = initialVal.lastIndexOf(".");
+        const end = (d.dir || lastDot <= 0) ? initialVal.length : lastDot;
+        this.dialogInput.set_selected_range({ start: 0, end });
+      }
+      this.dialogInput.focus();
+      cx.timer.after(300, () => this.dialogInput?.focus());
+    } else {
+      this.handle.focus();
+      cx.timer.after(200, () => this.handle.focus());
+    }
+  }
+
+  async confirmDialog(cx) {
+    if (this.busy) return;
+    const d = this.dialog;
+    const close = () => closeOverlay(props().overlay);
+
+    try {
+      this.busy = true;
+      cx.notify();
+
+      if (d.action === "new-file") {
+        const val = this.dialogInput.value().trim();
+        if (!val) { this.error = "File name cannot be empty"; this.busy = false; cx.notify(); return; }
+        if (val.includes("/") || val.includes("\\")) { this.error = "Invalid characters in file name"; this.busy = false; cx.notify(); return; }
+        const target = `${d.targetDir.replace(/\/+$/, "")}/${val}`;
+        const r = await exec("touch", [target]);
+        if (r.code !== 0) throw new Error(r.stderr || "Failed to create file");
+        notify({ title: "File created", body: val, level: "success", timeout: 2500 });
+      } else if (d.action === "new-folder") {
+        const val = this.dialogInput.value().trim();
+        if (!val) { this.error = "Folder name cannot be empty"; this.busy = false; cx.notify(); return; }
+        if (val.includes("/") || val.includes("\\")) { this.error = "Invalid characters in folder name"; this.busy = false; cx.notify(); return; }
+        const target = `${d.targetDir.replace(/\/+$/, "")}/${val}`;
+        const r = await exec("mkdir", ["-p", target]);
+        if (r.code !== 0) throw new Error(r.stderr || "Failed to create folder");
+        notify({ title: "Folder created", body: val, level: "success", timeout: 2500 });
+      } else if (d.action === "rename") {
+        const val = this.dialogInput.value().trim();
+        if (!val) { this.error = "Name cannot be empty"; this.busy = false; cx.notify(); return; }
+        if (val === d.name) { close(); return; }
+        if (val.includes("/") || val.includes("\\")) { this.error = "Invalid characters in name"; this.busy = false; cx.notify(); return; }
+        const parent = dirOfAbs(d.abs);
+        const newAbs = `${parent.replace(/\/+$/, "")}/${val}`;
+        const r = await exec("mv", [d.abs, newAbs]);
+        if (r.code !== 0) throw new Error(r.stderr || "Failed to rename");
+        notify({ title: "Renamed", body: `${d.name} → ${val}`, level: "success", timeout: 2500 });
+      } else if (d.action === "delete") {
+        const platform = window()?.platform;
+        let ok = false;
+        if (platform === "macos") {
+          const r = await exec("/usr/bin/trash", [d.abs]).catch(() => ({ code: 1 }));
+          if (r.code === 0) ok = true;
+        }
+        if (!ok) {
+          const r2 = await exec("rm", ["-rf", d.abs]);
+          if (r2.code !== 0) throw new Error(r2.stderr || "Failed to delete");
+        }
+        notify({ title: "Deleted", body: `${d.name} moved to trash`, level: "success", timeout: 2500 });
+      }
+
+      setShared(`${NAME}.refresh`, Date.now());
+      close();
+    } catch (e) {
+      this.busy = false;
+      this.error = String(e?.message ?? e);
+      cx.notify();
+    }
+  }
+
+  async duplicate(abs, name, dir) {
+    try {
+      const script = `SRC="$1"
+DIR=$(dirname "$SRC")
+BASE=$(basename "$SRC")
+if [ -d "$SRC" ]; then
+  DEST="$DIR/\${BASE} copy"
+  I=2
+  while [ -e "$DEST" ]; do
+    DEST="$DIR/\${BASE} copy $I"
+    I=$((I+1))
+  done
+  cp -R "$SRC" "$DEST"
+else
+  EXT="\${BASE##*.}"
+  NAME="\${BASE%.*}"
+  if [ "$EXT" = "$BASE" ]; then
+    DEST="$DIR/\${BASE} copy"
+  else
+    DEST="$DIR/\${NAME} copy.\${EXT}"
+  fi
+  I=2
+  while [ -e "$DEST" ]; do
+    if [ "$EXT" = "$BASE" ]; then
+      DEST="$DIR/\${BASE} copy $I"
+    else
+      DEST="$DIR/\${NAME} copy $I.\${EXT}"
+    fi
+    I=$((I+1))
+  done
+  cp "$SRC" "$DEST"
+fi
+echo "$DEST"
+`;
+      const r = await exec("sh", ["-c", script, NAME, abs]);
+      if (r.code !== 0) throw new Error(r.stderr || "Failed to duplicate");
+      const destPath = (r.stdout || "").trim();
+      notify({ title: "Duplicated", body: baseOf(destPath) || `${name} copied`, level: "success", timeout: 2500 });
+      setShared(`${NAME}.refresh`, Date.now());
+    } catch (e) {
+      notify({ title: "Duplicate failed", body: String(e?.message ?? e), level: "error" });
+    }
+  }
+
+  renderDialog(cx) {
+    const t = theme(), d = this.dialog, R = frameLook().radius;
+    const close = () => closeOverlay(props().overlay);
+    const isDelete = d.action === "delete";
+
+    const title = d.action === "new-file" ? "New File"
+      : d.action === "new-folder" ? "New Folder"
+      : d.action === "rename" ? `Rename ${d.dir ? "Folder" : "File"}`
+      : `Delete ${d.dir ? "Folder" : "File"}`;
+
+    const sub = d.action === "new-file" || d.action === "new-folder" ? `In: ${baseOf(d.targetDir) || "/"}`
+      : d.action === "rename" ? `Current name: ${d.name}`
+      : `Are you sure you want to delete "${d.name}"?`;
+
+    const confirmLabel = isDelete ? (this.busy ? "Deleting…" : "Move to Trash")
+      : (this.busy ? "Working…" : d.action === "rename" ? "Rename" : "Create");
+
+    const btn = (id, label, primary, danger, act) => h_flex().id(id).h(30).px(14).items_center().justify_center().rounded(R)
+      .cursor_pointer().text_size(12.5).font_medium()
+      .when(primary && !danger, (el) => el.bg(t.accent).text_color(t.accent_foreground ?? "#ffffff").hover((s) => s.opacity(0.9)))
+      .when(primary && danger, (el) => el.bg(t.ansi1 ?? "#e05252").text_color("#ffffff").hover((s) => s.opacity(0.9)))
+      .when(!primary, (el) => el.bg(t.surface ?? t.chrome).text_color(t.foreground).border_1().border_color(t.border).hover((s) => s.bg(t.hover)))
+      .on_click(act).child(label);
+
+    return v_flex().id("ft-dialog").track_focus(this.handle).size_full().p(16).gap(12).bg(t.popover ?? t.surface).text_color(t.foreground)
+      .on_key_down((e, cx) => {
+        if (e.key === "escape") { close(); cx.stop_propagation(); }
+        else if (e.key === "enter" && (isDelete || !this.dialogInputFocused)) { this.confirmDialog(cx); cx.stop_propagation(); }
+      })
+      .child(h_flex().items_center().justify_between()
+        .child(div().text_size(14).font_semibold().child(title))
+        .child(div().text_size(11).text_color(t.dim).child("Esc to cancel")))
+      .child(div().text_size(12).text_color(t.muted).child(sub))
+      .when(!isDelete, (el) => el.child(
+        h_flex().h(34).px(8).items_center().rounded(R).bg(t.background).border_1().border_color(this.dialogInputFocused ? t.accent : t.border)
+          .child(Input.new(this.dialogInput).flex_1().h_full().text_size(12.5).text_color(t.foreground))
+      ))
+      .when(isDelete, (el) => el.child(
+        div().text_size(11.5).text_color(t.dim).child("This item will be moved to the macOS Trash.")
+      ))
+      .when(Boolean(this.error), (el) => el.child(
+        div().text_size(11.5).text_color(t.ansi1 ?? "#e05252").child(this.error)
+      ))
+      .child(div().flex_1())
+      .child(h_flex().gap(8).justify_end()
+        .child(btn("ft-dlg-cancel", "Cancel", false, false, () => close()))
+        .child(btn("ft-dlg-confirm", confirmLabel, true, isDelete, () => this.confirmDialog(cx))));
+  }
+
   openMenu(rel, dir) {
     const abs = join(this.root, rel);
-    openOverlay({ mod: NAME, kind: "popup", width: 210, height: dir ? 5 * 28 + 10 : 7 * 28 + 10, props: { menu: { root: this.root, rel, abs, dir, local: !this.on } } });
+    let count = 2;
+    let seps = 1;
+    if (rel) {
+      count += 3;
+      seps += 1;
+    }
+    if (!dir) count += 2;
+    count += 1;
+    seps += 1;
+    if (rel) count += 1;
+    count += 2;
+    const height = count * 26 + seps * 7 + 8;
+    openOverlay({ mod: NAME, kind: "popup", width: 215, height, props: { menu: { root: this.root, rel, abs, dir, local: !this.on } } });
   }
 
   // A virtual list's rows can't hold handlers, so the list reports the row.
@@ -1000,20 +1201,55 @@ export default class FileTree extends View {
   renderMenu(cx) {
     const t = theme(), m = this.menu, R = frameLook().radius;
     const close = () => closeOverlay(props().overlay);
-    const item = (id, label, act) => div().id(id).h(28).px(10).flex().items_center().rounded(R).cursor_pointer().text_size(12.5)
-      .hover((s) => s.bg(t.hover)).on_click((_e, cx) => { close(); act(cx); }).child(label);
+    const item = (id, label, act, danger = false) => div().id(id).h(26).px(8).flex().items_center().rounded(R).cursor_pointer().text_size(12)
+      .hover((s) => s.bg(danger ? (t.ansi1 ? alpha(t.ansi1, 0.15) : t.hover) : t.hover))
+      .when(danger, (el) => el.text_color(t.ansi1 ?? t.foreground))
+      .on_click((_e, cx) => { close(); act(cx); }).child(label);
+    const sep = (key) => div().id(`ft-sep-${key}`).h(1).my(3).mx(4).bg(t.border);
+
     const items = [];
-    if (!m.dir) items.push(item("m-preview", "Preview", () => setShared(`${NAME}.preview`, { root: m.root, rel: m.rel, n: Date.now() })));
-    if (!m.dir && m.local) items.push(item("m-open", "Open in default app", () => openExternal(m.abs).catch((e) => notify({ title: "Could not open the file", body: String(e?.message ?? e), level: "error" }))));
+    const targetDir = m.dir ? m.abs : dirOfAbs(m.abs);
+
+    items.push(item("m-new-file", "New File…", () => {
+      openOverlay({ mod: NAME, kind: "dialog", width: 380, height: 175, props: { dialog: { action: "new-file", targetDir, root: m.root } } });
+    }));
+    items.push(item("m-new-folder", "New Folder…", () => {
+      openOverlay({ mod: NAME, kind: "dialog", width: 380, height: 175, props: { dialog: { action: "new-folder", targetDir, root: m.root } } });
+    }));
+
+    if (m.rel) {
+      items.push(sep("ops"));
+      items.push(item("m-rename", "Rename…", () => {
+        openOverlay({ mod: NAME, kind: "dialog", width: 380, height: 175, props: { dialog: { action: "rename", abs: m.abs, rel: m.rel, dir: m.dir, name: baseOf(m.abs), root: m.root } } });
+      }));
+      items.push(item("m-duplicate", "Duplicate", () => {
+        this.duplicate(m.abs, baseOf(m.abs), m.dir);
+      }));
+      items.push(item("m-delete", "Delete…", () => {
+        openOverlay({ mod: NAME, kind: "dialog", width: 380, height: 160, props: { dialog: { action: "delete", abs: m.abs, rel: m.rel, dir: m.dir, name: baseOf(m.abs), root: m.root } } });
+      }, true));
+    }
+
+    items.push(sep("view"));
+    if (!m.dir) {
+      items.push(item("m-preview", "Preview", () => setShared(`${NAME}.preview`, { root: m.root, rel: m.rel, n: Date.now() })));
+      if (m.local) items.push(item("m-open", "Open in default app", () => openExternal(m.abs).catch((e) => notify({ title: "Could not open file", body: String(e?.message ?? e), level: "error" }))));
+    }
     if (m.local) items.push(item("m-reveal", window()?.platform === "macos" ? "Reveal in Finder" : "Show in folder", () => revealExternal(m.abs).catch(() => {})));
-    items.push(item("m-rel", "Copy relative path", (cx) => copy(cx, m.rel)));
+
+    items.push(sep("path"));
+    if (m.rel) items.push(item("m-rel", "Copy relative path", (cx) => copy(cx, m.rel)));
     items.push(item("m-abs", "Copy absolute path", (cx) => copy(cx, m.abs)));
     items.push(item("m-send", "Send to agent", (cx) => sendToAgent(cx, m.abs)));
-    return v_flex().id("ft-menu").size_full().p(5).gap(0).bg(t.popover ?? t.surface).text_color(t.foreground).children(items);
+
+    return v_flex().id("ft-menu").size_full().p(4).gap(0).bg(t.popover ?? t.surface).text_color(t.foreground).children(items);
   }
 
   render(cx) {
+    if (this.dialog) return this.renderDialog(cx);
     if (this.menu) return this.renderMenu(cx);
+    const ref = shared(`${NAME}.refresh`);
+    if (ref && ref !== this.seenRefresh) { this.seenRefresh = ref; this.refresh(cx); }
     this.sync(cx);
     const req = shared(`${NAME}.preview`);
     if (req && req.n !== this.seenPreview) { this.seenPreview = req.n; if (req.root === this.root) this.show(req.rel, cx, true); }
@@ -1034,6 +1270,15 @@ export default class FileTree extends View {
 
     // Tools sit beside the filter box and change with the view.
     const tools = this.view === "tree" ? [
+      btn("ft-new-file", "+📄", "New file in root", false, () => {
+        if (!this.root) return;
+        openOverlay({ mod: NAME, kind: "dialog", width: 380, height: 175, props: { dialog: { action: "new-file", targetDir: this.root, root: this.root } } });
+      }),
+      btn("ft-new-folder", "+📁", "New folder in root", false, () => {
+        if (!this.root) return;
+        openOverlay({ mod: NAME, kind: "dialog", width: 380, height: 175, props: { dialog: { action: "new-folder", targetDir: this.root, root: this.root } } });
+      }),
+      btn("ft-refresh", "↻", "Refresh files", false, (cx) => this.refresh(cx)),
       btn("ft-up", "↑", "Up a folder", false, () => { if (!this.root) return; this.follow = false; this.pinned = this.root.replace(/[\\/][^\\/]+[\\/]?$/, "") || "/"; this.pinnedOn = this.on; }),
       btn("ft-home", "⌂", this.follow ? "Following the focused pane" : "Back to the focused pane's folder", this.follow, () => { this.follow = true; this.pinned = null; }),
       btn("ft-hidden", this.showHidden ? "◉" : "○", this.showHidden ? "Hide dotfiles (.)" : "Show dotfiles (.)", this.showHidden, () => { this.showHidden = !this.showHidden; this.savePrefs(); }),
@@ -1073,6 +1318,7 @@ export default class FileTree extends View {
           .when(Boolean(this.query), (el) => el.child(div().id("ft-clear").flex_none().text_size(12).text_color(t.dim).cursor_pointer().hover((s) => s.text_color(t.foreground)).on_click((_e, cx) => this.clearSearch(cx)).child("×"))))
         .children(tools))
       .child(div().flex_1().min_h(0).relative().px(4)
+        .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); if (this.root) this.openMenu("", true); })
         .child(v_virtual_list("ft-rows", rows.length, ROW, (i) => rows[i]?.rel ?? String(i), (range) => {
           const shown = rows.slice(range.start, range.end);
           this.visible = shown.filter((r) => !r.flat && r.e?.dir).map((r) => r.rel);
