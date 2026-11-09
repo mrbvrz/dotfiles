@@ -1,5 +1,85 @@
 {
   "programs": {
+    "bodat": {
+      "name": "Bodat",
+      "icon": "mods/better-sidebar/icons/bodat.svg",
+      "run": ["bodat"],
+      "match": ["bodat"],
+      "agent": true,
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "begu": {
+      "name": "Begu",
+      "icon": "mods/better-sidebar/icons/begu.svg",
+      "run": ["begu"],
+      "match": ["begu"],
+      "agent": true,
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "ipos": {
+      "name": "Ipos",
+      "icon": "mods/better-sidebar/icons/ipos.svg",
+      "run": ["ipos"],
+      "match": ["ipos"],
+      "agent": true,
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "datu": {
+      "name": "Datu",
+      "icon": "mods/better-sidebar/icons/datu.svg",
+      "run": ["datu"],
+      "match": ["datu"],
+      "agent": true,
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "pangulubalang": {
+      "name": "Pangulubalang",
+      "icon": "mods/better-sidebar/icons/pangulubalang.svg",
+      "run": ["pangulubalang"],
+      "match": ["pangulubalang"],
+      "agent": true,
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "tombak": {
+      "name": "Tombak",
+      "icon": "mods/better-sidebar/icons/tombak.svg",
+      "run": ["tombak"],
+      "match": ["tombak"],
+      "agent": true,
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "parhata": {
+      "name": "Parhata",
+      "icon": "mods/better-sidebar/icons/parhata.svg",
+      "run": ["parhata"],
+      "match": ["parhata"],
+      "agent": true,
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "basing": {
+      "name": "Basing",
+      "icon": "mods/better-sidebar/icons/basing.svg",
+      "run": ["basing"],
+      "match": ["basing"],
+      "agent": true,
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
     "antigravity": {
       "name": "Antigravity",
       "icon": "mods/better-sidebar/icons/antigravity.svg",
