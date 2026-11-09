@@ -1,0 +1,1 @@
+{"type":"module","private":true,"scripts":{"test":"node tests/graph.test.mjs && node tests/action-context.test.mjs && node tests/scm.test.mjs && node tests/actions.test.mjs && node tests/hunks.test.mjs && node tests/sync.test.mjs && node tests/branches.test.mjs"}}

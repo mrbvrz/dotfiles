@@ -394,3 +394,6 @@ if [[ -z "$ZED_TERM" && "$TERM_PROGRAM" != "zed" && -z "$VSCODE_INJECTION" ]]; t
     fi
   fi
 fi
+
+# mimocode
+export PATH=/Users/hasansuryaman/.mimocode/bin:$PATH

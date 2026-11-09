@@ -6,7 +6,8 @@
 // layout's pane frame, fonts from settings().
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex, Editor, EditorState, InputState, Input, Scrollbar, v_virtual_list, VirtualListScrollHandle, TextView } from "gpui-base";
-import ICONS from "./icons.js"; // copied from the file-icons mod (mods cannot import across folders)
+import SYMBOLS from "./symbols.js"; // Symbols Icon Theme (by Miguel Solorio)
+import { isImageExt, loadImageFile, resolveMarkdownImagePath, splitMarkdownImages } from "./preview.js";
 import { spaces, panes, agents, focused, exec, readTextFile, watchFolder, theme, settings, window, layout, home, appHome, props, run, notify, openOverlay, closeOverlay, shared, setShared } from "herdr";
 
 const NAME = "filetree";
@@ -116,38 +117,52 @@ function ago(ms) {
   const s = Math.max(0, Math.round((Date.now() - ms) / 1000));
   return s < 10 ? "now" : s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s / 60)}m` : s < 86400 ? `${Math.floor(s / 3600)}h` : `${Math.floor(s / 86400)}d`;
 }
-// File and folder icons: Zed-style crisp SVG vector icons with syntax-based color coding.
+// Symbols Icon Theme (by Miguel Solorio): crisp, beautiful icons matching Zed & VS Code
 function zedIcon(path, dir, open, t) {
+  const parts = (path ?? "").toLowerCase().split("/");
+  const name = parts[parts.length - 1];
+
   if (dir) {
-    const col = open ? (t.accent ?? t.foreground) : t.dim;
-    return svg(ICON("folder")).size(14).flex_none().text_color(col);
+    const custom = SYMBOLS.folderNames[name];
+    if (custom) return image(`mods/${NAME}/icons/symbols/${custom}`).size(15).flex_none();
+    const def = open ? SYMBOLS.defaultFolderOpen : SYMBOLS.defaultFolder;
+    return image(`mods/${NAME}/icons/symbols/${def}`).size(15).flex_none();
   }
 
-  const ext = (path ?? "").split(".").pop()?.toLowerCase();
-  const name = (path ?? "").split("/").pop()?.toLowerCase() ?? "";
+  // Exact file name match (e.g. package.json, .gitignore, README.md, vite.config.ts)
+  const byName = SYMBOLS.fileNames[name];
+  if (byName) return image(`mods/${NAME}/icons/symbols/${byName}`).size(15).flex_none();
 
-  let col = t.muted;
-  if (/^(ts|tsx|js|jsx|mjs|cjs)$/.test(ext)) col = t.ansi3 ?? t.accent;
-  else if (/^(rs|rust)$/.test(ext)) col = t.ansi11 ?? t.blocked;
-  else if (/^(py|python)$/.test(ext)) col = t.ansi4 ?? t.accent;
-  else if (/^(json|jsonc|toml|yaml|yml|xml)$/.test(ext)) col = t.ansi2 ?? t.done;
-  else if (/^(md|markdown|txt|rst)$/.test(ext)) col = t.ansi6 ?? t.muted;
-  else if (/^(html|css|scss|sass|less)$/.test(ext)) col = t.ansi5 ?? t.accent;
-  else if (/^(sh|zsh|bash)$/.test(ext) || name.startsWith(".")) col = t.dim;
-  else if (/^(png|jpg|jpeg|svg|gif|webp|ico)$/.test(ext)) col = t.ansi6 ?? t.foreground;
+  // Multi-dot and extension matches (e.g. spec.ts, tar.gz, ts, py, rs)
+  for (let dot = name.indexOf("."); dot !== -1; dot = name.indexOf(".", dot + 1)) {
+    const ext = name.slice(dot + 1);
+    const byExt = SYMBOLS.fileExtensions[ext];
+    if (byExt) return image(`mods/${NAME}/icons/symbols/${byExt}`).size(15).flex_none();
+  }
 
-  return svg(ICON("file")).size(14).flex_none().text_color(col);
+  // Fallback default file icon
+  return image(`mods/${NAME}/icons/symbols/${SYMBOLS.defaultFile}`).size(15).flex_none();
 }
 
 // ── where to look ──────────────────────────────────────────────────────────────────────
 // The focused pane's folder; when the focused pane is a mod (this tree opened as a pane,
 // say), the first terminal beside it.
+const lastRoot = new Map();
 function location() {
   const space = spaces().find((s) => s.active), f = focused();
   let pane = f?.pane ? panes().find((p) => p.pane === f.pane) : null;
   if (pane && !pane.terminal) pane = panes().find((p) => p.tab === pane.tab && p.terminal && p.cwd) ?? null;
   const on = f?.pane === null ? (f.terminal?.includes("/") ? f.terminal.split("/")[0] : null) : space?.machine ?? null;
-  return { cwd: pane?.cwd || f?.cwd || space?.folder || null, on };
+  let cwd = pane?.cwd || f?.cwd;
+  if (cwd) {
+    if (space) lastRoot.set(space.id, { cwd, on });
+  } else if (space && lastRoot.has(space.id)) {
+    const cached = lastRoot.get(space.id);
+    cwd = cached.cwd;
+  } else {
+    cwd = space?.folder || null;
+  }
+  return { cwd, on };
 }
 const windows = (on) => !on && window()?.platform === "windows";
 const psQuote = (s) => "'" + s.replaceAll("'", "''") + "'";
@@ -592,6 +607,7 @@ export default class FileTree extends View {
       if (e.kind === "read" && reads) this.flash(e.paths ?? [], "purple", cx, e.paths?.length > 1 ? SEARCH_REVEAL : READ_REVEAL);
       else if (e.kind === "write" && writes) this.flash(e.paths ?? [], "orange", cx, READ_REVEAL);
       else if (e.kind === "mention") this.reveal(e.paths ?? [], cx);
+      else if (e.kind === "preview" && e.paths?.[0]) { const rel = relTo(this.root, e.paths[0]); if (rel) this.show(rel, cx); }
       else if (e.kind === "bash-start") this.bashStarts.set(e.id, e.at);
       else if (e.kind === "bash-end" && writes) {
         const start = this.bashStarts.get(e.id) ?? e.at - 5000;
@@ -704,7 +720,7 @@ export default class FileTree extends View {
   // ── preview and opening (T3 Code style: side-by-side view) ───────────────────────────
   closePreview(cx) {
     this.code?.release();
-    this.code = null; this.md = null; this.file = null; this.fileError = null;
+    this.code = null; this.md = null; this.mdParts = null; this.img = null; this.file = null; this.fileError = null;
     run("layout.resize", { id: "panel", px: 368 });
     if (cx) cx.notify();
   }
@@ -713,19 +729,32 @@ export default class FileTree extends View {
   show(rel, cx, inRender = false) {
     if (!rel) { this.closePreview(cx); return; }
     this.code?.release();
-    this.code = null; this.md = null; this.fileError = null;
+    this.code = null; this.md = null; this.mdParts = null; this.img = null; this.fileError = null;
     this.file = rel;
     run("layout.resize", { id: "panel", px: 760 });
     const ctx = this.ctx;
+    const ext = rel.includes(".") ? rel.split(".").pop().toLowerCase() : "txt";
     cx.spawn(async (cx) => {
       try {
+        if (isImageExt(ext)) {
+          const res = await loadImageFile(join(ctx.root, rel), { exec, appHome, on: ctx.on });
+          if (this.file !== rel || !this.current(ctx)) return;
+          if (res.error) this.fileError = res.error;
+          else this.img = res;
+          return;
+        }
         const text = await readTextFile(join(ctx.root, rel), { on: ctx.on });
         if (this.file !== rel || !this.current(ctx)) return;
         if (text === null) { this.fileError = "This file is no longer available"; return; }
         if (text.includes("\0")) { this.fileError = "Binary file · no text preview"; return; }
         const value = text.length > 400000 ? text.slice(0, 400000) + "\n… (file truncated)" : text;
-        const ext = rel.includes(".") ? rel.split(".").pop().toLowerCase() : "txt";
-        if (ext === "md" || ext === "markdown" || ext === "mdx") { this.md = value; return; }
+        if (ext === "md" || ext === "markdown" || ext === "mdx") {
+          const { chunks, images } = splitMarkdownImages(value);
+          this.md = value;
+          this.mdParts = chunks.length ? chunks : [{ kind: "markdown", text: value }];
+          if (images > 0) this.loadMarkdownImages(rel, this.mdParts, ctx, cx);
+          return;
+        }
         const t = theme();
         this.code = EditorState.new({ language: LANG[ext] ?? ext, readonly: true, value,
           font_family: settings().font_family, font_size: 12,
@@ -734,6 +763,51 @@ export default class FileTree extends View {
       finally { cx.notify(); }
     });
     if (!inRender) cx.notify();
+  }
+
+  loadMarkdownImages(rel, parts, ctx, cx) {
+    const fullFile = join(ctx.root, rel);
+    const baseDir = dirOf(rel) ? join(ctx.root, dirOf(rel)) : ctx.root;
+    cx.spawn(async (cx) => {
+      for (const p of parts) {
+        if (p.kind !== "md-image") continue;
+        for (const item of p.items ?? []) {
+          if (this.file !== rel || this.mdParts !== parts || !this.current(ctx)) return;
+          const resolved = resolveMarkdownImagePath(baseDir, ctx.root, item.src);
+          if (!resolved) {
+            item.image = { error: "invalid path" };
+            cx.notify();
+            continue;
+          }
+          const res = await loadImageFile(resolved, { exec, appHome, on: ctx.on });
+          if (this.file !== rel || this.mdParts !== parts || !this.current(ctx)) return;
+          item.image = res.error ? { error: res.error } : res;
+          cx.notify();
+        }
+      }
+    });
+  }
+
+  renderMdImages(p, i, t, availWidth) {
+    const items = p.items ?? [];
+    const count = Math.max(1, items.length);
+    const colMax = Math.floor(Math.max(120, availWidth - (count - 1) * 10) / count);
+    const children = items.map((item, j) => {
+      const d = item.image ?? {};
+      if (d.path && d.width && d.height) {
+        let maxW = colMax;
+        if (item.widthPx) maxW = Math.min(maxW, item.widthPx);
+        else if (item.widthPct) maxW = Math.min(maxW, Math.floor(colMax * item.widthPct / 100));
+        const w = Math.max(24, Math.min(d.width, maxW));
+        const h = Math.max(16, Math.round(w * d.height / d.width));
+        return div().id(`ft-md-img-${i}-${j}`).flex_none().child(image(d.path).w(w).h(h));
+      }
+      const label = d.error ? `[image: ${item.alt || item.src} (${d.error})]` : `[loading image: ${item.alt || item.src}…]`;
+      return div().id(`ft-md-img-${i}-${j}`).flex_none().text_size(11).text_color(t.dim).child(label);
+    });
+    return count > 1
+      ? h_flex().id(`ft-md-row-${i}`).flex_none().gap(10).items_center().when(p.align === "center", (el) => el.justify_center()).children(children)
+      : v_flex().id(`ft-md-row-${i}`).flex_none().when(p.align === "center", (el) => el.items_center()).children(children);
   }
 
   openFile(rel, cx) {
@@ -1021,8 +1095,22 @@ export default class FileTree extends View {
         .child(btn("ft-ext", "↗ Zed", "Open in Zed", false, () => openExternal(join(this.root, this.file)).catch(() => {})))
         .child(btn("ft-close", "✕", "Close preview (Esc)", false, (cx) => this.closePreview(cx)));
 
+      const availWidth = Math.max(180, (this.width || 760) - 260 - 32);
       const editorContent = this.code ? Editor.new(this.code).flex_1().min_h(0)
-        : this.md !== null ? div().id("ft-md").flex_1().min_h(0).overflow_y_scrollbar().px(14).py(10).child(TextView.markdown("ft-md-text", this.md).selectable(true))
+        : this.img ? v_flex().id("ft-img-wrap").flex_1().min_h(0).overflow_y_scrollbar().px(14).py(10)
+            .child(div().id("ft-img").flex_none().child(
+              image(this.img.path)
+                .w(Math.min(this.img.width, availWidth))
+                .h(Math.round(Math.min(this.img.width, availWidth) * this.img.height / this.img.width))
+            ))
+        : this.mdParts ? v_flex().id("ft-md").flex_1().min_h(0).overflow_y_scrollbar().px(14).py(10).gap(10)
+            .children(this.mdParts.map((p, i) => (
+              p.kind === "md-image"
+                ? this.renderMdImages(p, i, t, availWidth)
+                : TextView.markdown(`ft-md-${this.file}-${i}`, p.text)
+                    .on_link_click((url, cx) => { if (/^https?:\/\//i.test(url)) cx.open_url(url); })
+                    .selectable(true)
+            )))
         : div().p(12).text_color(t.dim).child(this.fileError || "Loading file…");
 
       editorPane = v_flex().id("ft-editor-pane").flex_1().min_w(0).h_full().overflow_hidden().bg(t.background).border_r(1).border_color(t.border)

@@ -1,0 +1,115 @@
+{
+  "programs": {
+    "antigravity": {
+      "name": "Antigravity",
+      "icon": "mods/better-sidebar/icons/antigravity.svg",
+      "run": ["agy"],
+      "match": ["agy"],
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "agy": {
+      "name": "Antigravity",
+      "icon": "mods/better-sidebar/icons/antigravity.svg",
+      "run": ["agy"],
+      "match": ["agy"],
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "claude": {
+      "name": "Claude Code",
+      "icon": "mods/better-sidebar/icons/claude.svg",
+      "run": ["claude"],
+      "match": ["claude-code"],
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "opencode": {
+      "name": "OpenCode",
+      "icon": "mods/better-sidebar/icons/opencode.svg",
+      "run": ["opencode"],
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "codex": {
+      "name": "Codex",
+      "icon": "mods/better-sidebar/icons/codex.svg",
+      "run": ["codex"],
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "freebuff": {
+      "name": "FreeBuf",
+      "icon": "mods/better-sidebar/icons/freebuf.svg",
+      "run": ["freebuff"],
+      "match": ["freebuf", "freebuff"],
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "freebuf": {
+      "name": "FreeBuf",
+      "icon": "mods/better-sidebar/icons/freebuf.svg",
+      "run": ["freebuff"],
+      "match": ["freebuf", "freebuff"],
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "cursor": {
+      "name": "Cursor",
+      "icon": "mods/better-sidebar/icons/cursor.svg",
+      "run": ["cursor-agent"],
+      "match": ["cursor-agent"],
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "copilot": {
+      "name": "Copilot",
+      "icon": "mods/better-sidebar/icons/copilot.svg",
+      "run": ["copilot"],
+      "match": ["github-copilot"],
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "gemini": {
+      "name": "Gemini",
+      "icon": "mods/better-sidebar/icons/gemini.svg",
+      "run": ["gemini"],
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "grok": {
+      "name": "Grok",
+      "icon": "mods/better-sidebar/icons/grok.svg",
+      "run": ["grok"],
+      "match": ["grok-build"],
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "pi": {
+      "name": "Pi",
+      "icon": "mods/better-sidebar/icons/pi.svg",
+      "run": ["pi"],
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    },
+    "ollama": {
+      "name": "Ollama",
+      "icon": "mods/better-sidebar/icons/ollama.svg",
+      "tint": true,
+      "tile": "#1c1d21",
+      "color": "#ffffff"
+    }
+  }
+}

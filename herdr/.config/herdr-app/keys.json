@@ -58,6 +58,12 @@
     "ctrl-8": "space.select:8",
     "ctrl-9": "space.select:9"
   },
+  "layout:main-graph": {
+    "cmd-g": "tabs-graph.graph"
+  },
+  "layout:cukup": {
+    "cmd-g": "tabs-graph.graph"
+  },
   "terminal": {
     "cmd-f": "terminal.search",
     "cmd-c": "terminal.copy",

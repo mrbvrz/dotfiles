@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200">
+  <!-- Cukup canvas background -->
+  <rect width="320" height="200" fill="#131718"/>
+  
+  <!-- Sidebar -->
+  <rect width="78" height="200" fill="#131718"/>
+  <line x1="78" y1="0" x2="78" y2="200" stroke="#1B2223" stroke-width="1"/>
+  
+  <!-- Brand / Window controls -->
+  <circle cx="12" cy="12" r="3" fill="#D4708A"/>
+  <circle cx="20" cy="12" r="3" fill="#E6A854"/>
+  <circle cx="28" cy="12" r="3" fill="#74BBA2"/>
+  
+  <!-- Machine Vitals -->
+  <rect x="8" y="24" width="62" height="18" rx="3" fill="#1B2123" stroke="#1B2223" stroke-width="1"/>
+  <path d="M 12 36 L 20 32 L 28 35 L 36 29 L 44 33 L 52 28 L 60 30" fill="none" stroke="#E6A854" stroke-width="1.2"/>
+  
+  <!-- Spaces & Projects -->
+  <rect x="8" y="48" width="62" height="9" rx="2" fill="#252E30"/>
+  <rect x="12" y="51" width="28" height="3" rx="1.5" fill="#E6A854"/>
+  
+  <rect x="8" y="62" width="62" height="8" rx="2" fill="#1B2123"/>
+  <circle cx="12" cy="66" r="2" fill="#74BBA2"/>
+  <rect x="18" y="64" width="34" height="4" rx="1.5" fill="#D6E0DD"/>
+  
+  <rect x="8" y="74" width="62" height="8" rx="2" fill="#1B2123"/>
+  <circle cx="12" cy="78" r="2" fill="#6CA7C8"/>
+  <rect x="18" y="76" width="40" height="4" rx="1.5" fill="#B8C7C3"/>
+
+  <!-- Usage bar in sidebar -->
+  <rect x="8" y="146" width="62" height="1" fill="#1B2223"/>
+  <rect x="8" y="152" width="24" height="3" rx="1.5" fill="#6A7875"/>
+  <rect x="46" y="152" width="24" height="3" rx="1.5" fill="#E6A854"/>
+  
+  <!-- Tabs bar -->
+  <rect x="78" y="0" width="242" height="20" fill="#131718"/>
+  <line x1="78" y1="20" x2="320" y2="20" stroke="#1B2223" stroke-width="1"/>
+  
+  <!-- Active Tab -->
+  <rect x="84" y="3" width="56" height="14" rx="4" fill="#1B2123" stroke="#2C3739" stroke-width="1"/>
+  <circle cx="92" cy="10" r="2.5" fill="#E6A854"/>
+  <rect x="98" y="8" width="32" height="4" rx="1.5" fill="#D6E0DD"/>
+  
+  <!-- Second Tab -->
+  <rect x="144" y="5" width="42" height="10" rx="3" fill="#1B2123"/>
+  <rect x="150" y="8" width="30" height="4" rx="1.5" fill="#6A7875"/>
+  
+  <!-- Main Pane -->
+  <rect x="84" y="26" width="160" height="142" rx="6" fill="#131718" stroke="#1B2223" stroke-width="1"/>
+  <!-- Pane Header -->
+  <rect x="84" y="26" width="160" height="16" rx="6" fill="#1B2123"/>
+  <rect x="92" y="32" width="48" height="4" rx="1.5" fill="#E6A854"/>
+  
+  <!-- Code lines -->
+  <rect x="92" y="50" width="70" height="4" rx="1.5" fill="#D4708A"/>
+  <rect x="92" y="58" width="110" height="4" rx="1.5" fill="#D6E0DD"/>
+  <rect x="100" y="66" width="90" height="4" rx="1.5" fill="#74BBA2"/>
+  <rect x="100" y="74" width="75" height="4" rx="1.5" fill="#B694C7"/>
+  <rect x="100" y="82" width="120" height="4" rx="1.5" fill="#6CA7C8"/>
+  <rect x="92" y="90" width="60" height="4" rx="1.5" fill="#D6E0DD"/>
+  
+  <!-- Side panel -->
+  <rect x="250" y="26" width="64" height="142" rx="6" fill="#131718" stroke="#1B2223" stroke-width="1"/>
+  <rect x="256" y="32" width="30" height="4" rx="1.5" fill="#B8C7C3"/>
+  <rect x="256" y="44" width="50" height="3" rx="1.5" fill="#6A7875"/>
+  <rect x="256" y="52" width="42" height="3" rx="1.5" fill="#6A7875"/>
+  <rect x="256" y="60" width="46" height="3" rx="1.5" fill="#6A7875"/>
+  
+  <!-- Status row at bottom -->
+  <rect x="78" y="176" width="242" height="24" fill="#131718"/>
+  <line x1="78" y1="176" x2="320" y2="176" stroke="#1B2223" stroke-width="1"/>
+  <rect x="84" y="184" width="80" height="6" rx="2" fill="#1B2123"/>
+  <rect x="88" y="186" width="50" height="3" rx="1.5" fill="#74BBA2"/>
+  <rect x="220" y="184" width="92" height="6" rx="2" fill="#1B2123"/>
+  <rect x="226" y="186" width="60" height="3" rx="1.5" fill="#E6A854"/>
+</svg>
