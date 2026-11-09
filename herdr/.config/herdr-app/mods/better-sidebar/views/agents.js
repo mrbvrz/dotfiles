@@ -711,7 +711,7 @@ export class Agents {
                 .child(rest),
             ),
           )
-          .when(Boolean(prog) && prog !== rawName && prog !== rest, (el) =>
+          .when(Boolean(prog) && (!rest || /^\d+$/.test(rest)), (el) =>
             el.child(this.programName(prog, t)),
           ),
       );
@@ -782,7 +782,7 @@ export class Agents {
         el.child(div().flex_1().min_w(0).truncate().text_size(TEXT.caption).text_color(t.dim).child(a.space_name)),
       )
       // Under its space, the program instead.
-      .when(view.nested && Boolean(prog) && prog !== rawName && prog !== rest, (el) =>
+      .when(view.nested && Boolean(prog) && (!rest || /^\d+$/.test(rest)), (el) =>
         el.child(this.programName(prog, t)),
       );
   }
