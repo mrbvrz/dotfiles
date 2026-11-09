@@ -403,7 +403,17 @@ export const diffMethods = {
       .font_family(codeFont())
       .text_size(codeSize())
       .child(split ? this.scrollsTogether(list) : this.scrollsSideways(list))
-      .child(Scrollbar.vertical(listId).viewport_from_layout().absolute().inset_0());
+      .child(
+        h_flex()
+          .absolute()
+          .top(2)
+          .bottom(2)
+          .right(2)
+          .w(4)
+          .rounded(2)
+          .overflow_hidden()
+          .child(Scrollbar.vertical(listId).viewport_from_layout().size_full()),
+      );
   },
 
   // Side by side moves both columns with one offset, keeping the line numbers still.

@@ -383,7 +383,21 @@ export class Agents {
         .flex()
         .items_center()
         .child("Needs you");
-    // Idle: a ring; done: a dot.
+    // Done: badge check icon
+    if (a.status === "done")
+      return div()
+        .size(14)
+        .flex_none()
+        .rounded(4)
+        .bg((t.done ?? color) + "26")
+        .text_size(10)
+        .font_bold()
+        .text_color(t.done ?? color)
+        .flex()
+        .items_center()
+        .justify_center()
+        .child("✓");
+    // Idle: a ring
     if (a.status === "idle")
       return div()
         .size(7)
@@ -397,7 +411,7 @@ export class Agents {
       .mx(3)
       .flex_none()
       .rounded(4)
-      .bg(a.status === "done" ? color : t.dim + "00");
+      .bg(t.dim + "00");
   }
 
   // opts, from the lists view: `view` already read, `heading: false` under its tabs.
@@ -664,12 +678,8 @@ export class Agents {
       icon(l?.program, 12, t.dim, { name: rawName, app: l?.app, title: l?.title }) ?? (modIcon ? svg(modIcon).size(12).flex_none().text_color(t.dim) : null);
 
     const match = /^(\d+)(?:\s+(.*))?$/.exec(rawName.trim());
-    let num = match ? match[1] : null;
     let rest = match ? (match[2] ?? "") : rawName;
-    if (!num) {
-      const idx = w?.tabs?.findIndex((t) => t.id === tab.id);
-      if (idx !== undefined && idx >= 0) num = String(idx + 1);
-    }
+    if (!rest || /^\d+$/.test(rest)) rest = prog || rawName;
 
     return h_flex()
       .id(`tab-${tab.id}`)
@@ -693,15 +703,6 @@ export class Agents {
           .min_w(0)
           .gap(5)
           .items_center()
-          .when(Boolean(num), (el) =>
-            el.child(
-              div()
-                .flex_none()
-                .text_size(TEXT.caption)
-                .text_color(t.dim)
-                .child(num),
-            ),
-          )
           .when(Boolean(rest), (el) =>
             el.child(
               div()
@@ -745,28 +746,14 @@ export class Agents {
     const idle = a.status === "idle" && !a.focused;
 
     const match = /^(\d+)(?:\s+(.*))?$/.exec(rawName.trim());
-    let num = match ? match[1] : null;
     let rest = match ? (match[2] ?? "") : rawName;
-    if (!num) {
-      const sp = spaces().find((s) => s.id === a.space);
-      const idx = sp?.tabs?.findIndex((t) => t.id === a.tab);
-      if (idx !== undefined && idx >= 0) num = String(idx + 1);
-    }
+    if (!rest || /^\d+$/.test(rest)) rest = prog || rawName;
 
     return h_flex()
       .flex_1()
       .min_w(0)
       .gap(5)
       .items_center()
-      .when(Boolean(num), (el) =>
-        el.child(
-          div()
-            .flex_none()
-            .text_size(TEXT.caption)
-            .text_color(t.dim)
-            .child(num),
-        ),
-      )
       .when(Boolean(rest), (el) =>
         el.child(
           div()

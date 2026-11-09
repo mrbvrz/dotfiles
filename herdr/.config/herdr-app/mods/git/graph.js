@@ -888,7 +888,17 @@ export class Graph {
         .on_item_click((key, cx) => this.clicked(key, cx))
         .on_item_secondary_click((key, e, cx) => this.contextMenu(key, e, cx))
         .size_full())
-      .child(Scrollbar.vertical(this.listId).viewport_from_layout().absolute().inset_0());
+      .child(
+        v_flex()
+          .absolute()
+          .top(2)
+          .bottom(2)
+          .right(2)
+          .w(4)
+          .rounded(2)
+          .overflow_hidden()
+          .child(Scrollbar.vertical(this.listId).viewport_from_layout().size_full()),
+      );
   }
 
   detailsPane(t, mono) {
@@ -908,7 +918,17 @@ export class Graph {
           .when(Boolean(rows), (e) => e.child(div().id(`${this.diffId}-x`).size_full().overflow_x_scrollbar()
               .child(div().w_full().min_w(this.diff.width).h_full().child(v_virtual_list(this.diffId, rows.length, DIFF_ROW, (i) => String(i),
                 (range) => rows.slice(range.start, range.end).map((r) => this.diffRow(r, t))).size_full())))
-            .child(Scrollbar.vertical(this.diffId).viewport_from_layout().absolute().inset_0())));
+            .child(
+              v_flex()
+                .absolute()
+                .top(2)
+                .bottom(2)
+                .right(2)
+                .w(4)
+                .rounded(2)
+                .overflow_hidden()
+                .child(Scrollbar.vertical(this.diffId).viewport_from_layout().size_full()),
+            )));
     }
     const title = commit.uncommitted ? "Uncommitted changes" : `Commit ${commit.hash.slice(0, 8)}`;
     const body = v_flex().id("graph-details").flex_1().min_h(0).overflow_y_scrollbar().px(16).py(12).gap(4);
@@ -982,7 +1002,17 @@ export class Graph {
               .on_mouse_down("left", (ev) => { this.diffPress = { x: (ev.local_position?.x ?? 0) / this.unit() }; })
               .child(v_virtual_list(id, rows.length, DIFF_ROW, (i) => String(i), (range) => rows.slice(range.start, range.end).map(row))
                 .on_item_click((key, cx) => this.hunkClicked(key, cx)).size_full())))
-          .child(Scrollbar.vertical(id).viewport_from_layout().absolute().inset_0())));
+          .child(
+            v_flex()
+              .absolute()
+              .top(2)
+              .bottom(2)
+              .right(2)
+              .w(4)
+              .rounded(2)
+              .overflow_hidden()
+              .child(Scrollbar.vertical(id).viewport_from_layout().size_full()),
+          )));
   }
 
   // Top: the changes; a divider to drag; bottom: the history, or the open file's diff.

@@ -1326,7 +1326,17 @@ echo "$DEST"
         }).track_scroll(this.scroll).size_full()
           .on_item_click((rel, cx) => this.press(rel, cx))
           .on_item_secondary_click((rel, _e, cx) => { const r = this.rows().find((x) => x.rel === rel); if (!r) return; this.cursor = rel; this.openMenu(rel, r.e.dir); cx.notify(); }))
-        .child(Scrollbar.vertical("ft-rows").viewport_from_layout().absolute().inset_0())
+        .child(
+          v_flex()
+            .absolute()
+            .top(2)
+            .bottom(2)
+            .right(2)
+            .w(4)
+            .rounded(2)
+            .overflow_hidden()
+            .child(Scrollbar.vertical("ft-rows").viewport_from_layout().size_full()),
+        )
         .when(Boolean(note), (el) => el.child(div().absolute().top(4).left(0).right(0).px(10).text_size(12).text_color(t.dim).child(note))))
       .when(this.limited, (el) => el.child(div().px(10).py(3).text_size(11).text_color(t.dim).child(`Folders show their first ${PER_FOLDER} entries`)))
       .when(Boolean(this.hits?.length >= FIND_LIMIT), (el) => el.child(div().px(10).py(3).text_size(11).text_color(t.dim).child(`First ${FIND_LIMIT} matches · Enter jumps to the selected one`)))

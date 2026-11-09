@@ -1194,10 +1194,12 @@ export class Spaces {
       .child(
         v_flex()
           .absolute()
-          .top(0)
-          .bottom(0)
-          .right(1)
-          .w(3)
+          .top(2)
+          .bottom(2)
+          .right(2)
+          .w(4)
+          .rounded(2)
+          .overflow_hidden()
           .child(Scrollbar.vertical("spaces-list").mode("hover").size_full()),
       );
   }

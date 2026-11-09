@@ -109,7 +109,21 @@ export const paneHeaderMethods = {
             .child("Needs you"),
         ),
       )
-      .when(p.status === "done", (el) => el.child(div().size(7).flex_none().rounded(4).bg(t.done)))
+      .when(p.status === "done", (el) =>
+        el.child(
+          div()
+            .flex_none()
+            .px(6)
+            .h(18)
+            .flex()
+            .items_center()
+            .gap(3)
+            .rounded(5)
+            .bg(`${t.done}26`)
+            .child(div().text_size(10.5).font_bold().text_color(t.done).child("✓"))
+            .child(div().text_size(10.5).font_semibold().text_color(t.done).child("Done")),
+        ),
+      )
       .when(Boolean(this.hovered), (el) =>
         el
           .when(p.mod === "better-changes", (el) => el.child(this.FullFileButton()))

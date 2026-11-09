@@ -91,13 +91,14 @@ export default class MachineVitals extends View {
       .on_click(() => exec("open", ["-a", "Activity Monitor"]).catch(() => {}));
 
     if (narrow()) {
+      const cpuColorNarrow = cpu === null ? t.dim : warn(cpu);
       const mini = (label, pct, color) =>
         v_flex().items_center().child(div().text_size(9).text_color(t.dim).child(label))
           .child(div().text_size(11).text_color(color).child(pct === null ? "–" : pct));
       return root.items_center().justify_center().gap(6)
-        .child(mini("CPU", cpu === null ? null : `${Math.round(cpu)}%`, cpu === null ? t.dim : warn(cpu)))
-        .child(mini("NET", fmtShort(this.netRate.down + this.netRate.up), t.dim))
-        .child(mini("MEM", s ? `${Math.round(memPct)}%` : null, memColor));
+        .child(mini("CPU", cpu === null ? null : `${Math.round(cpu)}%`, cpuColorNarrow))
+        .child(mini("NET", fmtShort(this.netRate.down + this.netRate.up), cpuColorNarrow))
+        .child(mini("MEM", s ? `${Math.round(memPct)}%` : null, cpuColorNarrow));
     }
 
     const bar = (pct, color) =>
@@ -142,16 +143,17 @@ export default class MachineVitals extends View {
     const procs = this.procs.map((p) => `${p.name}  ${Math.round(p.cpu)}%`).join("\n");
     const netTip = `Network Activity:\nDownload: ${fmtSpeed(this.netRate.down)}\nUpload: ${fmtSpeed(this.netRate.up)}\nTotal In: ${gb(s?.net?.inBytes ?? 0)} GB\nTotal Out: ${gb(s?.net?.outBytes ?? 0)} GB`;
     const netVal = `↓${fmtShort(this.netRate.down)} ↑${fmtShort(this.netRate.up)}`;
+    const cpuColor = cpu === null ? t.dim : warn(cpu) === t.accent ? null : warn(cpu);
 
     return root
       .child(header)
       .child(
         v_flex().px(16).pb(6).gap(1)
           .when(Boolean(this.error) && !s, (el) => el.child(div().text_size(11).text_color(t.ansi1).truncate().child(this.error)))
-          .child(row("mv-cpu", "CPU", spark, cpu === null ? "…" : `${Math.round(cpu)}%`, cpu === null ? t.dim : warn(cpu) === t.accent ? null : warn(cpu),
+          .child(row("mv-cpu", "CPU", spark, cpu === null ? "…" : `${Math.round(cpu)}%`, cpuColor,
             procs ? `Most CPU lately:\n${procs}` : "Most CPU lately: …", (hovered, cx) => { if (hovered) this.loadProcs(cx); }))
-          .child(row("mv-net", "Net", netSpark, netVal, t.dim, netTip, null))
-          .child(row("mv-mem", "Mem", bar(memPct, memColor), s ? `${gb(s.mem.used)}/${gb(s.mem.total)} GB` : "…", memColor === t.accent ? null : memColor,
+          .child(row("mv-net", "Net", netSpark, netVal, cpuColor, netTip, null))
+          .child(row("mv-mem", "Mem", bar(memPct, memColor), s ? `${gb(s.mem.used)}/${gb(s.mem.total)} GB` : "…", cpuColor,
             s ? `Memory pressure ${pressureName}${s.swap ? `, swap used ${gb(s.swap)} GB` : ", no swap"}` : null))
           .child(row("mv-disk", "Disk", bar(diskUsed, warn(diskUsed, 90)), s?.disk ? `${gb(s.disk.free)} GB free` : "…", diskUsed >= 90 ? warn(diskUsed, 90) : null, null)),
       );
