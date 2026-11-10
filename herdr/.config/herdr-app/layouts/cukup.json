@@ -210,6 +210,13 @@
                       "content": {
                         "mod": "factory"
                       }
+                    },
+                    {
+                      "id": "docker",
+                      "type": "block",
+                      "content": {
+                        "mod": "docker"
+                      }
                     }
                   ],
                   "active": "files"
