@@ -634,10 +634,10 @@ export class Agents {
     });
   }
 
-  agentWithSubs(a, i, view, t) {
+  agentWithSubs(a, i, view, t, spaceBranch = null) {
     if (view.collapsed) return [this.railRow(a, i, t)];
     const subs = this.tree(view.all, a.address);
-    const row = this.agentRow(a, subs, view, t);
+    const row = this.agentRow(a, subs, view, t, spaceBranch);
     if (this.folded.has(a.address)) return [row];
     return [row, ...subs.map((s) => this.subRow(t, s, view.shown, view.byPriority))];
   }
@@ -672,9 +672,12 @@ export class Agents {
       );
   }
 
-  agentRow(a, subs, view, t) {
+  agentRow(a, subs, view, t, spaceBranch = null) {
     const pane = panes().find((p) => p.pane === a.pane) ?? panes().find((p) => p.tab === a.tab);
     const wt = pane?.cwd ? this.checkWorktree(pane.cwd) : null;
+    const sp = spaces().find((s) => s.id === a.space);
+    const spBranch = spaceBranch ?? (sp ? panes().find((p) => (sp.tabs ?? []).some((t) => t.id === p.tab) && p.branch)?.branch : null);
+    const isDifferent = Boolean(wt?.isWorktree && wt.branch && wt.branch !== spBranch);
     const pic = icon(a.program, 12, t.dim, a);
     const hovered = this.hovered === a.address;
     const when = this.since(a);
@@ -699,7 +702,7 @@ export class Agents {
       .on_click(() => run("pane.focus", { pane: a.pane }))
       .when(Boolean(pic), (el) => el.child(this.agentIcon(a, pic, subs)))
       .child(this.agentName(a, view, t))
-      .when(Boolean(wt?.isWorktree), (el) =>
+      .when(isDifferent, (el) =>
         el.child(
           h_flex()
             .flex_none()
@@ -711,9 +714,9 @@ export class Agents {
             .bg(a.focused ? t.raised : t.chrome)
             .text_size(TEXT.badge ?? 10)
             .text_color(t.accent ?? t.ansi3)
-            .tooltip(`Worktree: ${wt.branch || "linked"}`)
+            .tooltip(`Worktree: ${wt.branch}`)
             .child(Icon("branch", 10).text_color(t.accent ?? t.ansi3))
-            .child(div().truncate().max_w(80).child(wt.branch ? `wt: ${wt.branch}` : "worktree")),
+            .child(div().truncate().max_w(80).child(`wt: ${wt.branch}`)),
         ),
       )
       .when(Boolean(machine), (el) =>
@@ -734,10 +737,12 @@ export class Agents {
   }
 
   // A tab with no agent, under its space in the lists view: its program and its name.
-  tabRow(w, tab, lit, t) {
+  tabRow(w, tab, lit, t, spaceBranch = null) {
     const l = lead(tab);
     const pane = panes().find((p) => p.tab === tab.id);
     const wt = pane?.cwd ? this.checkWorktree(pane.cwd) : null;
+    const spBranch = spaceBranch ?? (w ? panes().find((p) => (w.tabs ?? []).some((t) => t.id === p.tab) && p.branch)?.branch : null);
+    const isDifferent = Boolean(wt?.isWorktree && wt.branch && wt.branch !== spBranch);
     // The tab's title, as Herdr's tab bar shows it.
     const rawName = tab.name || "";
     const prog = l?.program?.name;
@@ -785,7 +790,7 @@ export class Agents {
             el.child(this.programName(prog, t)),
           ),
       )
-      .when(Boolean(wt?.isWorktree), (el) =>
+      .when(isDifferent, (el) =>
         el.child(
           h_flex()
             .flex_none()
@@ -797,9 +802,9 @@ export class Agents {
             .bg(lit ? t.raised : t.chrome)
             .text_size(TEXT.badge ?? 10)
             .text_color(t.accent ?? t.ansi3)
-            .tooltip(`Worktree: ${wt.branch || "linked"}`)
+            .tooltip(`Worktree: ${wt.branch}`)
             .child(Icon("branch", 10).text_color(t.accent ?? t.ansi3))
-            .child(div().truncate().max_w(80).child(wt.branch ? `wt: ${wt.branch}` : "worktree")),
+            .child(div().truncate().max_w(80).child(`wt: ${wt.branch}`)),
         ),
       );
   }

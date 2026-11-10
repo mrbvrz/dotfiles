@@ -396,11 +396,13 @@ export class Spaces {
       order.push(...items.filter((x) => x.a).map((x) => x.a.address));
       const before = tree ? [tree.startsWith("└") ? "" : "│"] : [];
       const hasVisibleKids = kids > 0 && !this.spaceFolded.has(w.id);
+      const spaceGit = this.git[checkoutKey(w, panes())];
+      const spaceBranch = spaceGit?.branch ?? null;
       return items.flatMap((x, i) => {
         const last = i === items.length - 1 && !hasVisibleKids;
         const [row, ...subs] = x.a
-          ? this.agents.agentWithSubs(x.a, i, nested, t)
-          : [this.agents.tabRow(w, x.tab, x.tab.id === shownTab, t)];
+          ? this.agents.agentWithSubs(x.a, i, nested, t, spaceBranch)
+          : [this.agents.tabRow(w, x.tab, x.tab.id === shownTab, t, spaceBranch)];
         return [nest([...before, last ? "└" : "├"], row), ...subs.map((s) => nest([...before, last ? "" : "│"], s))];
       });
     };
