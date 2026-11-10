@@ -192,7 +192,6 @@ function gatherGroups(list, groupOf, sortId) {
 export class Agents {
   init(_props, cx) {
     this.cx = cx;
-    this.wtCache = new Map();
     this.sortOpen = false;
     this.sortFocus = cx.focus_handle();
     this.folded = new Set();
@@ -200,50 +199,6 @@ export class Agents {
     this.changed = JSON.parse(localStorage.getItem("changed") ?? "{}");
     this.pins = JSON.parse(localStorage.getItem("pins") ?? "[]");
     cx.timer.every(30000, (cx) => cx.notify());
-  }
-
-  checkWorktree(cwd) {
-    if (!cwd) return null;
-    if (this.wtCache.has(cwd)) return this.wtCache.get(cwd);
-    this.wtCache.set(cwd, { checking: true, isWorktree: false, branch: null });
-    if (this.cx) {
-      this.cx.spawn(async (cx) => {
-        let isWorktree = false;
-        let branch = null;
-        try {
-          const text = await readTextFile(`${cwd}/.git`);
-          if (text && text.startsWith("gitdir:")) {
-            isWorktree = true;
-            const m = text.match(/gitdir:\s*(.*)/);
-            if (m && m[1]) {
-              const gitDir = m[1].trim();
-              const headPath = `${gitDir}/HEAD`;
-              try {
-                const headText = await readTextFile(headPath);
-                if (headText && headText.startsWith("ref: refs/heads/")) {
-                  branch = headText.slice(16).trim();
-                }
-              } catch {}
-            }
-          }
-        } catch {
-          try {
-            const res = await exec("git", ["rev-parse", "--git-common-dir", "--show-toplevel"], { cwd });
-            if (res.code === 0) {
-              const [commonDir, topLevel] = res.stdout.trim().split("\n");
-              if (commonDir && topLevel && commonDir !== `${topLevel}/.git`) {
-                isWorktree = true;
-                const bRes = await exec("git", ["branch", "--show-current"], { cwd });
-                if (bRes.code === 0) branch = bRes.stdout.trim();
-              }
-            }
-          } catch {}
-        }
-        this.wtCache.set(cwd, { checking: false, isWorktree, branch });
-        if (isWorktree) cx.notify();
-      });
-    }
-    return this.wtCache.get(cwd);
   }
 
   // Stamps agents whose state changed. Done and idle count as one: looking at a
@@ -634,10 +589,10 @@ export class Agents {
     });
   }
 
-  agentWithSubs(a, i, view, t, spaceBranch = null) {
+  agentWithSubs(a, i, view, t) {
     if (view.collapsed) return [this.railRow(a, i, t)];
     const subs = this.tree(view.all, a.address);
-    const row = this.agentRow(a, subs, view, t, spaceBranch);
+    const row = this.agentRow(a, subs, view, t);
     if (this.folded.has(a.address)) return [row];
     return [row, ...subs.map((s) => this.subRow(t, s, view.shown, view.byPriority))];
   }
@@ -672,12 +627,7 @@ export class Agents {
       );
   }
 
-  agentRow(a, subs, view, t, spaceBranch = null) {
-    const pane = panes().find((p) => p.pane === a.pane) ?? panes().find((p) => p.tab === a.tab);
-    const wt = pane?.cwd ? this.checkWorktree(pane.cwd) : null;
-    const sp = spaces().find((s) => s.id === a.space);
-    const spBranch = spaceBranch ?? (sp ? panes().find((p) => (sp.tabs ?? []).some((t) => t.id === p.tab) && p.branch)?.branch : null);
-    const isDifferent = Boolean(wt?.isWorktree && wt.branch && wt.branch !== spBranch);
+  agentRow(a, subs, view, t) {
     const pic = icon(a.program, 12, t.dim, a);
     const hovered = this.hovered === a.address;
     const when = this.since(a);
@@ -702,23 +652,6 @@ export class Agents {
       .on_click(() => run("pane.focus", { pane: a.pane }))
       .when(Boolean(pic), (el) => el.child(this.agentIcon(a, pic, subs)))
       .child(this.agentName(a, view, t))
-      .when(isDifferent, (el) =>
-        el.child(
-          h_flex()
-            .flex_none()
-            .gap(3)
-            .items_center()
-            .px(5)
-            .h(18)
-            .rounded(4)
-            .bg(a.focused ? t.raised : t.chrome)
-            .text_size(TEXT.badge ?? 10)
-            .text_color(t.accent ?? t.ansi3)
-            .tooltip(`Worktree: ${wt.branch}`)
-            .child(Icon("branch", 10).text_color(t.accent ?? t.ansi3))
-            .child(div().truncate().max_w(80).child(`wt: ${wt.branch}`)),
-        ),
-      )
       .when(Boolean(machine), (el) =>
         el.child(div().text_size(TEXT.badge).text_color(t.dim).child(machine)),
       )
@@ -737,12 +670,8 @@ export class Agents {
   }
 
   // A tab with no agent, under its space in the lists view: its program and its name.
-  tabRow(w, tab, lit, t, spaceBranch = null) {
+  tabRow(w, tab, lit, t) {
     const l = lead(tab);
-    const pane = panes().find((p) => p.tab === tab.id);
-    const wt = pane?.cwd ? this.checkWorktree(pane.cwd) : null;
-    const spBranch = spaceBranch ?? (w ? panes().find((p) => (w.tabs ?? []).some((t) => t.id === p.tab) && p.branch)?.branch : null);
-    const isDifferent = Boolean(wt?.isWorktree && wt.branch && wt.branch !== spBranch);
     // The tab's title, as Herdr's tab bar shows it.
     const rawName = tab.name || "";
     const prog = l?.program?.name;
@@ -789,23 +718,6 @@ export class Agents {
           .when(Boolean(prog) && (!rest || /^\d+$/.test(rest)), (el) =>
             el.child(this.programName(prog, t)),
           ),
-      )
-      .when(isDifferent, (el) =>
-        el.child(
-          h_flex()
-            .flex_none()
-            .gap(3)
-            .items_center()
-            .px(5)
-            .h(18)
-            .rounded(4)
-            .bg(lit ? t.raised : t.chrome)
-            .text_size(TEXT.badge ?? 10)
-            .text_color(t.accent ?? t.ansi3)
-            .tooltip(`Worktree: ${wt.branch}`)
-            .child(Icon("branch", 10).text_color(t.accent ?? t.ansi3))
-            .child(div().truncate().max_w(80).child(`wt: ${wt.branch}`)),
-        ),
       );
   }
 
