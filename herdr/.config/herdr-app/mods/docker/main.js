@@ -1,9 +1,13 @@
 // Docker Management mod for Herdr.
 // Built custom from scratch for Herdr GPUI.
-// Features: Container lifecycle (start, stop, pause, unpause, restart, delete),
-// grouping by Docker Network (e.g. dpmptsp-pekanbaru) or Compose Project,
-// bulk group actions, live logs viewer drawer, terminal shell exec,
-// image & volume management, and port click-to-open.
+// Features:
+// - Container lifecycle: Start, Stop, Pause, Unpause, Restart, Delete (2-step confirm)
+// - Live charts & metrics on each card: CPU progress + sparkline, Memory gauge + MB, Net I/O & PIDs
+// - Grouping by Docker Network (e.g. dpmptsp-pekanbaru) or Compose Project
+// - Group bulk controls (Start all, Stop all, Restart all, Collapse/Expand)
+// - Live logs viewer drawer (fixed background task execution)
+// - Terminal shell exec into container (sh/bash tab in Herdr)
+// - Images & Volumes management, Port click-to-open in browser
 
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex, Input, InputState } from "gpui-base";
@@ -87,7 +91,9 @@ export default class DockerMod extends View {
     this.containers = [];
     this.images = [];
     this.volumes = [];
+    this.stats = new Map(); // id/name -> { cpuPerc, memPerc, memUsage, netIO, pids, cpuHistory, memHistory }
     this.loading = false;
+    this.statsLoading = false;
     this.dockerAvailable = true;
     this.dockerError = null;
 
@@ -102,10 +108,17 @@ export default class DockerMod extends View {
 
     this.refresh(cx);
 
-    // Auto-refresh every 5 seconds to keep container states updated
+    // Auto-refresh container states every 5 seconds
     cx.timer.every(5000, () => {
       if (!this.actionInProgress && !this.logsLoading) {
         this.refreshQuiet(cx);
+      }
+    });
+
+    // Auto-poll stats every 4 seconds for live charts
+    cx.timer.every(4000, () => {
+      if (this.tab === "containers" && this.containers.some((c) => c.state === "running")) {
+        this.fetchStats(cx);
       }
     });
   }
@@ -126,12 +139,14 @@ export default class DockerMod extends View {
     if (cx) cx.notify();
   }
 
-  async refresh(cx) {
+  refresh(cx) {
     this.loading = true;
     cx.notify();
-    await this.refreshQuiet(cx);
-    this.loading = false;
-    cx.notify();
+    cx.spawn(async (cx) => {
+      await this.refreshQuiet(cx);
+      this.loading = false;
+      cx.notify();
+    });
   }
 
   async refreshQuiet(cx) {
@@ -226,125 +241,188 @@ export default class DockerMod extends View {
       this.dockerAvailable = false;
       this.dockerError = String(e?.message ?? e);
     }
-    cx.notify();
+
+    // Also trigger stats fetch if containers exist
+    if (this.containers.some((c) => c.state === "running")) {
+      this.fetchStats(cx);
+    } else {
+      cx.notify();
+    }
   }
 
-  // ── Single Container Actions ─────────────────────────────────────────────────
+  fetchStats(cx) {
+    if (this.statsLoading) return;
+    this.statsLoading = true;
+    cx.spawn(async (cx) => {
+      try {
+        const res = await dockerCmd(["stats", "--no-stream", "--format", "{{json .}}"]);
+        if (res.code === 0) {
+          const lines = res.stdout.trim().split("\n").filter(Boolean);
+          for (const line of lines) {
+            try {
+              const r = JSON.parse(line);
+              const id = r.ID;
+              const name = r.Name;
+              const cpuPerc = parseFloat((r.CPUPerc || "0").replace("%", "")) || 0;
+              const memPerc = parseFloat((r.MemPerc || "0").replace("%", "")) || 0;
+              const prev = this.stats.get(id) || this.stats.get(name) || { cpuHistory: [], memHistory: [] };
+              const cpuHistory = [...(prev.cpuHistory || []), cpuPerc].slice(-10);
+              const memHistory = [...(prev.memHistory || []), memPerc].slice(-10);
+              const statObj = {
+                cpuPerc,
+                memPerc,
+                memUsage: r.MemUsage || "",
+                netIO: r.NetIO || "",
+                blockIO: r.BlockIO || "",
+                pids: r.PIDs || "",
+                cpuHistory,
+                memHistory,
+              };
+              this.stats.set(id, statObj);
+              this.stats.set(name, statObj);
+            } catch {}
+          }
+        }
+      } catch {}
+      this.statsLoading = false;
+      cx.notify();
+    });
+  }
 
-  async startContainer(c, cx) {
+  // ── Single Container Actions (Spawned Context) ───────────────────────────────
+
+  startContainer(c, cx) {
     this.actionInProgress = c.id;
-    cx.notify();
     notify({ title: `Starting ${c.name}…`, level: "info", timeout: 2000 });
-    try {
-      const res = await dockerCmd(["start", c.id]);
-      if (res.code === 0) {
-        notify({ title: "Container Started", body: c.name, level: "success", timeout: 2500 });
-      } else {
-        notify({ title: "Start Failed", body: res.stderr || res.stdout, level: "error", timeout: 4000 });
+    cx.notify();
+    cx.spawn(async (cx) => {
+      try {
+        const res = await dockerCmd(["start", c.id]);
+        if (res.code === 0) {
+          notify({ title: "Container Started", body: c.name, level: "success", timeout: 2500 });
+        } else {
+          notify({ title: "Start Failed", body: res.stderr || res.stdout, level: "error", timeout: 4000 });
+        }
+      } catch (e) {
+        notify({ title: "Start Failed", body: String(e?.message ?? e), level: "error", timeout: 4000 });
+      } finally {
+        this.actionInProgress = null;
+        await this.refreshQuiet(cx);
       }
-    } catch (e) {
-      notify({ title: "Start Failed", body: String(e?.message ?? e), level: "error", timeout: 4000 });
-    }
-    this.actionInProgress = null;
-    await this.refreshQuiet(cx);
+    });
   }
 
-  async stopContainer(c, cx) {
+  stopContainer(c, cx) {
     this.actionInProgress = c.id;
-    cx.notify();
     notify({ title: `Stopping ${c.name}…`, level: "info", timeout: 2000 });
-    try {
-      const res = await dockerCmd(["stop", "-t", "5", c.id]);
-      if (res.code === 0) {
-        notify({ title: "Container Stopped", body: c.name, level: "success", timeout: 2500 });
-      } else {
-        notify({ title: "Stop Failed", body: res.stderr || res.stdout, level: "error", timeout: 4000 });
+    cx.notify();
+    cx.spawn(async (cx) => {
+      try {
+        const res = await dockerCmd(["stop", "-t", "5", c.id]);
+        if (res.code === 0) {
+          notify({ title: "Container Stopped", body: c.name, level: "success", timeout: 2500 });
+        } else {
+          notify({ title: "Stop Failed", body: res.stderr || res.stdout, level: "error", timeout: 4000 });
+        }
+      } catch (e) {
+        notify({ title: "Stop Failed", body: String(e?.message ?? e), level: "error", timeout: 4000 });
+      } finally {
+        this.actionInProgress = null;
+        await this.refreshQuiet(cx);
       }
-    } catch (e) {
-      notify({ title: "Stop Failed", body: String(e?.message ?? e), level: "error", timeout: 4000 });
-    }
-    this.actionInProgress = null;
-    await this.refreshQuiet(cx);
+    });
   }
 
-  async pauseContainer(c, cx) {
+  pauseContainer(c, cx) {
     this.actionInProgress = c.id;
-    cx.notify();
     notify({ title: `Pausing ${c.name}…`, level: "info", timeout: 2000 });
-    try {
-      const res = await dockerCmd(["pause", c.id]);
-      if (res.code === 0) {
-        notify({ title: "Container Paused", body: c.name, level: "success", timeout: 2500 });
-      } else {
-        notify({ title: "Pause Failed", body: res.stderr || res.stdout, level: "error", timeout: 4000 });
+    cx.notify();
+    cx.spawn(async (cx) => {
+      try {
+        const res = await dockerCmd(["pause", c.id]);
+        if (res.code === 0) {
+          notify({ title: "Container Paused", body: c.name, level: "success", timeout: 2500 });
+        } else {
+          notify({ title: "Pause Failed", body: res.stderr || res.stdout, level: "error", timeout: 4000 });
+        }
+      } catch (e) {
+        notify({ title: "Pause Failed", body: String(e?.message ?? e), level: "error", timeout: 4000 });
+      } finally {
+        this.actionInProgress = null;
+        await this.refreshQuiet(cx);
       }
-    } catch (e) {
-      notify({ title: "Pause Failed", body: String(e?.message ?? e), level: "error", timeout: 4000 });
-    }
-    this.actionInProgress = null;
-    await this.refreshQuiet(cx);
+    });
   }
 
-  async unpauseContainer(c, cx) {
+  unpauseContainer(c, cx) {
     this.actionInProgress = c.id;
-    cx.notify();
     notify({ title: `Resuming ${c.name}…`, level: "info", timeout: 2000 });
-    try {
-      const res = await dockerCmd(["unpause", c.id]);
-      if (res.code === 0) {
-        notify({ title: "Container Resumed", body: c.name, level: "success", timeout: 2500 });
-      } else {
-        notify({ title: "Resume Failed", body: res.stderr || res.stdout, level: "error", timeout: 4000 });
-      }
-    } catch (e) {
-      notify({ title: "Resume Failed", body: String(e?.message ?? e), level: "error", timeout: 4000 });
-    }
-    this.actionInProgress = null;
-    await this.refreshQuiet(cx);
-  }
-
-  async restartContainer(c, cx) {
-    this.actionInProgress = c.id;
     cx.notify();
-    notify({ title: `Restarting ${c.name}…`, level: "info", timeout: 2000 });
-    try {
-      const res = await dockerCmd(["restart", "-t", "5", c.id]);
-      if (res.code === 0) {
-        notify({ title: "Container Restarted", body: c.name, level: "success", timeout: 2500 });
-      } else {
-        notify({ title: "Restart Failed", body: res.stderr || res.stdout, level: "error", timeout: 4000 });
+    cx.spawn(async (cx) => {
+      try {
+        const res = await dockerCmd(["unpause", c.id]);
+        if (res.code === 0) {
+          notify({ title: "Container Resumed", body: c.name, level: "success", timeout: 2500 });
+        } else {
+          notify({ title: "Resume Failed", body: res.stderr || res.stdout, level: "error", timeout: 4000 });
+        }
+      } catch (e) {
+        notify({ title: "Resume Failed", body: String(e?.message ?? e), level: "error", timeout: 4000 });
+      } finally {
+        this.actionInProgress = null;
+        await this.refreshQuiet(cx);
       }
-    } catch (e) {
-      notify({ title: "Restart Failed", body: String(e?.message ?? e), level: "error", timeout: 4000 });
-    }
-    this.actionInProgress = null;
-    await this.refreshQuiet(cx);
+    });
   }
 
-  async deleteContainer(c, cx) {
+  restartContainer(c, cx) {
+    this.actionInProgress = c.id;
+    notify({ title: `Restarting ${c.name}…`, level: "info", timeout: 2000 });
+    cx.notify();
+    cx.spawn(async (cx) => {
+      try {
+        const res = await dockerCmd(["restart", "-t", "5", c.id]);
+        if (res.code === 0) {
+          notify({ title: "Container Restarted", body: c.name, level: "success", timeout: 2500 });
+        } else {
+          notify({ title: "Restart Failed", body: res.stderr || res.stdout, level: "error", timeout: 4000 });
+        }
+      } catch (e) {
+        notify({ title: "Restart Failed", body: String(e?.message ?? e), level: "error", timeout: 4000 });
+      } finally {
+        this.actionInProgress = null;
+        await this.refreshQuiet(cx);
+      }
+    });
+  }
+
+  deleteContainer(c, cx) {
     if (this.confirmDelete !== c.id) {
       this.setConfirm(c.id, cx);
       return;
     }
     this.clearConfirm(cx);
     this.actionInProgress = c.id;
-    cx.notify();
     notify({ title: `Removing ${c.name}…`, level: "info", timeout: 2000 });
-    try {
-      const res = await dockerCmd(["rm", "-f", c.id]);
-      if (res.code === 0) {
-        notify({ title: "Container Removed", body: c.name, level: "success", timeout: 2500 });
-      } else {
-        notify({ title: "Delete Failed", body: res.stderr || res.stdout, level: "error", timeout: 4000 });
+    cx.notify();
+    cx.spawn(async (cx) => {
+      try {
+        const res = await dockerCmd(["rm", "-f", c.id]);
+        if (res.code === 0) {
+          notify({ title: "Container Removed", body: c.name, level: "success", timeout: 2500 });
+        } else {
+          notify({ title: "Delete Failed", body: res.stderr || res.stdout, level: "error", timeout: 4000 });
+        }
+      } catch (e) {
+        notify({ title: "Delete Failed", body: String(e?.message ?? e), level: "error", timeout: 4000 });
+      } finally {
+        this.actionInProgress = null;
+        await this.refreshQuiet(cx);
       }
-    } catch (e) {
-      notify({ title: "Delete Failed", body: String(e?.message ?? e), level: "error", timeout: 4000 });
-    }
-    this.actionInProgress = null;
-    await this.refreshQuiet(cx);
+    });
   }
 
-  async openTerminal(c, cx) {
+  openTerminal(c, cx) {
     try {
       run("tab.new", {
         name: `docker: ${c.name}`,
@@ -357,63 +435,74 @@ export default class DockerMod extends View {
     cx.notify();
   }
 
-  async viewLogs(c, cx) {
+  viewLogs(c, cx) {
     this.activeLogs = c;
     this.logsLoading = true;
     this.logsText = "Fetching logs…";
     cx.notify();
-    try {
-      const res = await dockerCmd(["logs", "--tail", "250", "--timestamps", c.id]);
-      this.logsText = (res.stdout || res.stderr || "No logs output recorded.").trim();
-    } catch (e) {
-      this.logsText = `Error fetching logs: ${String(e?.message ?? e)}`;
-    }
-    this.logsLoading = false;
-    cx.notify();
+
+    cx.spawn(async (cx) => {
+      try {
+        const res = await dockerCmd(["logs", "--tail", "150", c.id]);
+        const text = (res.stdout || res.stderr || "").trim();
+        this.logsText = text || "No logs output recorded for this container.";
+      } catch (e) {
+        this.logsText = `Error fetching logs: ${String(e?.message ?? e)}`;
+      } finally {
+        this.logsLoading = false;
+        cx.notify();
+      }
+    });
   }
 
-  // ── Group Bulk Actions ───────────────────────────────────────────────────────
+  // ── Group Bulk Actions (Spawned Context) ─────────────────────────────────────
 
-  async startGroup(containers, cx) {
+  startGroup(containers, cx) {
     const targets = containers.filter((c) => c.state !== "running");
     if (!targets.length) return;
     notify({ title: `Starting ${targets.length} container(s)…`, level: "info", timeout: 2000 });
-    for (const c of targets) {
-      try {
-        await dockerCmd(["start", c.id]);
-      } catch {}
-    }
-    notify({ title: "Group Started", body: `Started ${targets.length} container(s)`, level: "success", timeout: 2500 });
-    await this.refreshQuiet(cx);
+    cx.spawn(async (cx) => {
+      for (const c of targets) {
+        try {
+          await dockerCmd(["start", c.id]);
+        } catch {}
+      }
+      notify({ title: "Group Started", body: `Started ${targets.length} container(s)`, level: "success", timeout: 2500 });
+      await this.refreshQuiet(cx);
+    });
   }
 
-  async stopGroup(containers, cx) {
+  stopGroup(containers, cx) {
     const targets = containers.filter((c) => c.state === "running" || c.state === "paused");
     if (!targets.length) return;
     notify({ title: `Stopping ${targets.length} container(s)…`, level: "info", timeout: 2000 });
-    for (const c of targets) {
-      try {
-        await dockerCmd(["stop", "-t", "5", c.id]);
-      } catch {}
-    }
-    notify({ title: "Group Stopped", body: `Stopped ${targets.length} container(s)`, level: "success", timeout: 2500 });
-    await this.refreshQuiet(cx);
+    cx.spawn(async (cx) => {
+      for (const c of targets) {
+        try {
+          await dockerCmd(["stop", "-t", "5", c.id]);
+        } catch {}
+      }
+      notify({ title: "Group Stopped", body: `Stopped ${targets.length} container(s)`, level: "success", timeout: 2500 });
+      await this.refreshQuiet(cx);
+    });
   }
 
-  async restartGroup(containers, cx) {
+  restartGroup(containers, cx) {
     notify({ title: `Restarting ${containers.length} container(s)…`, level: "info", timeout: 2000 });
-    for (const c of containers) {
-      try {
-        await dockerCmd(["restart", "-t", "5", c.id]);
-      } catch {}
-    }
-    notify({ title: "Group Restarted", body: `Restarted ${containers.length} container(s)`, level: "success", timeout: 2500 });
-    await this.refreshQuiet(cx);
+    cx.spawn(async (cx) => {
+      for (const c of containers) {
+        try {
+          await dockerCmd(["restart", "-t", "5", c.id]);
+        } catch {}
+      }
+      notify({ title: "Group Restarted", body: `Restarted ${containers.length} container(s)`, level: "success", timeout: 2500 });
+      await this.refreshQuiet(cx);
+    });
   }
 
   // ── Images & Volumes Actions ─────────────────────────────────────────────────
 
-  async deleteImage(img, cx) {
+  deleteImage(img, cx) {
     if (this.confirmDelete !== img.id) {
       this.setConfirm(img.id, cx);
       return;
@@ -421,21 +510,24 @@ export default class DockerMod extends View {
     this.clearConfirm(cx);
     this.actionInProgress = img.id;
     cx.notify();
-    try {
-      const res = await dockerCmd(["rmi", "-f", img.id]);
-      if (res.code === 0) {
-        notify({ title: "Image Removed", body: `${img.repository}:${img.tag}`, level: "success", timeout: 2500 });
-      } else {
-        notify({ title: "Remove Failed", body: res.stderr || res.stdout, level: "error", timeout: 4000 });
+    cx.spawn(async (cx) => {
+      try {
+        const res = await dockerCmd(["rmi", "-f", img.id]);
+        if (res.code === 0) {
+          notify({ title: "Image Removed", body: `${img.repository}:${img.tag}`, level: "success", timeout: 2500 });
+        } else {
+          notify({ title: "Remove Failed", body: res.stderr || res.stdout, level: "error", timeout: 4000 });
+        }
+      } catch (e) {
+        notify({ title: "Remove Failed", body: String(e?.message ?? e), level: "error", timeout: 4000 });
+      } finally {
+        this.actionInProgress = null;
+        await this.refreshQuiet(cx);
       }
-    } catch (e) {
-      notify({ title: "Remove Failed", body: String(e?.message ?? e), level: "error", timeout: 4000 });
-    }
-    this.actionInProgress = null;
-    await this.refreshQuiet(cx);
+    });
   }
 
-  async deleteVolume(vol, cx) {
+  deleteVolume(vol, cx) {
     if (this.confirmDelete !== vol.name) {
       this.setConfirm(vol.name, cx);
       return;
@@ -443,43 +535,49 @@ export default class DockerMod extends View {
     this.clearConfirm(cx);
     this.actionInProgress = vol.name;
     cx.notify();
-    try {
-      const res = await dockerCmd(["volume", "rm", "-f", vol.name]);
-      if (res.code === 0) {
-        notify({ title: "Volume Removed", body: vol.name, level: "success", timeout: 2500 });
-      } else {
-        notify({ title: "Remove Failed", body: res.stderr || res.stdout, level: "error", timeout: 4000 });
+    cx.spawn(async (cx) => {
+      try {
+        const res = await dockerCmd(["volume", "rm", "-f", vol.name]);
+        if (res.code === 0) {
+          notify({ title: "Volume Removed", body: vol.name, level: "success", timeout: 2500 });
+        } else {
+          notify({ title: "Remove Failed", body: res.stderr || res.stdout, level: "error", timeout: 4000 });
+        }
+      } catch (e) {
+        notify({ title: "Remove Failed", body: String(e?.message ?? e), level: "error", timeout: 4000 });
+      } finally {
+        this.actionInProgress = null;
+        await this.refreshQuiet(cx);
       }
-    } catch (e) {
-      notify({ title: "Remove Failed", body: String(e?.message ?? e), level: "error", timeout: 4000 });
-    }
-    this.actionInProgress = null;
-    await this.refreshQuiet(cx);
+    });
   }
 
-  async pruneStopped(cx) {
+  pruneStopped(cx) {
     if (this.confirmDelete !== "prune-stopped") {
       this.setConfirm("prune-stopped", cx);
       return;
     }
     this.clearConfirm(cx);
     notify({ title: "Pruning Stopped Containers…", level: "info", timeout: 2000 });
-    try {
-      const res = await dockerCmd(["container", "prune", "-f"]);
-      if (res.code === 0) {
-        notify({
-          title: "Prune Completed",
-          body: res.stdout.trim() || "Cleaned up stopped containers",
-          level: "success",
-          timeout: 3000,
-        });
-      } else {
-        notify({ title: "Prune Failed", body: res.stderr, level: "error", timeout: 4000 });
+    cx.spawn(async (cx) => {
+      try {
+        const res = await dockerCmd(["container", "prune", "-f"]);
+        if (res.code === 0) {
+          notify({
+            title: "Prune Completed",
+            body: res.stdout.trim() || "Cleaned up stopped containers",
+            level: "success",
+            timeout: 3000,
+          });
+        } else {
+          notify({ title: "Prune Failed", body: res.stderr, level: "error", timeout: 4000 });
+        }
+      } catch (e) {
+        notify({ title: "Prune Failed", body: String(e?.message ?? e), level: "error", timeout: 4000 });
+      } finally {
+        await this.refreshQuiet(cx);
       }
-    } catch (e) {
-      notify({ title: "Prune Failed", body: String(e?.message ?? e), level: "error", timeout: 4000 });
-    }
-    await this.refreshQuiet(cx);
+    });
   }
 
   // ── Render Components ────────────────────────────────────────────────────────
@@ -1006,9 +1104,161 @@ export default class DockerMod extends View {
       );
   }
 
+  // ── Container Card Chart Visualization ───────────────────────────────────────
+
+  renderContainerChart(c, stat, t) {
+    const isRunning = c.state === "running";
+    if (!isRunning) return null;
+
+    if (!stat) {
+      return h_flex()
+        .h(16)
+        .items_center()
+        .gap(6)
+        .text_size(10)
+        .text_color(t.dim)
+        .child(
+          svg(`${ICONS}/refresh.svg`)
+            .size(10)
+            .text_color(t.dim)
+            .spin(900),
+        )
+        .child(div().child("Measuring live metrics…"));
+    }
+
+    const cpuVal = stat.cpuPerc;
+    const memVal = stat.memPerc;
+    const cpuColor = cpuVal >= 80 ? t.ansi1 : cpuVal >= 40 ? t.ansi3 : t.ansi2;
+    const memColor = memVal >= 85 ? t.ansi1 : memVal >= 60 ? t.ansi3 : t.accent || t.ansi4;
+
+    const sparkBar = (val, max = 100, color) => {
+      const hPct = Math.max(3, Math.min(100, Math.round((val / max) * 100)));
+      return div()
+        .w(3)
+        .h(14)
+        .flex_none()
+        .rounded(1)
+        .bg(t.chrome)
+        .flex()
+        .items_end()
+        .child(
+          div()
+            .w_full()
+            .h(`${hPct}%`)
+            .rounded(1)
+            .bg(color),
+        );
+    };
+
+    const miniSparkline = (history, max, color) => {
+      const hist = history && history.length ? history : [0];
+      return h_flex()
+        .h(14)
+        .items_end()
+        .gap(1)
+        .flex_none()
+        .children(
+          Array.from({ length: 8 }, (_, i) => {
+            const v = hist[i - (8 - hist.length)];
+            return sparkBar(v === undefined ? 0 : v, max, color);
+          }),
+        );
+    };
+
+    const progressBar = (pct, color) =>
+      div()
+        .flex_1()
+        .h(4)
+        .rounded(2)
+        .bg(t.chrome)
+        .overflow_hidden()
+        .child(
+          div()
+            .h_full()
+            .w(`${Math.max(2, Math.min(100, pct))}%`)
+            .rounded(2)
+            .bg(color),
+        );
+
+    const memUsageClean = (stat.memUsage || "").split("/")[0].trim();
+
+    return v_flex()
+      .p(6)
+      .gap(4)
+      .rounded(6)
+      .bg(t.background)
+      .border_1()
+      .border_color(t.border)
+      // CPU Row
+      .child(
+        h_flex()
+          .h(16)
+          .gap(6)
+          .items_center()
+          .text_size(10)
+          .child(div().w(26).flex_none().font_medium().text_color(t.dim).child("CPU"))
+          .child(progressBar(cpuVal, cpuColor))
+          .child(miniSparkline(stat.cpuHistory, Math.max(10, ...(stat.cpuHistory || [10])), cpuColor))
+          .child(
+            div()
+              .w(38)
+              .flex_none()
+              .text_right()
+              .font_family("monospace")
+              .font_medium()
+              .text_color(cpuColor)
+              .child(`${cpuVal.toFixed(1)}%`),
+          ),
+      )
+      // Memory Row
+      .child(
+        h_flex()
+          .h(16)
+          .gap(6)
+          .items_center()
+          .text_size(10)
+          .child(div().w(26).flex_none().font_medium().text_color(t.dim).child("MEM"))
+          .child(progressBar(memVal, memColor))
+          .when(Boolean(memUsageClean), (el) =>
+            el.child(
+              div()
+                .flex_none()
+                .truncate()
+                .font_family("monospace")
+                .text_size(9.5)
+                .text_color(t.muted)
+                .child(memUsageClean),
+            ),
+          )
+          .child(
+            div()
+              .w(38)
+              .flex_none()
+              .text_right()
+              .font_family("monospace")
+              .font_medium()
+              .text_color(memColor)
+              .child(`${memVal.toFixed(1)}%`),
+          ),
+      )
+      // Network & PIDs Row
+      .when(Boolean(stat.netIO), (el) =>
+        el.child(
+          h_flex()
+            .text_size(9.5)
+            .text_color(t.dim)
+            .items_center()
+            .justify_between()
+            .child(div().child(`Net: ${stat.netIO}`))
+            .when(Boolean(stat.pids), (b) => b.child(div().child(`PIDs: ${stat.pids}`))),
+        ),
+      );
+  }
+
   renderContainerCard(c, t, cx) {
     const isBusy = this.actionInProgress === c.id;
     const isConfirmingDelete = this.confirmDelete === c.id;
+    const stat = this.stats.get(c.id) || this.stats.get(c.name);
 
     // Status colors
     const isRunning = c.state === "running";
@@ -1162,6 +1412,8 @@ export default class DockerMod extends View {
               .child(c.status),
           ),
       )
+      // Live Performance Chart (CPU & Memory)
+      .child(this.renderContainerChart(c, stat, t))
       .when(c.ports.length > 0, (el) =>
         // Ports row
         el.child(
@@ -1217,25 +1469,25 @@ export default class DockerMod extends View {
             el
               // Start action (if stopped)
               .when(!isRunning && !isPaused, (b) =>
-                b.child(actionBtn("play", "Start Container", () => this.startContainer(c, cx))),
+                b.child(actionBtn("play", "Start Container", (cx) => this.startContainer(c, cx))),
               )
               // Pause / Unpause
               .when(isRunning, (b) =>
-                b.child(actionBtn("pause", "Pause Container", () => this.pauseContainer(c, cx))),
+                b.child(actionBtn("pause", "Pause Container", (cx) => this.pauseContainer(c, cx))),
               )
               .when(isPaused, (b) =>
-                b.child(actionBtn("play", "Unpause Container", () => this.unpauseContainer(c, cx))),
+                b.child(actionBtn("play", "Unpause Container", (cx) => this.unpauseContainer(c, cx))),
               )
               // Stop action (if running or paused)
               .when(isRunning || isPaused, (b) =>
-                b.child(actionBtn("stop", "Stop Container", () => this.stopContainer(c, cx))),
+                b.child(actionBtn("stop", "Stop Container", (cx) => this.stopContainer(c, cx))),
               )
               // Restart action
-              .child(actionBtn("refresh", "Restart Container", () => this.restartContainer(c, cx)))
+              .child(actionBtn("refresh", "Restart Container", (cx) => this.restartContainer(c, cx)))
               // Terminal Exec action
-              .child(actionBtn("terminal", "Exec Shell (Terminal tab)", () => this.openTerminal(c, cx)))
+              .child(actionBtn("terminal", "Exec Shell (Terminal tab)", (cx) => this.openTerminal(c, cx)))
               // Logs action
-              .child(actionBtn("file-text", "View Recent Logs", () => this.viewLogs(c, cx)))
+              .child(actionBtn("file-text", "View Recent Logs", (cx) => this.viewLogs(c, cx)))
               .child(div().flex_1())
               // Delete action with confirmation
               .child(
@@ -1253,7 +1505,7 @@ export default class DockerMod extends View {
                       .on_click((_e, cx) => this.deleteContainer(c, cx))
                       .child(svg(`${ICONS}/trash.svg`).size(11).text_color(t.raised))
                       .child(div().text_size(11).font_bold().child("Confirm Delete?"))
-                  : actionBtn("trash", "Delete Container", () => this.deleteContainer(c, cx), false),
+                  : actionBtn("trash", "Delete Container", (cx) => this.deleteContainer(c, cx), false),
               ),
           ),
       );
