@@ -625,6 +625,8 @@ export class Agents {
   }
 
   agentRow(a, subs, view, t) {
+    const pane = panes().find((p) => p.pane === a.pane) ?? panes().find((p) => p.tab === a.tab);
+    const branch = pane?.branch;
     const pic = icon(a.program, 12, t.dim, a);
     const hovered = this.hovered === a.address;
     const when = this.since(a);
@@ -649,6 +651,22 @@ export class Agents {
       .on_click(() => run("pane.focus", { pane: a.pane }))
       .when(Boolean(pic), (el) => el.child(this.agentIcon(a, pic, subs)))
       .child(this.agentName(a, view, t))
+      .when(Boolean(branch), (el) =>
+        el.child(
+          h_flex()
+            .flex_none()
+            .gap(3)
+            .items_center()
+            .px(5)
+            .h(18)
+            .rounded(4)
+            .bg(a.focused ? t.raised : t.chrome)
+            .text_size(TEXT.badge ?? 10)
+            .text_color(t.dim)
+            .child(Icon("git-branch", 10).text_color(t.dim))
+            .child(div().truncate().max_w(80).child(branch)),
+        ),
+      )
       .when(Boolean(machine), (el) =>
         el.child(div().text_size(TEXT.badge).text_color(t.dim).child(machine)),
       )
@@ -669,6 +687,8 @@ export class Agents {
   // A tab with no agent, under its space in the lists view: its program and its name.
   tabRow(w, tab, lit, t) {
     const l = lead(tab);
+    const pane = panes().find((p) => p.tab === tab.id);
+    const branch = pane?.branch;
     // The tab's title, as Herdr's tab bar shows it.
     const rawName = tab.name || "";
     const prog = l?.program?.name;
@@ -715,6 +735,22 @@ export class Agents {
           .when(Boolean(prog) && (!rest || /^\d+$/.test(rest)), (el) =>
             el.child(this.programName(prog, t)),
           ),
+      )
+      .when(Boolean(branch), (el) =>
+        el.child(
+          h_flex()
+            .flex_none()
+            .gap(3)
+            .items_center()
+            .px(5)
+            .h(18)
+            .rounded(4)
+            .bg(lit ? t.raised : t.chrome)
+            .text_size(TEXT.badge ?? 10)
+            .text_color(t.dim)
+            .child(Icon("git-branch", 10).text_color(t.dim))
+            .child(div().truncate().max_w(80).child(branch)),
+        ),
       );
   }
 
