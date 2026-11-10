@@ -1052,7 +1052,7 @@ export class Spaces {
         div().min_w(0).max_w(150).truncate().tooltip(w.name).text_color(t.foreground).child(w.name),
       )
       .when(!tree && Boolean(provider), (el) => el.child(provider))
-      .when(Boolean(tree), (el) => el.child(this.branchName(g, w.name, t)))
+      .child(this.branchName(g, w.name, t))
       .child(this.gitTail(g, w.active, t, w));
   }
 

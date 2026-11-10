@@ -17,6 +17,8 @@ import {
   setAgentOrder,
   window,
   layout,
+  readTextFile,
+  exec,
 } from "herdr";
 import { findNode } from "./find-node.js";
 import { TEXT, Icon, IconButton, GroupHeader, Menu, MenuLabel, MenuOption } from "./ui.js";
@@ -189,6 +191,8 @@ function gatherGroups(list, groupOf, sortId) {
 
 export class Agents {
   init(_props, cx) {
+    this.cx = cx;
+    this.wtCache = new Map();
     this.sortOpen = false;
     this.sortFocus = cx.focus_handle();
     this.folded = new Set();
@@ -196,6 +200,50 @@ export class Agents {
     this.changed = JSON.parse(localStorage.getItem("changed") ?? "{}");
     this.pins = JSON.parse(localStorage.getItem("pins") ?? "[]");
     cx.timer.every(30000, (cx) => cx.notify());
+  }
+
+  checkWorktree(cwd) {
+    if (!cwd) return null;
+    if (this.wtCache.has(cwd)) return this.wtCache.get(cwd);
+    this.wtCache.set(cwd, { checking: true, isWorktree: false, branch: null });
+    if (this.cx) {
+      this.cx.spawn(async (cx) => {
+        let isWorktree = false;
+        let branch = null;
+        try {
+          const text = await readTextFile(`${cwd}/.git`);
+          if (text && text.startsWith("gitdir:")) {
+            isWorktree = true;
+            const m = text.match(/gitdir:\s*(.*)/);
+            if (m && m[1]) {
+              const gitDir = m[1].trim();
+              const headPath = `${gitDir}/HEAD`;
+              try {
+                const headText = await readTextFile(headPath);
+                if (headText && headText.startsWith("ref: refs/heads/")) {
+                  branch = headText.slice(16).trim();
+                }
+              } catch {}
+            }
+          }
+        } catch {
+          try {
+            const res = await exec("git", ["rev-parse", "--git-common-dir", "--show-toplevel"], { cwd });
+            if (res.code === 0) {
+              const [commonDir, topLevel] = res.stdout.trim().split("\n");
+              if (commonDir && topLevel && commonDir !== `${topLevel}/.git`) {
+                isWorktree = true;
+                const bRes = await exec("git", ["branch", "--show-current"], { cwd });
+                if (bRes.code === 0) branch = bRes.stdout.trim();
+              }
+            }
+          } catch {}
+        }
+        this.wtCache.set(cwd, { checking: false, isWorktree, branch });
+        if (isWorktree) cx.notify();
+      });
+    }
+    return this.wtCache.get(cwd);
   }
 
   // Stamps agents whose state changed. Done and idle count as one: looking at a
@@ -626,7 +674,7 @@ export class Agents {
 
   agentRow(a, subs, view, t) {
     const pane = panes().find((p) => p.pane === a.pane) ?? panes().find((p) => p.tab === a.tab);
-    const branch = pane?.branch;
+    const wt = pane?.cwd ? this.checkWorktree(pane.cwd) : null;
     const pic = icon(a.program, 12, t.dim, a);
     const hovered = this.hovered === a.address;
     const when = this.since(a);
@@ -651,7 +699,7 @@ export class Agents {
       .on_click(() => run("pane.focus", { pane: a.pane }))
       .when(Boolean(pic), (el) => el.child(this.agentIcon(a, pic, subs)))
       .child(this.agentName(a, view, t))
-      .when(Boolean(branch), (el) =>
+      .when(Boolean(wt?.isWorktree), (el) =>
         el.child(
           h_flex()
             .flex_none()
@@ -662,9 +710,10 @@ export class Agents {
             .rounded(4)
             .bg(a.focused ? t.raised : t.chrome)
             .text_size(TEXT.badge ?? 10)
-            .text_color(t.dim)
-            .child(Icon("git-branch", 10).text_color(t.dim))
-            .child(div().truncate().max_w(80).child(branch)),
+            .text_color(t.accent ?? t.ansi3)
+            .tooltip(`Worktree: ${wt.branch || "linked"}`)
+            .child(Icon("branch", 10).text_color(t.accent ?? t.ansi3))
+            .child(div().truncate().max_w(80).child(wt.branch ? `wt: ${wt.branch}` : "worktree")),
         ),
       )
       .when(Boolean(machine), (el) =>
@@ -688,7 +737,7 @@ export class Agents {
   tabRow(w, tab, lit, t) {
     const l = lead(tab);
     const pane = panes().find((p) => p.tab === tab.id);
-    const branch = pane?.branch;
+    const wt = pane?.cwd ? this.checkWorktree(pane.cwd) : null;
     // The tab's title, as Herdr's tab bar shows it.
     const rawName = tab.name || "";
     const prog = l?.program?.name;
@@ -736,7 +785,7 @@ export class Agents {
             el.child(this.programName(prog, t)),
           ),
       )
-      .when(Boolean(branch), (el) =>
+      .when(Boolean(wt?.isWorktree), (el) =>
         el.child(
           h_flex()
             .flex_none()
@@ -747,9 +796,10 @@ export class Agents {
             .rounded(4)
             .bg(lit ? t.raised : t.chrome)
             .text_size(TEXT.badge ?? 10)
-            .text_color(t.dim)
-            .child(Icon("git-branch", 10).text_color(t.dim))
-            .child(div().truncate().max_w(80).child(branch)),
+            .text_color(t.accent ?? t.ansi3)
+            .tooltip(`Worktree: ${wt.branch || "linked"}`)
+            .child(Icon("branch", 10).text_color(t.accent ?? t.ansi3))
+            .child(div().truncate().max_w(80).child(wt.branch ? `wt: ${wt.branch}` : "worktree")),
         ),
       );
   }
