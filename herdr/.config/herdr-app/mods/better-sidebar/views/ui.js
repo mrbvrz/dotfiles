@@ -104,7 +104,7 @@ export function GroupHeader({
 export function Rail(kind, mid = 15, color) {
   const t = theme();
   const borderCol = color ?? t.dim ?? "#6A7875";
-  const THICK = 1.5;
+  const THICK = 1;
   const isBranch = Boolean(kind && kind.startsWith("├"));
   const isEnd = Boolean(kind && kind.startsWith("└"));
   const isPipe = Boolean(kind && kind.startsWith("│"));

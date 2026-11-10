@@ -337,8 +337,8 @@ export class Agents {
             .mr(4)
             .flex_none()
             .border_color(t.accent ?? "#E6A854")
-            .when(Boolean(l), (el) => el.border_l(1.5))
-            .when(l === "└" || l === "├", (el) => el.border_b(1.5).rounded_bl(6)),
+            .when(Boolean(l), (el) => el.border_l(1))
+            .when(l === "└" || l === "├", (el) => el.border_b(1).rounded_bl(6)),
         ),
       )
       .when(Boolean(pic), (el) => el.child(div().mr(8).child(pic)))

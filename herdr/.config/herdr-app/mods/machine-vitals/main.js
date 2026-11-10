@@ -132,11 +132,17 @@ export default class MachineVitals extends View {
     );
 
     const b = s?.battery;
+    const battColor = (pct) => {
+      if (pct <= 20) return t.ansi1;
+      if (pct <= 50) return t.ansi3;
+      return t.done ?? t.ansi2;
+    };
+    const bColor = b ? battColor(b.pct) : t.dim;
     const header = h_flex().px(16).h(30).pt(8).flex_none().items_center().justify_between()
       .child(div().text_size(11.5).font_medium().text_color(t.dim).child("This Mac"))
       .when(Boolean(b), (el) => el.child(
-        h_flex().id("mv-battery").gap(4).items_center().text_size(11).text_color(b.pct <= 15 && !b.ac ? t.ansi1 : t.dim)
-          .when(b.ac, (el) => el.child(svg("mods/machine-vitals/plug.svg").size(12)))
+        h_flex().id("mv-battery").gap(4).items_center().text_size(11).text_color(bColor)
+          .when(b.ac, (el) => el.child(svg("mods/machine-vitals/plug.svg").size(12).text_color(bColor)))
           .child(`Battery ${b.pct}%`)
           .tooltip(`Battery ${b.pct}%, ${b.state}${b.ac ? ", on AC power" : ""}`)));
 
