@@ -87,7 +87,6 @@ export default class Tabs extends View {
       const pane = panes().find(p => p.tab === c.id);
       const program = panes().find(p => p.tab === c.id && p.program?.agent)?.program ?? pane?.program;
       const name = /^tb\d+$/.test(c.name) ? program?.name ?? "Terminal" : c.name;
-      const branch = pane?.branch;
       return h_flex().id(`tab-${c.id}`).h(29).px(10).gap(7).rounded(7).items_center().flex_none().text_size(12.8)
         .border(1).border_color(c.active ? t.border : t.chrome).bg(c.active ? t.raised : t.chrome).text_color(c.active ? t.foreground : t.muted)
         .hover(s => s.bg(t.hover))
@@ -100,12 +99,6 @@ export default class Tabs extends View {
         .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); openOverlay({ mod: "menu", kind: "popup", width: 200, props: { tab: "tab", target: { id: c.id, space: space.id } } }); })
         .when(Boolean(program?.icon), el => el.child(program.tint ? svg(program.icon).size(14).text_color(t.muted) : image(program.icon).size(14)))
         .child(div().max_w(150).truncate().child(c.zoomed ? `${name} Z` : name))
-        .when(Boolean(branch), el => el.child(
-          h_flex().gap(3).items_center().px(5).h(18).rounded(4).bg(c.active ? t.background : t.raised)
-            .text_size(10).text_color(t.dim)
-            .child(svg("mods/tabs-graph/branch.svg").size(10).text_color(t.dim))
-            .child(div().max_w(90).truncate().child(branch))
-        ))
         .when(c.status === "working", el => el.child(svg("mods/workspace-chrome/spinner.svg").size(12).flex_none().text_color(t.working).spin(900)))
         .when(c.status === "blocked", el => el.child(div().size(6).rounded(3).bg(t.blocked)))
         .when(c.status === "done", el => el.child(
