@@ -815,7 +815,7 @@ export class Spaces {
   // The branch, quietly beside the name. main, master and the space's own name go without saying.
   branchName(g, name, t) {
     const branch = g?.branch === "(detached)" ? "detached" : (g?.branch ?? "detached");
-    const shown = g && !USUAL_BRANCHES.has(branch) && branch !== name;
+    const shown = Boolean(g?.branch);
     return div()
       .flex_1()
       .min_w(0)
