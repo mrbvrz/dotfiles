@@ -1,6 +1,6 @@
 // The spaces list: right-aligned branches, nested worktrees and a PR status line.
 // Repository facts follow each space's first terminal.
-import { div, image } from "gpui-kit";
+import { div, svg, image } from "gpui-kit";
 import { v_flex, h_flex, Scrollbar } from "gpui-base";
 import {
   spaces,
@@ -1064,27 +1064,34 @@ export class Spaces {
     }
     const icon = this.spaceIcons[w.id];
     if (icon) {
+      if (icon.endsWith(".svg")) {
+        return h_flex()
+          .size(18)
+          .flex_none()
+          .rounded(4)
+          .items_center()
+          .justify_center()
+          .child(svg(icon).size(14).flex_none().text_color(t.dim));
+      }
       return h_flex()
         .size(18)
         .flex_none()
         .rounded(4)
         .items_center()
         .justify_center()
-        .child(image(icon).w(16).h(16).rounded(3).flex_none());
+        .child(Icon("folder", 14).text_color(t.dim));
     }
 
-    const color = (shared("space.colors") ?? {})[w.id] ?? "ansi6";
-    const fill = color.startsWith("#") ? color : (AVATAR_COLORS[color] ?? t[color]);
     return h_flex()
       .size(18)
       .flex_none()
       .rounded(5)
-      .bg(fill)
+      .bg(t.raised ?? t.surface)
       .items_center()
       .justify_center()
       .text_size(TEXT.avatar)
-      .font_bold()
-      .text_color("#ffffff")
+      .font_semibold()
+      .text_color(t.muted)
       .child([...w.name][0]?.toUpperCase() ?? "?");
   }
 

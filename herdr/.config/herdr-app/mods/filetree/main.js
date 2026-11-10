@@ -6,7 +6,7 @@
 // layout's pane frame, fonts from settings().
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex, Editor, EditorState, InputState, Input, Scrollbar, v_virtual_list, VirtualListScrollHandle, TextView } from "gpui-base";
-import SYMBOLS from "./symbols.js"; // Symbols Icon Theme (by Miguel Solorio)
+import ZED_THEME from "./zed_theme.js"; // Zed Default Monochrome Icon Theme
 import { isImageExt, loadImageFile, resolveMarkdownImagePath, splitMarkdownImages } from "./preview.js";
 import { spaces, panes, agents, focused, exec, readTextFile, watchFolder, theme, settings, window, layout, home, appHome, props, run, notify, openOverlay, closeOverlay, shared, setShared } from "herdr";
 
@@ -118,50 +118,76 @@ function ago(ms) {
   const s = Math.max(0, Math.round((Date.now() - ms) / 1000));
   return s < 10 ? "now" : s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s / 60)}m` : s < 86400 ? `${Math.floor(s / 3600)}h` : `${Math.floor(s / 86400)}d`;
 }
-// Symbols Icon Theme (by Miguel Solorio): crisp, beautiful icons matching Zed & VS Code
+// Zed Default Monochrome Icon Theme: crisp vector glyphs matching Zed IDE
 function zedIcon(path, dir, open, t) {
+  if (dir) {
+    const file = open ? ZED_THEME.defaultFolderOpen : ZED_THEME.defaultFolder;
+    return svg(`mods/${NAME}/icons/zed/${file}`).size(15).flex_none().text_color(t.dim ?? t.muted);
+  }
+
   const parts = (path ?? "").toLowerCase().split("/");
   const name = parts[parts.length - 1];
 
-  if (dir) {
-    const custom = SYMBOLS.folderNames[name];
-    if (custom) return image(`mods/${NAME}/icons/symbols/${custom}`).size(15).flex_none();
-    const def = open ? SYMBOLS.defaultFolderOpen : SYMBOLS.defaultFolder;
-    return image(`mods/${NAME}/icons/symbols/${def}`).size(15).flex_none();
+  // 1. Exact match in stems (e.g. dockerfile, containerfile, .dockerignore, podfile)
+  let iconKey = ZED_THEME.stems[name];
+
+  // 2. Exact match in suffixes (e.g. eslint.config.js, docker-compose.yml)
+  if (!iconKey) iconKey = ZED_THEME.suffixes[name];
+
+  // 3. Multi-dot and extension matches (e.g. test.spec.ts, foo.d.ts, bar.js)
+  if (!iconKey) {
+    for (let dot = name.indexOf("."); dot !== -1; dot = name.indexOf(".", dot + 1)) {
+      const ext = name.slice(dot + 1);
+      if (ZED_THEME.suffixes[ext]) {
+        iconKey = ZED_THEME.suffixes[ext];
+        break;
+      }
+    }
   }
 
-  // Exact file name match (e.g. package.json, .gitignore, README.md, vite.config.ts)
-  const byName = SYMBOLS.fileNames[name];
-  if (byName) return image(`mods/${NAME}/icons/symbols/${byName}`).size(15).flex_none();
-
-  // Multi-dot and extension matches (e.g. spec.ts, tar.gz, ts, py, rs)
-  for (let dot = name.indexOf("."); dot !== -1; dot = name.indexOf(".", dot + 1)) {
-    const ext = name.slice(dot + 1);
-    const byExt = SYMBOLS.fileExtensions[ext];
-    if (byExt) return image(`mods/${NAME}/icons/symbols/${byExt}`).size(15).flex_none();
-  }
-
-  // Fallback default file icon
-  return image(`mods/${NAME}/icons/symbols/${SYMBOLS.defaultFile}`).size(15).flex_none();
+  const svgFile = (iconKey && ZED_THEME.icons[iconKey]) || ZED_THEME.defaultFile;
+  return svg(`mods/${NAME}/icons/zed/${svgFile}`).size(15).flex_none().text_color(t.dim ?? t.muted);
 }
 
 // ── where to look ──────────────────────────────────────────────────────────────────────
-// The focused pane's folder; when the focused pane is a mod (this tree opened as a pane,
-// say), the first terminal beside it.
+// The active space folder or its active terminal pane folder.
 const lastRoot = new Map();
 function location() {
-  const space = spaces().find((s) => s.active), f = focused();
-  let pane = f?.pane ? panes().find((p) => p.pane === f.pane) : null;
-  if (pane && !pane.terminal) pane = panes().find((p) => p.tab === pane.tab && p.terminal && p.cwd) ?? null;
-  const on = f?.pane === null ? (f.terminal?.includes("/") ? f.terminal.split("/")[0] : null) : space?.machine ?? null;
-  let cwd = pane?.cwd || f?.cwd;
+  const space = spaces().find((s) => s.active);
+  if (!space) return { cwd: null, on: null };
+  const on = space.machine ?? null;
+  const f = focused();
+  const allPanes = panes();
+  const spaceTabIds = new Set((space.tabs || []).map((t) => t.id));
+
+  let pane = f?.pane ? allPanes.find((p) => p.pane === f.pane && spaceTabIds.has(p.tab)) : null;
+  if (pane && !pane.terminal) {
+    pane = allPanes.find((p) => p.tab === pane.tab && p.terminal && p.cwd) ?? null;
+  }
+
+  // If focused pane is not in this space, resolve active pane from space tabs
+  if (!pane) {
+    const activeTab = (space.tabs || []).find((t) => t.active) || space.tabs?.[0];
+    if (activeTab) {
+      pane = allPanes.find((p) => p.tab === activeTab.id && p.cwd && p.terminal) ||
+             allPanes.find((p) => p.tab === activeTab.id && p.cwd);
+    }
+    if (!pane) {
+      pane = allPanes.find((p) => spaceTabIds.has(p.tab) && p.cwd);
+    }
+  }
+
+  let cwd = pane?.cwd;
+  if (!cwd && f?.space === space.id && f?.cwd) {
+    cwd = f.cwd;
+  }
+
   if (cwd) {
-    if (space) lastRoot.set(space.id, { cwd, on });
-  } else if (space && lastRoot.has(space.id)) {
-    const cached = lastRoot.get(space.id);
-    cwd = cached.cwd;
+    lastRoot.set(space.id, { cwd, on });
+  } else if (lastRoot.has(space.id)) {
+    cwd = lastRoot.get(space.id).cwd;
   } else {
-    cwd = space?.folder || null;
+    cwd = space.folder || null;
   }
   return { cwd, on };
 }
@@ -1261,6 +1287,13 @@ echo "$DEST"
   render(cx) {
     if (this.dialog) return this.renderDialog(cx);
     if (this.menu) return this.renderMenu(cx);
+    const activeSpace = spaces().find((s) => s.active);
+    if (activeSpace && activeSpace.id !== this.seenSpaceId) {
+      this.seenSpaceId = activeSpace.id;
+      this.follow = true;
+      this.pinned = null;
+      this.pinnedOn = null;
+    }
     const ref = shared(`${NAME}.refresh`);
     if (ref && ref !== this.seenRefresh) { this.seenRefresh = ref; this.refresh(cx); }
     this.sync(cx);

@@ -10,7 +10,7 @@ import { panes, props, run, theme, home, readTextFile, watchFolder, exec, setSha
 
 function icon(p, size, color) {
   if (!p?.icon) return null;
-  return p.tint ? svg(p.icon).size(size).flex_none().text_color(color) : image(p.icon).w(size).h(size).flex_none();
+  return (p.icon.endsWith(".svg") || p.tint) ? svg(p.icon).size(size).flex_none().text_color(color) : image(p.icon).w(size).h(size).flex_none();
 }
 
 function folder(cwd) {
