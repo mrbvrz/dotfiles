@@ -382,14 +382,12 @@ export class Spaces {
     order.push(...pins);
     this.above = () => (pinned ? this.agents.groupRows(pinned, 0, view, t) : []);
 
-    const activeColor = t.accent ?? t.working ?? "#E6A854";
     const nest = (lines, row, railOpts = []) =>
       h_flex()
         .children(
           lines.map((l, idx) => {
             const opts = railOpts[idx] || {};
-            const col = opts.branchColor || opts.topVColor || t.dim;
-            return Rail(l, 15, col, false, opts);
+            return Rail(l, 15, null, false, opts);
           }),
         )
         .child(row.flex_1().min_w(0));
@@ -406,43 +404,35 @@ export class Spaces {
       order.push(...items.filter((x) => x.a).map((x) => x.a.address));
 
       const isItemWorking = (item) => {
-        const isAgent = Boolean(item.a);
-        const agentStatus = isAgent ? (item.a.status || this.agents?.listed?.get(item.a.address)) : null;
-        const isAgentWorking = agentStatus === "working";
-        const isTabWorking = !isAgent && item.tab && panes().some((p) => p.tab === item.tab.id && p.status === "working");
-        return isAgentWorking || isTabWorking;
+        if (!item?.a) return false;
+        const st = this.agents?.listed?.get(item.a.address) ?? item.a.status;
+        if (st === "working") return true;
+        if (this.agents?.tree) {
+          const kids = this.agents.tree(all, item.a.address) || [];
+          return kids.some((k) => (this.agents?.listed?.get(k.t.address) ?? k.t.status) === "working");
+        }
+        return false;
       };
 
       const hasActiveAnywhere = items.some(isItemWorking);
       const before = tree ? [tree.startsWith("└") ? "" : "│"] : [];
       const beforeOpts = before.map(() => ({
-        topVPulse: hasActiveAnywhere,
-        topVColor: activeColor,
-        bottomVPulse: hasActiveAnywhere,
-        bottomVColor: activeColor,
+        vPulse: hasActiveAnywhere,
       }));
       const hasVisibleKids = kids > 0 && !this.spaceFolded.has(w.id);
 
       return items.flatMap((x, i) => {
         const last = i === items.length - 1 && !hasVisibleKids;
         const isWorking = isItemWorking(x);
-        const hasActiveAtOrBelow = items.slice(i).some(isItemWorking);
         const hasActiveBelow = items.slice(i + 1).some(isItemWorking);
 
         const currentOpts = {
-          topVPulse: hasActiveAtOrBelow,
-          topVColor: activeColor,
+          vPulse: hasActiveBelow,
           branchPulse: isWorking,
-          branchColor: isWorking ? activeColor : t.dim,
-          bottomVPulse: hasActiveBelow,
-          bottomVColor: activeColor,
         };
 
         const subPipeOpts = {
-          topVPulse: hasActiveBelow,
-          topVColor: activeColor,
-          bottomVPulse: hasActiveBelow,
-          bottomVColor: activeColor,
+          vPulse: hasActiveBelow,
         };
 
         const [row, ...subs] = x.a

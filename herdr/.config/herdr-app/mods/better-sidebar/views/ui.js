@@ -104,42 +104,42 @@ export function GroupHeader({
 export function Rail(kind, mid = 15, color, pulse = false, opts = {}) {
   const t = theme();
   const defaultCol = color ?? t.dim ?? "#6A7875";
+  const activeColor = t.accent ?? t.working ?? "#E6A854";
   const THICK = 1;
-  const RADIUS = 15;
+  const RADIUS = 10;
   const isBranch = Boolean(kind && kind.startsWith("├"));
   const isEnd = Boolean(kind && kind.startsWith("└"));
   const isPipe = Boolean(kind && kind.startsWith("│"));
 
-  const topVCol = opts.topVColor ?? defaultCol;
-  const topVPulse = opts.topVPulse ?? pulse;
-  const bottomVCol = opts.bottomVColor ?? defaultCol;
-  const bottomVPulse = opts.bottomVPulse ?? pulse;
-  const branchCol = opts.branchColor ?? defaultCol;
-  const branchPulse = opts.branchPulse ?? pulse;
+  const vPulse = Boolean(opts.vPulse);
+  const vCol = vPulse ? activeColor : defaultCol;
 
-  const vLine = (top, bottomOrH, isHeight = false, vColor = topVCol, vPls = topVPulse) => {
+  const branchPulse = Boolean(opts.branchPulse || pulse);
+  const branchCol = branchPulse ? activeColor : defaultCol;
+
+  const vLine = (top, bottomOrH, isHeight = false, col = vCol, pls = vPulse) => {
     const el = div()
       .absolute()
       .left(15)
       .top(top)
       .w(THICK)
-      .bg(vColor)
-      .when(Boolean(vPls), (e) => e.loop("opacity", { from: 0.45, to: 1, period: 2200 }));
+      .bg(col)
+      .when(Boolean(pls), (e) => e.loop("opacity", { from: 0.45, to: 1, period: 2200 }));
     return isHeight ? el.h(bottomOrH) : el.bottom(bottomOrH);
   };
 
-  const roundedCorner = (cColor = branchCol, cPls = branchPulse) =>
+  const roundedCorner = (col = branchCol, pls = branchPulse) =>
     div()
       .absolute()
       .left(15)
       .top(0)
-      .w(15)
+      .w(13)
       .h(mid + THICK)
       .border_l(THICK)
       .border_b(THICK)
-      .border_color(cColor)
+      .border_color(col)
       .rounded_bl(RADIUS)
-      .when(Boolean(cPls), (e) => e.loop("opacity", { from: 0.45, to: 1, period: 2200 }));
+      .when(Boolean(pls), (e) => e.loop("opacity", { from: 0.45, to: 1, period: 2200 }));
 
   const root = div()
     .relative()
@@ -148,18 +148,21 @@ export function Rail(kind, mid = 15, color, pulse = false, opts = {}) {
     .self_stretch();
 
   if (isPipe) {
-    if (topVPulse === bottomVPulse && topVCol === bottomVCol) {
-      return root.child(vLine(0, 0, false, topVCol, topVPulse));
-    }
-    return root
-      .child(vLine(0, mid, true, topVCol, topVPulse))
-      .child(vLine(mid, 0, false, bottomVCol, bottomVPulse));
+    return root.child(vLine(0, 0, false, vCol, vPulse));
   }
 
   if (isBranch) {
+    if (vPulse) {
+      // Straight line to an active agent below is glowing.
+      // Draw the branch first, then draw the unbroken vertical line on top
+      // so the branch NEVER cuts through or interrupts the straight vertical line!
+      return root
+        .child(roundedCorner(branchCol, branchPulse))
+        .child(vLine(0, 0, false, activeColor, true));
+    }
+    // Normal branch: continuous vertical line in defaultCol, with corner on top
     return root
-      .child(vLine(0, mid, true, topVCol, topVPulse))
-      .child(vLine(mid, 0, false, bottomVCol, bottomVPulse))
+      .child(vLine(0, 0, false, defaultCol, false))
       .child(roundedCorner(branchCol, branchPulse));
   }
 
