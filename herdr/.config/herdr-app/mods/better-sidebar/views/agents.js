@@ -335,18 +335,44 @@ export class Agents {
       .children(
         s.lines.map((l, idx) => {
           const isTarget = isWorking && idx === s.lines.length - 1;
-          const col = isTarget ? activeColor : (t.dim ?? "#6A7875");
-          return div()
+          const cell = div()
+            .relative()
             .self_start()
             .mt(-4)
             .w(9)
             .h(17)
             .mr(4)
-            .flex_none()
-            .border_color(col)
-            .when(isTarget, (el) => el.loop("opacity", { from: 0.45, to: 1, period: 2200 }))
-            .when(Boolean(l), (el) => el.border_l(1))
-            .when(l === "└" || l === "├", (el) => el.border_b(1).rounded_bl(10));
+            .flex_none();
+          if (!l) return cell;
+
+          cell.child(
+            div()
+              .absolute()
+              .top(0)
+              .left(0)
+              .w_full()
+              .h_full()
+              .border_color(t.dim ?? "#6A7875")
+              .border_l(1)
+              .when(l === "└" || l === "├", (el) => el.border_b(1).rounded_bl(10)),
+          );
+
+          if (isTarget) {
+            cell.child(
+              div()
+                .absolute()
+                .top(0)
+                .left(0)
+                .w_full()
+                .h_full()
+                .border_color(activeColor)
+                .loop("opacity", { from: 0, to: 1, period: 2200 })
+                .border_l(1)
+                .when(l === "└" || l === "├", (el) => el.border_b(1).rounded_bl(10)),
+            );
+          }
+
+          return cell;
         }),
       )
       .when(Boolean(pic), (el) => el.child(div().mr(8).child(pic)))

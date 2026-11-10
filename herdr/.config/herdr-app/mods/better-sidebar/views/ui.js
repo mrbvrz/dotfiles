@@ -112,23 +112,20 @@ export function Rail(kind, mid = 15, color, pulse = false, opts = {}) {
   const isPipe = Boolean(kind && kind.startsWith("│"));
 
   const vPulse = Boolean(opts.vPulse);
-  const vCol = vPulse ? activeColor : defaultCol;
-
   const branchPulse = Boolean(opts.branchPulse || pulse);
-  const branchCol = branchPulse ? activeColor : defaultCol;
 
-  const vLine = (top, bottomOrH, isHeight = false, col = vCol, pls = vPulse) => {
+  const vLine = (top, bottomOrH, isHeight = false, col = defaultCol, pls = false) => {
     const el = div()
       .absolute()
       .left(15)
       .top(top)
       .w(THICK)
       .bg(col)
-      .when(Boolean(pls), (e) => e.loop("opacity", { from: 0.45, to: 1, period: 2200 }));
+      .when(Boolean(pls), (e) => e.loop("opacity", { from: 0, to: 1, period: 2200 }));
     return isHeight ? el.h(bottomOrH) : el.bottom(bottomOrH);
   };
 
-  const roundedCorner = (col = branchCol, pls = branchPulse) =>
+  const roundedCorner = (col = defaultCol, pls = false) =>
     div()
       .absolute()
       .left(15)
@@ -139,7 +136,7 @@ export function Rail(kind, mid = 15, color, pulse = false, opts = {}) {
       .border_b(THICK)
       .border_color(col)
       .rounded_bl(RADIUS)
-      .when(Boolean(pls), (e) => e.loop("opacity", { from: 0.45, to: 1, period: 2200 }));
+      .when(Boolean(pls), (e) => e.loop("opacity", { from: 0, to: 1, period: 2200 }));
 
   const root = div()
     .relative()
@@ -148,26 +145,32 @@ export function Rail(kind, mid = 15, color, pulse = false, opts = {}) {
     .self_stretch();
 
   if (isPipe) {
-    return root.child(vLine(0, 0, false, vCol, vPulse));
+    root.child(vLine(0, 0, false, defaultCol, false));
+    if (vPulse) {
+      root.child(vLine(0, 0, false, activeColor, true));
+    }
+    return root;
   }
 
   if (isBranch) {
+    root.child(roundedCorner(defaultCol, false));
+    root.child(vLine(0, 0, false, defaultCol, false));
+
     if (vPulse) {
-      // Straight line to an active agent below is glowing.
-      // Draw the branch first, then draw the unbroken vertical line on top
-      // so the branch NEVER cuts through or interrupts the straight vertical line!
-      return root
-        .child(roundedCorner(branchCol, branchPulse))
-        .child(vLine(0, 0, false, activeColor, true));
+      root.child(vLine(0, 0, false, activeColor, true));
     }
-    // Normal branch: continuous vertical line in defaultCol, with corner on top
-    return root
-      .child(vLine(0, 0, false, defaultCol, false))
-      .child(roundedCorner(branchCol, branchPulse));
+    if (branchPulse) {
+      root.child(roundedCorner(activeColor, true));
+    }
+    return root;
   }
 
   if (isEnd) {
-    return root.child(roundedCorner(branchCol, branchPulse));
+    root.child(roundedCorner(defaultCol, false));
+    if (branchPulse) {
+      root.child(roundedCorner(activeColor, true));
+    }
+    return root;
   }
 
   return root;
