@@ -614,7 +614,20 @@ export default class FileTree extends View {
       if (e.kind === "read" && reads) this.flash(e.paths ?? [], "purple", cx, e.paths?.length > 1 ? SEARCH_REVEAL : READ_REVEAL);
       else if (e.kind === "write" && writes) this.flash(e.paths ?? [], "orange", cx, READ_REVEAL);
       else if (e.kind === "mention") this.reveal(e.paths ?? [], cx);
-      else if (e.kind === "preview" && e.paths?.[0]) { const rel = relTo(this.root, e.paths[0]); if (rel) this.show(rel, cx); }
+      else if (e.kind === "preview" && e.paths?.[0]) {
+        const abs = e.paths[0];
+        let rel = relTo(this.root, abs);
+        if (!rel) {
+          const dir = abs.replace(/\/[^/]+$/, "");
+          this.pinned = dir;
+          this.pinnedOn = this.on;
+          this.follow = false;
+          this.reset(dir, this.on);
+          this.refresh(cx);
+          rel = abs.replace(dir + "/", "");
+        }
+        if (rel) this.show(rel, cx);
+      }
       else if (e.kind === "bash-start") this.bashStarts.set(e.id, e.at);
       else if (e.kind === "bash-end" && writes) {
         const start = this.bashStarts.get(e.id) ?? e.at - 5000;
@@ -1252,7 +1265,17 @@ echo "$DEST"
     if (ref && ref !== this.seenRefresh) { this.seenRefresh = ref; this.refresh(cx); }
     this.sync(cx);
     const req = shared(`${NAME}.preview`);
-    if (req && req.n !== this.seenPreview) { this.seenPreview = req.n; if (req.root === this.root) this.show(req.rel, cx, true); }
+    if (req && req.n !== this.seenPreview) {
+      this.seenPreview = req.n;
+      if (req.root && req.root !== this.root) {
+        this.pinned = req.root;
+        this.pinnedOn = this.on;
+        this.follow = false;
+        this.reset(req.root, this.on);
+        this.refresh(cx);
+      }
+      if (req.rel) this.show(req.rel, cx, true);
+    }
     // Another mod (session-bar's changed chip) asks for a view.
     const want = shared(`${NAME}.view`);
     if (want && want.n !== this.seenView) {

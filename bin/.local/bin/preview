@@ -1,5 +1,5 @@
 #!/bin/bash
-# Herdr Preview CLI: opens markdown / document preview in Herdr
+# Herdr Preview CLI: opens file preview directly in Herdr's right-side files panel
 
 RAW="${1:-AGENTS.md}"
 
@@ -30,18 +30,32 @@ fi
 
 FILE_NAME=$(basename "$ABS_PATH")
 DIR_NAME=$(dirname "$ABS_PATH")
-PREVIEW_DIR="$HOME/.local/state/herdr-preview"
+NOW_MS=$(python3 -c 'import time; print(int(time.time() * 1000))')
 
-mkdir -p "$PREVIEW_DIR"
+# 1. Reveal right-side files panel via Herdr IPC socket if available
+if [[ -S "$HOME/.config/herdr-app/herdr-app.sock" ]]; then
+  herdr-app do layout.select --stack panel-body --child files >/dev/null 2>&1
+  herdr-app do layout.show --id panel >/dev/null 2>&1
+fi
 
+# 2. Append to filetree activity log (immediate native preview trigger)
+FT_DIR="$HOME/.local/state/herdr-filetree"
+mkdir -p "$FT_DIR"
 python3 -c "
-import json, time, os, sys
-p = sys.argv[1]
-fn = sys.argv[2]
-dn = sys.argv[3]
-data = {'path': p, 'file': fn, 'cwd': dn, 'ts': int(time.time() * 1000)}
-with open(os.path.expanduser('~/.local/state/herdr-preview/request.json'), 'w') as f:
-    json.dump(data, f)
-" "$ABS_PATH" "$FILE_NAME" "$DIR_NAME"
+import json, sys
+data = {'at': int(sys.argv[1]), 'kind': 'preview', 'paths': [sys.argv[2]]}
+with open('$FT_DIR/activity.jsonl', 'a') as f:
+    f.write(json.dumps(data) + '\n')
+" "$NOW_MS" "$ABS_PATH"
 
-echo "✓ Opening preview for $FILE_NAME in Herdr..."
+# 3. Notify pane mod request listener
+PREVIEW_DIR="$HOME/.local/state/herdr-preview"
+mkdir -p "$PREVIEW_DIR"
+python3 -c "
+import json, sys
+data = {'path': sys.argv[1], 'file': sys.argv[2], 'cwd': sys.argv[3], 'ts': int(sys.argv[4])}
+with open('$PREVIEW_DIR/request.json', 'w') as f:
+    json.dump(data, f)
+" "$ABS_PATH" "$FILE_NAME" "$DIR_NAME" "$NOW_MS"
+
+echo "✓ Opening $FILE_NAME in right-side preview panel..."
