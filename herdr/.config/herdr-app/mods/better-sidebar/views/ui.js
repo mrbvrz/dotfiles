@@ -105,6 +105,7 @@ export function Rail(kind, mid = 15, color, pulse = false, opts = {}) {
   const t = theme();
   const defaultCol = color ?? t.dim ?? "#6A7875";
   const activeColor = t.accent ?? t.working ?? "#E6A854";
+  const doneColor = t.done ?? t.ansi2 ?? "#74BBA2";
   const THICK = 1;
   const RADIUS = 10;
   const isBranch = Boolean(kind && kind.startsWith("├"));
@@ -112,9 +113,14 @@ export function Rail(kind, mid = 15, color, pulse = false, opts = {}) {
   const isPipe = Boolean(kind && kind.startsWith("│"));
 
   const vPulse = Boolean(opts.vPulse);
-  const branchPulse = Boolean(opts.branchPulse || pulse);
+  const vDone = Boolean(opts.vDone);
+  const baseVCol = vDone ? doneColor : defaultCol;
 
-  const vLine = (top, bottomOrH, isHeight = false, col = defaultCol, pls = false) => {
+  const branchPulse = Boolean(opts.branchPulse || pulse);
+  const branchDone = Boolean(opts.branchDone);
+  const baseBranchCol = branchDone ? doneColor : defaultCol;
+
+  const vLine = (top, bottomOrH, isHeight = false, col = baseVCol, pls = false) => {
     const el = div()
       .absolute()
       .left(15)
@@ -125,7 +131,7 @@ export function Rail(kind, mid = 15, color, pulse = false, opts = {}) {
     return isHeight ? el.h(bottomOrH) : el.bottom(bottomOrH);
   };
 
-  const roundedCorner = (col = defaultCol, pls = false) =>
+  const roundedCorner = (col = baseBranchCol, pls = false) =>
     div()
       .absolute()
       .left(15)
@@ -145,7 +151,7 @@ export function Rail(kind, mid = 15, color, pulse = false, opts = {}) {
     .self_stretch();
 
   if (isPipe) {
-    root.child(vLine(0, 0, false, defaultCol, false));
+    root.child(vLine(0, 0, false, baseVCol, false));
     if (vPulse) {
       root.child(vLine(0, 0, false, activeColor, true));
     }
@@ -153,8 +159,8 @@ export function Rail(kind, mid = 15, color, pulse = false, opts = {}) {
   }
 
   if (isBranch) {
-    root.child(roundedCorner(defaultCol, false));
-    root.child(vLine(0, 0, false, defaultCol, false));
+    root.child(roundedCorner(baseBranchCol, false));
+    root.child(vLine(0, 0, false, baseVCol, false));
 
     if (vPulse) {
       root.child(vLine(0, 0, false, activeColor, true));
@@ -166,7 +172,7 @@ export function Rail(kind, mid = 15, color, pulse = false, opts = {}) {
   }
 
   if (isEnd) {
-    root.child(roundedCorner(defaultCol, false));
+    root.child(roundedCorner(baseBranchCol, false));
     if (branchPulse) {
       root.child(roundedCorner(activeColor, true));
     }

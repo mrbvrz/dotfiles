@@ -403,9 +403,14 @@ export class Spaces {
       );
       order.push(...items.filter((x) => x.a).map((x) => x.a.address));
 
+      const getStatus = (item) => {
+        if (!item?.a) return null;
+        return this.agents?.listed?.get(item.a.address) ?? item.a.status;
+      };
+
       const isItemWorking = (item) => {
         if (!item?.a) return false;
-        const st = this.agents?.listed?.get(item.a.address) ?? item.a.status;
+        const st = getStatus(item);
         if (st === "working") return true;
         if (this.agents?.tree) {
           const kids = this.agents.tree(all, item.a.address) || [];
@@ -414,25 +419,43 @@ export class Spaces {
         return false;
       };
 
-      const hasActiveAnywhere = items.some(isItemWorking);
+      const isItemDone = (item) => {
+        if (!item?.a) return false;
+        const st = getStatus(item);
+        if (st === "done") return true;
+        if (this.agents?.tree) {
+          const kids = this.agents.tree(all, item.a.address) || [];
+          return kids.some((k) => (this.agents?.listed?.get(k.t.address) ?? k.t.status) === "done");
+        }
+        return false;
+      };
+
+      const hasWorkingAnywhere = items.some(isItemWorking);
+      const hasDoneAnywhere = !hasWorkingAnywhere && items.some(isItemDone);
       const before = tree ? [tree.startsWith("└") ? "" : "│"] : [];
       const beforeOpts = before.map(() => ({
-        vPulse: hasActiveAnywhere,
+        vPulse: hasWorkingAnywhere,
+        vDone: hasDoneAnywhere,
       }));
       const hasVisibleKids = kids > 0 && !this.spaceFolded.has(w.id);
 
       return items.flatMap((x, i) => {
         const last = i === items.length - 1 && !hasVisibleKids;
         const isWorking = isItemWorking(x);
-        const hasActiveBelow = items.slice(i + 1).some(isItemWorking);
+        const isDone = !isWorking && isItemDone(x);
+        const hasWorkingBelow = items.slice(i + 1).some(isItemWorking);
+        const hasDoneBelow = !hasWorkingBelow && items.slice(i + 1).some(isItemDone);
 
         const currentOpts = {
-          vPulse: hasActiveBelow,
+          vPulse: hasWorkingBelow,
+          vDone: hasDoneBelow,
           branchPulse: isWorking,
+          branchDone: isDone,
         };
 
         const subPipeOpts = {
-          vPulse: hasActiveBelow,
+          vPulse: hasWorkingBelow,
+          vDone: hasDoneBelow,
         };
 
         const [row, ...subs] = x.a

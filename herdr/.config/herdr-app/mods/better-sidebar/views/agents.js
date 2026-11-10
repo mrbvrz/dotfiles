@@ -318,7 +318,9 @@ export class Agents {
     const pic = icon(k.program, 11, t.dim, k);
     const on = k.address === shown;
     const isWorking = st === "working";
+    const isDone = st === "done";
     const activeColor = t.accent ?? t.working ?? "#E6A854";
+    const doneColor = t.done ?? t.ansi2 ?? "#74BBA2";
     return h_flex()
       .id(`sub-${k.address}`)
       .pl(39)
@@ -334,7 +336,7 @@ export class Agents {
       .on_click(() => this.peek(k.address))
       .children(
         s.lines.map((l, idx) => {
-          const isTarget = isWorking && idx === s.lines.length - 1;
+          const isTarget = idx === s.lines.length - 1;
           const cell = div()
             .relative()
             .self_start()
@@ -345,6 +347,7 @@ export class Agents {
             .flex_none();
           if (!l) return cell;
 
+          const baseBorderColor = isTarget && isDone ? doneColor : (t.dim ?? "#6A7875");
           cell.child(
             div()
               .absolute()
@@ -352,12 +355,12 @@ export class Agents {
               .left(0)
               .w_full()
               .h_full()
-              .border_color(t.dim ?? "#6A7875")
+              .border_color(baseBorderColor)
               .border_l(1)
               .when(l === "└" || l === "├", (el) => el.border_b(1).rounded_bl(10)),
           );
 
-          if (isTarget) {
+          if (isTarget && isWorking) {
             cell.child(
               div()
                 .absolute()
@@ -380,7 +383,7 @@ export class Agents {
         div()
           .flex_1()
           .truncate()
-          .text_color(on ? t.foreground : t.muted)
+          .text_color(isWorking ? activeColor : (on ? t.foreground : t.muted))
           .child(k.name || k.template || k.program?.name || k.address),
       )
       .child(this.status(t, { status: st }, compact));
@@ -389,8 +392,10 @@ export class Agents {
   // compact: a ! for blocked where a header already says "Needs you".
   status(t, a, compact = false) {
     const color = t[a.status] ?? t.dim;
-    if (a.status === "working")
-      return Icon("spinner").size(12).mx(1).flex_none().text_color(t.working).spin(900);
+    if (a.status === "working") {
+      const activeColor = t.accent ?? t.working ?? "#E6A854";
+      return Icon("spinner").size(12).mx(1).flex_none().text_color(activeColor).spin(900);
+    }
     if (a.status === "blocked" && compact)
       return div()
         .size(14)
@@ -778,6 +783,8 @@ export class Agents {
     const rawName = a.tab_name || label || "";
     const prog = a.program?.name;
     const idle = a.status === "idle" && !a.focused;
+    const isWorking = a.status === "working" || this.listed?.get(a.address) === "working";
+    const activeColor = t.accent ?? t.working ?? "#E6A854";
 
     const match = /^(\d+)(?:\s+(.*))?$/.exec(rawName.trim());
     let rest = match ? (match[2] ?? "") : rawName;
@@ -794,7 +801,7 @@ export class Agents {
             .min_w(0)
             .max_w(namesSpace ? 140 : 200)
             .truncate()
-            .text_color(idle ? t.muted : t.foreground)
+            .text_color(isWorking ? activeColor : (idle ? t.muted : t.foreground))
             .child(rest),
         ),
       )
