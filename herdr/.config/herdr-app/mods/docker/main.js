@@ -1,6 +1,9 @@
 // Docker Management mod for Herdr.
-// Provides container lifecycle controls (start, stop, pause, unpause, restart, delete),
-// live logs viewer, terminal shell exec, image & volume inspector, and compose space filtering.
+// Built custom from scratch for Herdr GPUI.
+// Features: Container lifecycle (start, stop, pause, unpause, restart, delete),
+// grouping by Docker Network (e.g. dpmptsp-pekanbaru) or Compose Project,
+// bulk group actions, live logs viewer drawer, terminal shell exec,
+// image & volume management, and port click-to-open.
 
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex, Input, InputState } from "gpui-base";
@@ -50,12 +53,35 @@ function parsePorts(portStr) {
   return result;
 }
 
+// Determines the primary network for a container.
+// Custom named networks (like dpmptsp-pekanbaru) take precedence over *_default or bridge.
+function getPrimaryNetwork(networks) {
+  if (!networks || networks.length === 0) return "bridge";
+  const custom = networks.find(
+    (n) => n !== "bridge" && !n.endsWith("_default") && n !== "host" && n !== "none",
+  );
+  if (custom) return custom;
+  return networks[0];
+}
+
 export default class DockerMod extends View {
   init(_props, cx) {
     this.cx = cx;
     this.tab = "containers"; // "containers" | "images" | "volumes"
     this.statusFilter = "all"; // "all" | "running" | "paused" | "stopped"
-    this.search = InputState.new({ placeholder: "Search containers, images, ports..." });
+
+    let savedGroupBy = "network";
+    try {
+      savedGroupBy = localStorage.getItem("docker.groupBy") || "network";
+    } catch {}
+    this.groupBy = ["network", "project", "none"].includes(savedGroupBy) ? savedGroupBy : "network";
+
+    this.groupFolded = new Set();
+    try {
+      this.groupFolded = new Set(JSON.parse(localStorage.getItem("docker.groupFolded") || "[]"));
+    } catch {}
+
+    this.search = InputState.new({ placeholder: "Search containers, networks, images..." });
     this.search.on("change", () => cx.notify());
 
     this.containers = [];
@@ -65,11 +91,11 @@ export default class DockerMod extends View {
     this.dockerAvailable = true;
     this.dockerError = null;
 
-    this.actionInProgress = null; // ID of container/image/volume currently undergoing an action
-    this.confirmDelete = null; // ID of item awaiting confirmation to delete
+    this.actionInProgress = null; // Container/Image ID currently undergoing an action
+    this.confirmDelete = null; // Item ID awaiting 2-step confirmation to delete
     this.confirmTimeout = null;
 
-    this.activeLogs = null; // Container object for logs viewer
+    this.activeLogs = null; // Container object for logs viewer drawer
     this.logsText = "";
     this.logsLoading = false;
     this.spaceOnly = false;
@@ -115,31 +141,39 @@ export default class DockerMod extends View {
         this.dockerAvailable = true;
         this.dockerError = null;
         const lines = psRes.stdout.trim().split("\n").filter(Boolean);
-        this.containers = lines.map((line) => {
-          try {
-            const raw = JSON.parse(line);
-            const name = (raw.Names || "").replace(/^\//, "");
-            let composeProject = null;
-            if (raw.Labels) {
-              const m = raw.Labels.match(/com\.docker\.compose\.project=([^,]+)/);
-              if (m && m[1]) composeProject = m[1];
+        this.containers = lines
+          .map((line) => {
+            try {
+              const raw = JSON.parse(line);
+              const name = (raw.Names || "").replace(/^\//, "");
+              let composeProject = null;
+              if (raw.Labels) {
+                const m = raw.Labels.match(/com\.docker\.compose\.project=([^,]+)/);
+                if (m && m[1]) composeProject = m[1];
+              }
+              const networks = (raw.Networks || "")
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean);
+              return {
+                id: raw.ID,
+                name,
+                image: raw.Image || "",
+                state: (raw.State || "").toLowerCase(),
+                status: raw.Status || "",
+                created: raw.CreatedAt || raw.RunningFor || "",
+                ports: parsePorts(raw.Ports),
+                portsRaw: raw.Ports || "",
+                composeProject,
+                networks,
+                primaryNetwork: getPrimaryNetwork(networks),
+                size: raw.Size || "",
+              };
+            } catch {
+              return null;
             }
-            return {
-              id: raw.ID,
-              name,
-              image: raw.Image || "",
-              state: (raw.State || "").toLowerCase(),
-              status: raw.Status || "",
-              created: raw.CreatedAt || raw.RunningFor || "",
-              ports: parsePorts(raw.Ports),
-              portsRaw: raw.Ports || "",
-              composeProject,
-              size: raw.Size || "",
-            };
-          } catch {
-            return null;
-          }
-        }).filter(Boolean);
+          })
+          .filter(Boolean);
       } else {
         this.dockerAvailable = false;
         this.dockerError = psRes.stderr || "Docker daemon not responding";
@@ -149,20 +183,22 @@ export default class DockerMod extends View {
         const imgRes = await dockerCmd(["images", "--format", "{{json .}}"]);
         if (imgRes.code === 0) {
           const lines = imgRes.stdout.trim().split("\n").filter(Boolean);
-          this.images = lines.map((line) => {
-            try {
-              const r = JSON.parse(line);
-              return {
-                id: r.ID,
-                repository: r.Repository,
-                tag: r.Tag,
-                size: r.Size,
-                created: r.CreatedSince || r.CreatedAt,
-              };
-            } catch {
-              return null;
-            }
-          }).filter(Boolean);
+          this.images = lines
+            .map((line) => {
+              try {
+                const r = JSON.parse(line);
+                return {
+                  id: r.ID,
+                  repository: r.Repository,
+                  tag: r.Tag,
+                  size: r.Size,
+                  created: r.CreatedSince || r.CreatedAt,
+                };
+              } catch {
+                return null;
+              }
+            })
+            .filter(Boolean);
         }
       }
 
@@ -170,18 +206,20 @@ export default class DockerMod extends View {
         const volRes = await dockerCmd(["volume", "ls", "--format", "{{json .}}"]);
         if (volRes.code === 0) {
           const lines = volRes.stdout.trim().split("\n").filter(Boolean);
-          this.volumes = lines.map((line) => {
-            try {
-              const r = JSON.parse(line);
-              return {
-                name: r.Name,
-                driver: r.Driver,
-                scope: r.Scope,
-              };
-            } catch {
-              return null;
-            }
-          }).filter(Boolean);
+          this.volumes = lines
+            .map((line) => {
+              try {
+                const r = JSON.parse(line);
+                return {
+                  name: r.Name,
+                  driver: r.Driver,
+                  scope: r.Scope,
+                };
+              } catch {
+                return null;
+              }
+            })
+            .filter(Boolean);
         }
       }
     } catch (e) {
@@ -191,7 +229,7 @@ export default class DockerMod extends View {
     cx.notify();
   }
 
-  // ── Container Actions ────────────────────────────────────────────────────────
+  // ── Single Container Actions ─────────────────────────────────────────────────
 
   async startContainer(c, cx) {
     this.actionInProgress = c.id;
@@ -334,6 +372,47 @@ export default class DockerMod extends View {
     cx.notify();
   }
 
+  // ── Group Bulk Actions ───────────────────────────────────────────────────────
+
+  async startGroup(containers, cx) {
+    const targets = containers.filter((c) => c.state !== "running");
+    if (!targets.length) return;
+    notify({ title: `Starting ${targets.length} container(s)…`, level: "info", timeout: 2000 });
+    for (const c of targets) {
+      try {
+        await dockerCmd(["start", c.id]);
+      } catch {}
+    }
+    notify({ title: "Group Started", body: `Started ${targets.length} container(s)`, level: "success", timeout: 2500 });
+    await this.refreshQuiet(cx);
+  }
+
+  async stopGroup(containers, cx) {
+    const targets = containers.filter((c) => c.state === "running" || c.state === "paused");
+    if (!targets.length) return;
+    notify({ title: `Stopping ${targets.length} container(s)…`, level: "info", timeout: 2000 });
+    for (const c of targets) {
+      try {
+        await dockerCmd(["stop", "-t", "5", c.id]);
+      } catch {}
+    }
+    notify({ title: "Group Stopped", body: `Stopped ${targets.length} container(s)`, level: "success", timeout: 2500 });
+    await this.refreshQuiet(cx);
+  }
+
+  async restartGroup(containers, cx) {
+    notify({ title: `Restarting ${containers.length} container(s)…`, level: "info", timeout: 2000 });
+    for (const c of containers) {
+      try {
+        await dockerCmd(["restart", "-t", "5", c.id]);
+      } catch {}
+    }
+    notify({ title: "Group Restarted", body: `Restarted ${containers.length} container(s)`, level: "success", timeout: 2500 });
+    await this.refreshQuiet(cx);
+  }
+
+  // ── Images & Volumes Actions ─────────────────────────────────────────────────
+
   async deleteImage(img, cx) {
     if (this.confirmDelete !== img.id) {
       this.setConfirm(img.id, cx);
@@ -388,7 +467,12 @@ export default class DockerMod extends View {
     try {
       const res = await dockerCmd(["container", "prune", "-f"]);
       if (res.code === 0) {
-        notify({ title: "Prune Completed", body: res.stdout.trim() || "Cleaned up stopped containers", level: "success", timeout: 3000 });
+        notify({
+          title: "Prune Completed",
+          body: res.stdout.trim() || "Cleaned up stopped containers",
+          level: "success",
+          timeout: 3000,
+        });
       } else {
         notify({ title: "Prune Failed", body: res.stderr, level: "error", timeout: 4000 });
       }
@@ -557,17 +641,18 @@ export default class DockerMod extends View {
 
   renderToolbar(t, cx) {
     const activeSpace = spaces().find((s) => s.active);
+
     const filterChip = (id, label) => {
       const active = this.statusFilter === id;
       return div()
-        .px(8)
-        .h(22)
-        .rounded(5)
+        .px(7)
+        .h(20)
+        .rounded(4)
         .flex_none()
         .flex()
         .items_center()
         .cursor_pointer()
-        .text_size(11)
+        .text_size(10.5)
         .bg(active ? t.selected : t.chrome)
         .text_color(active ? t.foreground : t.dim)
         .border_1()
@@ -575,6 +660,32 @@ export default class DockerMod extends View {
         .hover((s) => s.bg(t.hover).text_color(t.foreground))
         .on_click((_e, cx) => {
           this.statusFilter = id;
+          cx.notify();
+        })
+        .child(label);
+    };
+
+    const groupChip = (id, label) => {
+      const active = this.groupBy === id;
+      return div()
+        .px(7)
+        .h(20)
+        .rounded(4)
+        .flex_none()
+        .flex()
+        .items_center()
+        .cursor_pointer()
+        .text_size(10.5)
+        .bg(active ? t.selected : t.chrome)
+        .text_color(active ? t.accent || t.foreground : t.dim)
+        .border_1()
+        .border_color(active ? t.border : t.chrome)
+        .hover((s) => s.bg(t.hover).text_color(t.foreground))
+        .on_click((_e, cx) => {
+          this.groupBy = id;
+          try {
+            localStorage.setItem("docker.groupBy", id);
+          } catch {}
           cx.notify();
         })
         .child(label);
@@ -588,6 +699,7 @@ export default class DockerMod extends View {
       .border_b(1)
       .border_color(t.border)
       .child(
+        // Search bar
         h_flex()
           .h(32)
           .px(10)
@@ -626,6 +738,7 @@ export default class DockerMod extends View {
           ),
       )
       .child(
+        // Line 2: Status chips & Space filter
         h_flex()
           .gap(4)
           .items_center()
@@ -633,30 +746,163 @@ export default class DockerMod extends View {
           .child(filterChip("running", "Running"))
           .child(filterChip("paused", "Paused"))
           .child(filterChip("stopped", "Stopped"))
+          .child(div().flex_1())
           .when(Boolean(activeSpace?.name), (el) =>
-            el
-              .child(div().w(4))
-              .child(
-                h_flex()
-                  .px(8)
-                  .h(22)
-                  .gap(4)
-                  .rounded(5)
-                  .flex_none()
-                  .items_center()
-                  .cursor_pointer()
-                  .text_size(11)
-                  .bg(this.spaceOnly ? t.accent + "26" : t.chrome)
-                  .text_color(this.spaceOnly ? t.accent : t.dim)
-                  .border_1()
-                  .border_color(this.spaceOnly ? t.accent + "55" : t.chrome)
-                  .hover((s) => s.bg(t.hover))
-                  .on_click((_e, cx) => {
-                    this.spaceOnly = !this.spaceOnly;
-                    cx.notify();
-                  })
-                  .child(div().child(`In: ${activeSpace.name}`)),
-              ),
+            el.child(
+              h_flex()
+                .px(7)
+                .h(20)
+                .gap(4)
+                .rounded(4)
+                .flex_none()
+                .items_center()
+                .cursor_pointer()
+                .text_size(10.5)
+                .bg(this.spaceOnly ? t.accent + "26" : t.chrome)
+                .text_color(this.spaceOnly ? t.accent : t.dim)
+                .border_1()
+                .border_color(this.spaceOnly ? t.accent + "55" : t.chrome)
+                .hover((s) => s.bg(t.hover))
+                .on_click((_e, cx) => {
+                  this.spaceOnly = !this.spaceOnly;
+                  cx.notify();
+                })
+                .child(div().child(`In: ${activeSpace.name}`)),
+            ),
+          ),
+      )
+      .when(this.tab === "containers", (el) =>
+        // Line 3: Group by options
+        el.child(
+          h_flex()
+            .gap(4)
+            .items_center()
+            .child(div().text_size(10.5).text_color(t.dim).child("Group by:"))
+            .child(groupChip("network", "Network"))
+            .child(groupChip("project", "Project"))
+            .child(groupChip("none", "Flat")),
+        ),
+      );
+  }
+
+  // ── Containers List & Grouping ───────────────────────────────────────────────
+
+  renderGroupHeader(groupName, groupContainers, t, cx) {
+    const isFolded = this.groupFolded.has(groupName);
+    const running = groupContainers.filter((c) => c.state === "running").length;
+    const total = groupContainers.length;
+
+    return h_flex()
+      .h(28)
+      .flex_none()
+      .px(8)
+      .gap(6)
+      .items_center()
+      .rounded(6)
+      .bg(t.chrome)
+      .border_1()
+      .border_color(t.border)
+      .cursor_pointer()
+      .hover((s) => s.bg(t.hover))
+      .on_click((_e, cx) => {
+        if (this.groupFolded.has(groupName)) this.groupFolded.delete(groupName);
+        else this.groupFolded.add(groupName);
+        try {
+          localStorage.setItem("docker.groupFolded", JSON.stringify([...this.groupFolded]));
+        } catch {}
+        cx.notify();
+      })
+      .child(
+        svg(`${ICONS}/${this.groupBy === "network" ? "server" : "layers"}.svg`)
+          .size(12)
+          .text_color(t.accent || t.ansi4),
+      )
+      .child(
+        div()
+          .font_semibold()
+          .text_size(12)
+          .text_color(t.foreground)
+          .truncate()
+          .child(groupName),
+      )
+      .child(
+        div()
+          .px(5)
+          .h(16)
+          .rounded(4)
+          .flex()
+          .items_center()
+          .text_size(9.5)
+          .bg(running > 0 ? t.ansi2 + "22" : t.raised)
+          .text_color(running > 0 ? t.ansi2 : t.dim)
+          .child(`${running}/${total}`),
+      )
+      .child(div().flex_1())
+      .child(
+        h_flex()
+          .gap(4)
+          .items_center()
+          .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
+          // Group Start Button
+          .when(running < total, (el) =>
+            el.child(
+              div()
+                .size(20)
+                .flex()
+                .items_center()
+                .justify_center()
+                .rounded(4)
+                .cursor_pointer()
+                .tooltip("Start all in group")
+                .hover((s) => s.bg(t.hover))
+                .on_click((_e, cx) => {
+                  cx.stop_propagation();
+                  this.startGroup(groupContainers, cx);
+                })
+                .child(svg(`${ICONS}/play.svg`).size(10).text_color(t.ansi2)),
+            ),
+          )
+          // Group Stop Button
+          .when(running > 0, (el) =>
+            el.child(
+              div()
+                .size(20)
+                .flex()
+                .items_center()
+                .justify_center()
+                .rounded(4)
+                .cursor_pointer()
+                .tooltip("Stop all in group")
+                .hover((s) => s.bg(t.hover))
+                .on_click((_e, cx) => {
+                  cx.stop_propagation();
+                  this.stopGroup(groupContainers, cx);
+                })
+                .child(svg(`${ICONS}/stop.svg`).size(10).text_color(t.ansi1)),
+            ),
+          )
+          // Group Restart Button
+          .child(
+            div()
+              .size(20)
+              .flex()
+              .items_center()
+              .justify_center()
+              .rounded(4)
+              .cursor_pointer()
+              .tooltip("Restart all in group")
+              .hover((s) => s.bg(t.hover))
+              .on_click((_e, cx) => {
+                cx.stop_propagation();
+                this.restartGroup(groupContainers, cx);
+              })
+              .child(svg(`${ICONS}/refresh.svg`).size(10).text_color(t.dim)),
+          )
+          // Chevron
+          .child(
+            svg(`${ICONS}/chevron-${isFolded ? "down" : "up"}.svg`)
+              .size(11)
+              .text_color(t.dim),
           ),
       );
   }
@@ -673,12 +919,13 @@ export default class DockerMod extends View {
       if (this.spaceOnly && activeSpace) {
         const matchesSpace =
           (c.composeProject && c.composeProject.toLowerCase().includes(activeSpace)) ||
-          c.name.toLowerCase().includes(activeSpace);
+          c.name.toLowerCase().includes(activeSpace) ||
+          c.networks.some((n) => n.toLowerCase().includes(activeSpace));
         if (!matchesSpace) return false;
       }
 
       if (q) {
-        const hay = `${c.name} ${c.image} ${c.composeProject ?? ""} ${c.portsRaw} ${c.status}`.toLowerCase();
+        const hay = `${c.name} ${c.image} ${c.composeProject ?? ""} ${c.networks.join(" ")} ${c.portsRaw} ${c.status}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -709,14 +956,54 @@ export default class DockerMod extends View {
         );
     }
 
+    if (this.groupBy === "none") {
+      return v_flex()
+        .id("docker-containers-scroll")
+        .flex_1()
+        .min_h(0)
+        .overflow_y_scrollbar()
+        .p(10)
+        .gap(8)
+        .children(list.map((c) => this.renderContainerCard(c, t, cx)));
+    }
+
+    // Grouping
+    const groups = new Map();
+    for (const c of list) {
+      let key = "standalone";
+      if (this.groupBy === "network") {
+        key = c.primaryNetwork || "bridge";
+      } else if (this.groupBy === "project") {
+        key = c.composeProject || "standalone";
+      }
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(c);
+    }
+
+    // Sort groups: put custom named network like 'dpmptsp-pekanbaru' at top
+    const sortedGroupKeys = [...groups.keys()].sort((a, b) => {
+      if (a === "dpmptsp-pekanbaru") return -1;
+      if (b === "dpmptsp-pekanbaru") return 1;
+      return a.localeCompare(b);
+    });
+
     return v_flex()
       .id("docker-containers-scroll")
       .flex_1()
       .min_h(0)
       .overflow_y_scrollbar()
       .p(10)
-      .gap(8)
-      .children(list.map((c) => this.renderContainerCard(c, t, cx)));
+      .gap(10)
+      .children(
+        sortedGroupKeys.flatMap((groupKey) => {
+          const groupContainers = groups.get(groupKey);
+          const isFolded = this.groupFolded.has(groupKey);
+          return [
+            this.renderGroupHeader(groupKey, groupContainers, t, cx),
+            ...(!isFolded ? groupContainers.map((c) => this.renderContainerCard(c, t, cx)) : []),
+          ];
+        }),
+      );
   }
 
   renderContainerCard(c, t, cx) {
@@ -755,13 +1042,13 @@ export default class DockerMod extends View {
       .w_full()
       .flex_none()
       .p(10)
-      .gap(8)
+      .gap(7)
       .rounded(8)
       .bg(t.raised)
       .border_1()
       .border_color(c.state === "running" ? t.border : t.chrome)
       .child(
-        // Header row: Status dot, Name, Project badge, ID, actions
+        // Header row: Status dot, Name, ID, actions
         h_flex()
           .gap(8)
           .items_center()
@@ -782,22 +1069,6 @@ export default class DockerMod extends View {
               .text_color(t.foreground)
               .child(c.name),
           )
-          .when(Boolean(c.composeProject), (el) =>
-            el.child(
-              h_flex()
-                .px(5)
-                .h(18)
-                .rounded(4)
-                .items_center()
-                .bg(t.chrome)
-                .border_1()
-                .border_color(t.border)
-                .text_size(10)
-                .text_color(t.dim)
-                .tooltip(`Compose Project: ${c.composeProject}`)
-                .child(c.composeProject),
-            ),
-          )
           .child(
             div()
               .font_family("monospace")
@@ -811,6 +1082,62 @@ export default class DockerMod extends View {
                 notify({ title: "Copied ID", body: c.id, timeout: 1500 });
               })
               .child(c.id.slice(0, 10)),
+          ),
+      )
+      .child(
+        // Badges row: Compose project badge + Network badges
+        h_flex()
+          .flex_wrap()
+          .gap(4)
+          .items_center()
+          .when(Boolean(c.composeProject), (el) =>
+            el.child(
+              h_flex()
+                .px(5)
+                .h(18)
+                .gap(3)
+                .rounded(4)
+                .items_center()
+                .bg(t.chrome)
+                .border_1()
+                .border_color(t.border)
+                .text_size(10)
+                .text_color(t.muted)
+                .cursor_pointer()
+                .tooltip(`Compose Project: ${c.composeProject} · click to filter`)
+                .hover((s) => s.bg(t.hover).text_color(t.foreground))
+                .on_click((_e, cx) => {
+                  this.search.set_value(c.composeProject);
+                  cx.notify();
+                })
+                .child(svg(`${ICONS}/layers.svg`).size(9).text_color(t.dim))
+                .child(c.composeProject),
+            ),
+          )
+          .children(
+            c.networks.map((net) => {
+              const isHighlighted = net === "dpmptsp-pekanbaru";
+              return h_flex()
+                .px(5)
+                .h(18)
+                .gap(3)
+                .rounded(4)
+                .items_center()
+                .bg(isHighlighted ? t.accent + "18" : t.chrome)
+                .border_1()
+                .border_color(isHighlighted ? t.accent + "44" : t.border)
+                .text_size(10)
+                .text_color(isHighlighted ? t.accent : t.dim)
+                .cursor_pointer()
+                .tooltip(`Network: ${net} · click to filter`)
+                .hover((s) => s.bg(t.hover).text_color(t.foreground))
+                .on_click((_e, cx) => {
+                  this.search.set_value(net);
+                  cx.notify();
+                })
+                .child(svg(`${ICONS}/server.svg`).size(9).text_color(isHighlighted ? t.accent : t.dim))
+                .child(net);
+            }),
           ),
       )
       .child(
@@ -1180,7 +1507,11 @@ export default class DockerMod extends View {
                   .hover((s) => s.bg(t.hover))
                   .on_click((_e, cx) => {
                     cx.write_to_clipboard(this.logsText);
-                    notify({ title: "Logs Copied", body: `${this.activeLogs.name} logs copied to clipboard`, timeout: 2000 });
+                    notify({
+                      title: "Logs Copied",
+                      body: `${this.activeLogs.name} logs copied to clipboard`,
+                      timeout: 2000,
+                    });
                   })
                   .child(svg(`${ICONS}/info.svg`).size(12).text_color(t.dim)),
               )
