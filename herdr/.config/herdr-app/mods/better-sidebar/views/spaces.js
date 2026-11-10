@@ -1168,15 +1168,24 @@ export class Spaces {
     return h_flex()
       .gap(6)
       .items_center()
+      .when(Boolean(tree), (el) => el.child(Icon("branch", 13).text_color(t.dim)))
+      .when(!tree, (el) => el.child(this.avatar(w, t)))
+      .child(
+        div().min_w(0).max_w(150).truncate().tooltip(w.name).text_color(t.foreground).child(w.name),
+      )
+      .when(!tree && Boolean(provider), (el) => el.child(provider))
+      .child(this.branchName(g, w.name, t))
+      .child(this.gitTail(g, w.active, t, w))
       .child(
         h_flex()
-          .size(14)
+          .size(16)
           .flex_none()
           .items_center()
           .justify_center()
           .cursor_pointer()
           .rounded(4)
           .hover((s) => s.bg(t.hover))
+          .tooltip(isFolded ? "Expand" : "Collapse")
           .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
           .on_click((_e, cx) => {
             cx.stop_propagation();
@@ -1190,16 +1199,8 @@ export class Spaces {
             } catch {}
             cx.notify();
           })
-          .child(Icon(isFolded ? "chevron-right" : "chevron-down", 11).text_color(t.dim)),
-      )
-      .when(Boolean(tree), (el) => el.child(Icon("branch", 13).text_color(t.dim)))
-      .when(!tree, (el) => el.child(this.avatar(w, t)))
-      .child(
-        div().min_w(0).max_w(150).truncate().tooltip(w.name).text_color(t.foreground).child(w.name),
-      )
-      .when(!tree && Boolean(provider), (el) => el.child(provider))
-      .child(this.branchName(g, w.name, t))
-      .child(this.gitTail(g, w.active, t, w));
+          .child(Icon(isFolded ? "chevron-down" : "chevron-up", 11).text_color(t.dim)),
+      );
   }
 
   avatar(w, t) {
