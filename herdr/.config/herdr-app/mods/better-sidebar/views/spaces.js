@@ -448,20 +448,32 @@ export class Spaces {
       const dataDir = `${appH}/data/space-favicons`;
 
       const candidates = [
-        `${folder}/src-tauri/icons/icon.ico`,
+        `${folder}/.crest.png`,
+        `${folder}/resources/app-icon.png`,
+        `${folder}/resources/icon.png`,
         `${folder}/src-tauri/icons/icon.png`,
         `${folder}/src-tauri/icons/128x128.png`,
         `${folder}/src-tauri/icons/32x32.png`,
-        `${folder}/favicon.ico`,
+        `${folder}/src-tauri/icons/icon.ico`,
+        `${folder}/public/favicon.svg`,
         `${folder}/public/favicon.ico`,
+        `${folder}/public/favicon.png`,
+        `${folder}/public/logo.svg`,
+        `${folder}/public/logo.png`,
+        `${folder}/src/assets/logo.svg`,
+        `${folder}/src/assets/logo.png`,
         `${folder}/app/favicon.ico`,
+        `${folder}/app/favicon.png`,
+        `${folder}/app/favicon.svg`,
         `${folder}/src/favicon.ico`,
         `${folder}/assets/favicon.ico`,
+        `${folder}/assets/favicon.png`,
+        `${folder}/assets/favicon.svg`,
         `${folder}/images/favicon.ico`,
-        `${folder}/public/favicon.svg`,
-        `${folder}/public/favicon.png`,
-        `${folder}/favicon.png`,
+        `${folder}/images/favicon.png`,
         `${folder}/favicon.svg`,
+        `${folder}/favicon.ico`,
+        `${folder}/favicon.png`,
       ];
 
       let found = null;
@@ -505,24 +517,158 @@ export class Spaces {
         return;
       }
 
-      // Check React base
-      const pkgPath = `${folder}/package.json`;
-      const pkgTest = await exec("test", ["-f", pkgPath]);
-      let isReact = false;
-      if (pkgTest.code === 0) {
-        const catPkg = await exec("cat", [pkgPath]);
-        if (catPkg.code === 0 && (catPkg.stdout.includes('"react"') || catPkg.stdout.includes('"react-dom"'))) {
-          isReact = true;
+      // 2. Framework & Tech Stack Auto-Detection
+      // Check Tauri
+      const tauriCheck = await exec("test", ["-e", `${folder}/src-tauri`]);
+      if (tauriCheck.code === 0) {
+        if (this.spaceIcons[w.id] !== "icons/tauri.svg") {
+          this.spaceIcons[w.id] = "icons/tauri.svg";
+          this.cx?.notify?.();
         }
-      }
-      if (!isReact) {
-        const reactSvgTest = await exec("test", ["-f", `${folder}/src/assets/react.svg`]);
-        if (reactSvgTest.code === 0) isReact = true;
+        return;
       }
 
+      // Read package.json if it exists
+      const pkgPath = `${folder}/package.json`;
+      const pkgTest = await exec("test", ["-f", pkgPath]);
+      let pkgContent = "";
+      if (pkgTest.code === 0) {
+        const catPkg = await exec("cat", [pkgPath]);
+        if (catPkg.code === 0) pkgContent = catPkg.stdout || "";
+      }
+
+      // Check Next.js
+      const isNext = (await exec("test", ["-f", `${folder}/next.config.js`])).code === 0 ||
+                     (await exec("test", ["-f", `${folder}/next.config.mjs`])).code === 0 ||
+                     (await exec("test", ["-f", `${folder}/next.config.ts`])).code === 0 ||
+                     pkgContent.includes('"next"');
+      if (isNext) {
+        if (this.spaceIcons[w.id] !== "icons/next.svg") {
+          this.spaceIcons[w.id] = "icons/next.svg";
+          this.cx?.notify?.();
+        }
+        return;
+      }
+
+      // Check Astro
+      const isAstro = (await exec("test", ["-f", `${folder}/astro.config.mjs`])).code === 0 ||
+                      (await exec("test", ["-f", `${folder}/astro.config.ts`])).code === 0 ||
+                      pkgContent.includes('"astro"');
+      if (isAstro) {
+        if (this.spaceIcons[w.id] !== "icons/astro.svg") {
+          this.spaceIcons[w.id] = "icons/astro.svg";
+          this.cx?.notify?.();
+        }
+        return;
+      }
+
+      // Check Nuxt
+      const isNuxt = (await exec("test", ["-f", `${folder}/nuxt.config.ts`])).code === 0 ||
+                     (await exec("test", ["-f", `${folder}/nuxt.config.js`])).code === 0 ||
+                     pkgContent.includes('"nuxt"');
+      if (isNuxt) {
+        if (this.spaceIcons[w.id] !== "icons/nuxt.svg") {
+          this.spaceIcons[w.id] = "icons/nuxt.svg";
+          this.cx?.notify?.();
+        }
+        return;
+      }
+
+      // Check Svelte
+      const isSvelte = (await exec("test", ["-f", `${folder}/svelte.config.js`])).code === 0 ||
+                       pkgContent.includes('"svelte"');
+      if (isSvelte) {
+        if (this.spaceIcons[w.id] !== "icons/svelte.svg") {
+          this.spaceIcons[w.id] = "icons/svelte.svg";
+          this.cx?.notify?.();
+        }
+        return;
+      }
+
+      // Check Vue
+      const isVue = (await exec("test", ["-f", `${folder}/vue.config.js`])).code === 0 ||
+                    pkgContent.includes('"vue"');
+      if (isVue) {
+        if (this.spaceIcons[w.id] !== "icons/vue.svg") {
+          this.spaceIcons[w.id] = "icons/vue.svg";
+          this.cx?.notify?.();
+        }
+        return;
+      }
+
+      // Check React
+      const isReact = pkgContent.includes('"react"') ||
+                      pkgContent.includes('"react-dom"') ||
+                      (await exec("test", ["-f", `${folder}/src/assets/react.svg`])).code === 0;
       if (isReact) {
         if (this.spaceIcons[w.id] !== "icons/react.svg") {
           this.spaceIcons[w.id] = "icons/react.svg";
+          this.cx?.notify?.();
+        }
+        return;
+      }
+
+      // Check Vite
+      const isVite = (await exec("test", ["-f", `${folder}/vite.config.ts`])).code === 0 ||
+                     (await exec("test", ["-f", `${folder}/vite.config.js`])).code === 0 ||
+                     pkgContent.includes('"vite"');
+      if (isVite) {
+        if (this.spaceIcons[w.id] !== "icons/vite.svg") {
+          this.spaceIcons[w.id] = "icons/vite.svg";
+          this.cx?.notify?.();
+        }
+        return;
+      }
+
+      // Check Rust / Cargo
+      const isCargo = (await exec("test", ["-f", `${folder}/Cargo.toml`])).code === 0;
+      if (isCargo) {
+        if (this.spaceIcons[w.id] !== "icons/cargo.svg") {
+          this.spaceIcons[w.id] = "icons/cargo.svg";
+          this.cx?.notify?.();
+        }
+        return;
+      }
+
+      // Check Go
+      const isGo = (await exec("test", ["-f", `${folder}/go.mod`])).code === 0;
+      if (isGo) {
+        if (this.spaceIcons[w.id] !== "icons/go.svg") {
+          this.spaceIcons[w.id] = "icons/go.svg";
+          this.cx?.notify?.();
+        }
+        return;
+      }
+
+      // Check Python
+      const isPython = (await exec("test", ["-f", `${folder}/pyproject.toml`])).code === 0 ||
+                       (await exec("test", ["-f", `${folder}/requirements.txt`])).code === 0 ||
+                       (await exec("test", ["-f", `${folder}/Pipfile`])).code === 0 ||
+                       (await exec("test", ["-f", `${folder}/manage.py`])).code === 0;
+      if (isPython) {
+        if (this.spaceIcons[w.id] !== "icons/python.svg") {
+          this.spaceIcons[w.id] = "icons/python.svg";
+          this.cx?.notify?.();
+        }
+        return;
+      }
+
+      // Check PHP
+      const isPhp = (await exec("test", ["-f", `${folder}/composer.json`])).code === 0 ||
+                    (await exec("test", ["-f", `${folder}/artisan`])).code === 0 ||
+                    (await exec("test", ["-f", `${folder}/index.php`])).code === 0;
+      if (isPhp) {
+        if (this.spaceIcons[w.id] !== "icons/php.svg") {
+          this.spaceIcons[w.id] = "icons/php.svg";
+          this.cx?.notify?.();
+        }
+        return;
+      }
+
+      // Check Generic Node
+      if (pkgContent) {
+        if (this.spaceIcons[w.id] !== "icons/node.svg") {
+          this.spaceIcons[w.id] = "icons/node.svg";
           this.cx?.notify?.();
         }
         return;
@@ -1064,22 +1210,13 @@ export class Spaces {
     }
     const icon = this.spaceIcons[w.id];
     if (icon) {
-      if (icon.endsWith(".svg")) {
-        return h_flex()
-          .size(18)
-          .flex_none()
-          .rounded(4)
-          .items_center()
-          .justify_center()
-          .child(svg(icon).size(14).flex_none().text_color(t.dim));
-      }
       return h_flex()
         .size(18)
         .flex_none()
         .rounded(4)
         .items_center()
         .justify_center()
-        .child(Icon("folder", 14).text_color(t.dim));
+        .child(image(icon).w(16).h(16).rounded(3).flex_none());
     }
 
     return h_flex()
