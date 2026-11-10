@@ -104,7 +104,7 @@ export function GroupHeader({
 export function Rail(kind, mid = 15, color, pulse = false) {
   const t = theme();
   const borderCol = color ?? t.dim ?? "#6A7875";
-  const THICK = pulse ? 1.5 : 1;
+  const THICK = pulse ? 2 : 1;
   const isBranch = Boolean(kind && kind.startsWith("├"));
   const isEnd = Boolean(kind && kind.startsWith("└"));
   const isPipe = Boolean(kind && kind.startsWith("│"));
@@ -112,7 +112,7 @@ export function Rail(kind, mid = 15, color, pulse = false) {
   const vLine = (top, bottomOrH, isHeight = false) => {
     const el = div()
       .absolute()
-      .left(15)
+      .left(pulse ? 14 : 15)
       .top(top)
       .w(THICK)
       .bg(borderCol);
@@ -122,7 +122,7 @@ export function Rail(kind, mid = 15, color, pulse = false) {
   const roundedCorner = () =>
     div()
       .absolute()
-      .left(15)
+      .left(pulse ? 14 : 15)
       .top(0)
       .w(12)
       .h(mid + THICK)
@@ -136,7 +136,7 @@ export function Rail(kind, mid = 15, color, pulse = false) {
     .w(24)
     .flex_none()
     .self_stretch()
-    .when(Boolean(pulse), (el) => el.loop("opacity", { from: 0.35, to: 1, period: 1000 }))
+    .when(Boolean(pulse), (el) => el.loop("opacity", { from: 0.45, to: 1, period: 2200 }))
     .when(isPipe, (el) => el.child(vLine(0, 0)))
     .when(isBranch, (el) => el.child(vLine(0, 0)).child(roundedCorner()))
     .when(isEnd, (el) => el.child(roundedCorner()));

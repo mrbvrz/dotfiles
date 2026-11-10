@@ -64,7 +64,7 @@ export class Lists {
     const pins = pinned?.members.map((a) => a.address) ?? [];
     order.push(...pins);
     this.spaces.above = () => (pinned ? this.agents.groupRows(pinned, 0, view, t) : []);
-    const activeColor = t.working ?? t.ansi3 ?? "#F59E0B";
+    const activeColor = t.accent ?? t.working ?? "#E6A854";
     const nest = (lines, row, isWorking = false) =>
       h_flex()
         .children(

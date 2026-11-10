@@ -318,7 +318,7 @@ export class Agents {
     const pic = icon(k.program, 11, t.dim, k);
     const on = k.address === shown;
     const isWorking = st === "working";
-    const activeColor = t.working ?? t.ansi3 ?? "#F59E0B";
+    const activeColor = t.accent ?? t.working ?? "#E6A854";
     return h_flex()
       .id(`sub-${k.address}`)
       .pl(39)
@@ -344,9 +344,9 @@ export class Agents {
             .mr(4)
             .flex_none()
             .border_color(col)
-            .when(isTarget, (el) => el.loop("opacity", { from: 0.35, to: 1, period: 1000 }))
-            .when(Boolean(l), (el) => el.border_l(isTarget ? 1.5 : 1))
-            .when(l === "└" || l === "├", (el) => el.border_b(isTarget ? 1.5 : 1).rounded_bl(6));
+            .when(isTarget, (el) => el.loop("opacity", { from: 0.45, to: 1, period: 2200 }))
+            .when(Boolean(l), (el) => el.border_l(isTarget ? 2 : 1))
+            .when(l === "└" || l === "├", (el) => el.border_b(isTarget ? 2 : 1).rounded_bl(6));
         }),
       )
       .when(Boolean(pic), (el) => el.child(div().mr(8).child(pic)))
