@@ -1,0 +1,1 @@
+javascript:(function(){var s=document.createElement('script');s.src='http://127.0.0.1:7890/content.js?t='+Date.now();document.body.appendChild(s);var c=document.createElement('link');c.rel='stylesheet';c.href='http://127.0.0.1:7890/content.css?t='+Date.now();document.head.appendChild(c);})();

@@ -1,0 +1,405 @@
+/* Herdr ADE Browser Annotate Styles */
+
+:root {
+  --herdr-bg: #141819;
+  --herdr-card: #1B2122;
+  --herdr-border: #2D393B;
+  --herdr-accent: #E6A854;
+  --herdr-accent-hover: #EDB56B;
+  --herdr-accent-rgb: 230, 168, 84;
+  --herdr-green: #74BBA2;
+  --herdr-red: #E06C75;
+  --herdr-text: #F8FAFC;
+  --herdr-muted: #8C9C9A;
+  --herdr-dim: #546361;
+}
+
+/* Base Shadow DOM or reset container */
+#herdr-annotate-root {
+  all: initial;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2147483647;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--herdr-text);
+  font-size: 13px;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+#herdr-annotate-root * {
+  box-sizing: border-box;
+}
+
+/* Floating Toolbar */
+.herdr-toolbar {
+  pointer-events: auto;
+  position: fixed;
+  top: 18px;
+  right: 24px;
+  background: rgba(20, 24, 25, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--herdr-border);
+  border-radius: 12px;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.2);
+  user-select: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 2147483647;
+}
+
+.herdr-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px 2px 4px;
+  border-right: 1px solid var(--herdr-border);
+}
+
+.herdr-logo-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: var(--herdr-accent);
+  color: #141819;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.herdr-brand-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--herdr-text);
+  letter-spacing: -0.2px;
+}
+
+.herdr-tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--herdr-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.herdr-tool-btn:hover {
+  background: #232B2C;
+  color: var(--herdr-text);
+}
+
+.herdr-tool-btn.active {
+  background: rgba(var(--herdr-accent-rgb), 0.15);
+  border-color: rgba(var(--herdr-accent-rgb), 0.45);
+  color: var(--herdr-accent);
+  font-weight: 600;
+}
+
+.herdr-tool-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.2;
+}
+
+.herdr-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #1B2122;
+  font-size: 11px;
+  color: var(--herdr-muted);
+  border: 1px solid #283335;
+}
+
+.herdr-status-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--herdr-green);
+}
+
+.herdr-close-btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: var(--herdr-dim);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.herdr-close-btn:hover {
+  background: #232B2C;
+  color: var(--herdr-text);
+}
+
+/* Hover & Selection Highlights */
+.herdr-inspect-box {
+  position: absolute;
+  pointer-events: none;
+  border: 2px solid var(--herdr-accent);
+  background: rgba(var(--herdr-accent-rgb), 0.08);
+  border-radius: 3px;
+  transition: all 0.08s ease-out;
+  box-shadow: 0 0 10px rgba(var(--herdr-accent-rgb), 0.35);
+  z-index: 2147483640;
+}
+
+.herdr-inspect-badge {
+  position: absolute;
+  top: -24px;
+  left: -2px;
+  background: var(--herdr-accent);
+  color: #141819;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px 4px 0 0;
+  white-space: nowrap;
+  pointer-events: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+}
+
+/* Marquee Drag Box */
+.herdr-marquee-box {
+  position: absolute;
+  pointer-events: none;
+  border: 2px dashed var(--herdr-accent);
+  background: rgba(var(--herdr-accent-rgb), 0.12);
+  border-radius: 4px;
+  z-index: 2147483641;
+}
+
+.herdr-marquee-dim {
+  position: absolute;
+  bottom: -22px;
+  right: 0;
+  background: #141819;
+  color: var(--herdr-accent);
+  border: 1px solid var(--herdr-accent);
+  font-size: 10.5px;
+  font-weight: 500;
+  padding: 2px 5px;
+  border-radius: 4px;
+  pointer-events: none;
+  font-family: monospace;
+}
+
+/* Annotation Card / Popover */
+.herdr-popover {
+  pointer-events: auto;
+  position: absolute;
+  width: 340px;
+  background: rgba(20, 24, 25, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--herdr-border);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 2147483646;
+  animation: herdrFadeIn 0.15s ease-out;
+}
+
+@keyframes herdrFadeIn {
+  from { opacity: 0; transform: scale(0.96) translateY(4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.herdr-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.herdr-element-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: #1B2122;
+  border: 1px solid #2D393B;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-family: monospace;
+  color: var(--herdr-accent);
+}
+
+.herdr-preview-wrap {
+  width: 100%;
+  max-height: 140px;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid var(--herdr-border);
+  margin-bottom: 10px;
+  background: #0B0E0F;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.herdr-preview-img {
+  max-width: 100%;
+  max-height: 140px;
+  object-fit: contain;
+  display: block;
+}
+
+.herdr-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.herdr-chip {
+  font-size: 11px;
+  padding: 3px 7px;
+  border-radius: 5px;
+  background: #1E2526;
+  border: 1px solid #2B3638;
+  color: var(--herdr-muted);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.herdr-chip:hover {
+  background: #283234;
+  color: var(--herdr-text);
+  border-color: var(--herdr-accent);
+}
+
+.herdr-textarea {
+  width: 100%;
+  height: 72px;
+  background: #171C1D;
+  border: 1px solid #2D393B;
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--herdr-text);
+  font-size: 12.5px;
+  line-height: 1.4;
+  resize: vertical;
+  outline: none;
+  margin-bottom: 12px;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.herdr-textarea:focus {
+  border-color: var(--herdr-accent);
+  box-shadow: 0 0 0 2px rgba(var(--herdr-accent-rgb), 0.2);
+}
+
+.herdr-popover-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.herdr-target-info {
+  font-size: 11px;
+  color: var(--herdr-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.herdr-target-badge {
+  color: var(--herdr-accent);
+  font-weight: 500;
+}
+
+.herdr-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.herdr-btn-cancel {
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid var(--herdr-border);
+  color: var(--herdr-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.herdr-btn-cancel:hover {
+  background: #232B2C;
+  color: var(--herdr-text);
+}
+
+.herdr-btn-send {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: var(--herdr-accent);
+  color: #141819;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.herdr-btn-send:hover {
+  background: var(--herdr-accent-hover);
+}
+
+.herdr-btn-send:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Toast message */
+.herdr-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #171C1D;
+  border: 1px solid var(--herdr-green);
+  border-radius: 8px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--herdr-text);
+  font-size: 12.5px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  animation: herdrFadeIn 0.2s ease-out;
+  pointer-events: auto;
+  z-index: 2147483647;
+}
+
+.herdr-toast-icon {
+  color: var(--herdr-green);
+  font-weight: bold;
+}

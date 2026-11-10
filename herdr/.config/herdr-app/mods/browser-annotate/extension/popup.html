@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Herdr ADE Annotate</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 290px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #141819;
+      color: #E2E8F0;
+      padding: 14px;
+      font-size: 13px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #232B2C;
+      margin-bottom: 12px;
+    }
+    .logo-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      background: #E6A854;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #141819;
+      font-weight: bold;
+      font-size: 11px;
+    }
+    .title {
+      font-weight: 600;
+      font-size: 13.5px;
+      color: #F8FAFC;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      padding: 3px 7px;
+      border-radius: 12px;
+      background: #1B2122;
+      border: 1px solid #2B3537;
+    }
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #64748B;
+    }
+    .dot.online { background: #74BBA2; box-shadow: 0 0 6px rgba(116, 187, 162, 0.6); }
+    .dot.offline { background: #E06C75; }
+    .section-label {
+      font-size: 11px;
+      color: #8C9C9A;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .select-wrap {
+      margin-bottom: 12px;
+    }
+    select {
+      width: 100%;
+      padding: 7px 10px;
+      background: #1B2122;
+      border: 1px solid #2F3B3E;
+      color: #F8FAFC;
+      border-radius: 6px;
+      font-size: 12.5px;
+      outline: none;
+    }
+    select:focus {
+      border-color: #E6A854;
+    }
+    .btn {
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: none;
+      transition: all 0.15s ease;
+      margin-bottom: 8px;
+    }
+    .btn-primary {
+      background: #E6A854;
+      color: #141819;
+    }
+    .btn-primary:hover {
+      background: #EDB56B;
+    }
+    .btn-secondary {
+      background: #232B2C;
+      color: #C3CEC9;
+      border: 1px solid #2F3B3E;
+    }
+    .btn-secondary:hover {
+      background: #2B3537;
+      color: #F8FAFC;
+    }
+    .footer-note {
+      font-size: 11px;
+      color: #6A7875;
+      text-align: center;
+      margin-top: 8px;
+    }
+    .kbd {
+      padding: 1px 4px;
+      background: #232B2C;
+      border-radius: 3px;
+      border: 1px solid #364446;
+      font-family: monospace;
+      font-size: 10.5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo-row">
+      <div class="badge-icon">H</div>
+      <div class="title">Herdr ADE</div>
+    </div>
+    <div class="status-pill" id="statusPill">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">Checking...</span>
+    </div>
+  </div>
+
+  <div class="select-wrap">
+    <div class="section-label">Target Agent Terminal</div>
+    <select id="terminalSelect">
+      <option value="">Auto (Active / Working Agent)</option>
+    </select>
+  </div>
+
+  <button class="btn btn-primary" id="btnToggle">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6z"/></svg>
+    Launch Toolbar on Page
+  </button>
+
+  <div class="footer-note">
+    Shortcut: <span class="kbd">Alt+Shift+A</span> on any web page
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
