@@ -20,6 +20,7 @@ import {
   watchFolder,
   window,
   layout,
+  notify,
 } from "herdr";
 import { Agents } from "./agents.js";
 import { PRStatusObserver, prPlaceKey, prAppearance } from "../git/pr-status.js";
@@ -1225,6 +1226,97 @@ export class Spaces {
       });
   }
 
+  async openBrowserAnnotate(w, cx, isAltClick = false) {
+    const ps = panes();
+    const folder = spaceFolder(w, ps);
+    const spaceId = w.id;
+    const spaceName = w.name;
+
+    // 1. Resolve terminal for this space
+    const tabs = new Set((w.tabs ?? []).map((t) => t.id));
+    const spacePanes = ps.filter((p) => tabs.has(p.tab) && p.terminal);
+    const allAgents = agents() || [];
+
+    let targetTerminal = null;
+    for (const p of spacePanes) {
+      const a = allAgents.find((ag) => ag.address === p.terminal);
+      if (a && a.status === "working") {
+        targetTerminal = a.address;
+        break;
+      }
+    }
+    if (!targetTerminal) {
+      for (const p of spacePanes) {
+        const a = allAgents.find((ag) => ag.address === p.terminal);
+        if (a) {
+          targetTerminal = a.address;
+          break;
+        }
+      }
+    }
+    if (!targetTerminal && spacePanes.length > 0) {
+      targetTerminal = spacePanes[0].terminal;
+    }
+
+    // 2. Resolve URL
+    let targetUrl = "";
+    try {
+      targetUrl = localStorage.getItem(`space.url.${spaceId}`) || "";
+    } catch {}
+
+    if (!targetUrl || isAltClick) {
+      let defaultPort = "5173";
+      if (folder) {
+        try {
+          const pkgTest = await exec("test", ["-f", `${folder}/package.json`]);
+          if (pkgTest.code === 0) {
+            const catRes = await exec("cat", [`${folder}/package.json`]);
+            const pkg = catRes.stdout || "";
+            if (pkg.includes('"next"')) defaultPort = "3000";
+            else if (pkg.includes('"nuxt"')) defaultPort = "3000";
+            else if (pkg.includes('"vite"')) defaultPort = "5173";
+            else if (pkg.includes('"astro"')) defaultPort = "4321";
+          }
+          const artisanTest = await exec("test", ["-f", `${folder}/artisan`]);
+          if (artisanTest.code === 0) defaultPort = "8000";
+        } catch {}
+      }
+      targetUrl = targetUrl || `http://localhost:${defaultPort}`;
+    }
+
+    // Save active URL
+    try {
+      localStorage.setItem(`space.url.${spaceId}`, targetUrl);
+    } catch {}
+
+    // 3. Register to Bridge Server
+    try {
+      await exec("curl", [
+        "-s",
+        "-X", "POST",
+        "http://127.0.0.1:7890/api/active-project",
+        "-H", "Content-Type: application/json",
+        "-d", JSON.stringify({
+          spaceId,
+          spaceName,
+          folder,
+          terminal: targetTerminal,
+          url: targetUrl
+        })
+      ]);
+    } catch {}
+
+    // 4. Open in Chrome
+    try {
+      await exec("open", ["-a", "Google Chrome", targetUrl]);
+      notify(`Opened ${spaceName} in Chrome (${targetUrl}) with ADE Annotator active`);
+    } catch {
+      try {
+        await exec("open", [targetUrl]);
+      } catch {}
+    }
+  }
+
   rowTitle(w, g, tree, t) {
     const isFolded = this.spaceFolded.has(w.id);
     const provider = this.providerBadge(w, t);
@@ -1239,6 +1331,23 @@ export class Spaces {
       .when(!tree && Boolean(provider), (el) => el.child(provider))
       .child(this.branchName(g, w.name, t))
       .child(this.gitTail(g, w.active, t, w))
+      .child(
+        h_flex()
+          .size(16)
+          .flex_none()
+          .items_center()
+          .justify_center()
+          .cursor_pointer()
+          .rounded(4)
+          .hover((s) => s.bg(t.hover))
+          .tooltip(`Inspect & Annotate in Browser (${w.name})`)
+          .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
+          .on_click((e, cx) => {
+            cx.stop_propagation();
+            this.openBrowserAnnotate(w, cx, Boolean(e.modifiers?.alt));
+          })
+          .child(Icon("target", 12).text_color(t.dim)),
+      )
       .child(
         h_flex()
           .size(16)

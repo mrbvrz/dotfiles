@@ -12,6 +12,8 @@ const execFileAsync = promisify(execFile);
 const PORT = 7890;
 const HOST = "127.0.0.1";
 const recentHistory = [];
+const projectMap = new Map(); // spaceId -> { spaceId, spaceName, folder, terminal, url, updatedAt }
+let lastActiveSpaceId = null;
 
 async function getLiveTerminals() {
   try {
@@ -108,6 +110,45 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // Get registered projects
+  if (url.pathname === "/api/projects") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({
+      status: "ok",
+      projects: Array.from(projectMap.values()),
+      lastActiveSpaceId
+    }));
+    return;
+  }
+
+  // Register active project from Herdr
+  if (url.pathname === "/api/active-project" && req.method === "POST") {
+    let body = "";
+    req.on("data", (chunk) => { body += chunk; });
+    req.on("end", () => {
+      try {
+        const data = JSON.parse(body);
+        if (data.spaceId) {
+          projectMap.set(data.spaceId, {
+            spaceId: data.spaceId,
+            spaceName: data.spaceName || data.spaceId,
+            folder: data.folder || "",
+            terminal: data.terminal || null,
+            url: data.url || "",
+            updatedAt: Date.now()
+          });
+          lastActiveSpaceId = data.spaceId;
+        }
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, activeSpaceId: lastActiveSpaceId }));
+      } catch (err) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
   // Post annotation
   if (url.pathname === "/api/annotate" && req.method === "POST") {
     let body = "";
@@ -117,6 +158,31 @@ const server = http.createServer(async (req, res) => {
         const payload = JSON.parse(body);
         const { instruction, pageUrl, pageTitle, element, screenshotBase64 } = payload;
         let target = payload.targetTerminal;
+        let matchedProject = null;
+
+        // Try to match project by pageUrl
+        if (pageUrl) {
+          try {
+            const parsedUrl = new URL(pageUrl);
+            const hostPort = parsedUrl.host; // e.g. "localhost:5173"
+            for (const proj of projectMap.values()) {
+              if (proj.url) {
+                try {
+                  const projUrl = new URL(proj.url);
+                  if (projUrl.host === hostPort) {
+                    matchedProject = proj;
+                    break;
+                  }
+                } catch {}
+              }
+            }
+          } catch {}
+        }
+
+        // If no URL match, fallback to last active space project
+        if (!matchedProject && lastActiveSpaceId && projectMap.has(lastActiveSpaceId)) {
+          matchedProject = projectMap.get(lastActiveSpaceId);
+        }
 
         // 1. Save screenshot to disk if provided
         let savedImagePath = null;
@@ -131,16 +197,31 @@ const server = http.createServer(async (req, res) => {
         // 2. Resolve target terminal
         const terminals = await getLiveTerminals();
         if (!target) {
-          const workingAgent = terminals.find((t) => t.status === "working");
-          const anyAgent = terminals.find((t) => t.agent && t.agent !== "zsh" && t.agent !== "bash");
-          target = workingAgent?.address || anyAgent?.address || terminals[0]?.address || "t1";
+          if (matchedProject?.terminal) {
+            // Verify if project's terminal is live
+            const isLive = terminals.some((t) => t.address === matchedProject.terminal && t.state === "live");
+            if (isLive) target = matchedProject.terminal;
+          }
+          if (!target) {
+            const workingAgent = terminals.find((t) => t.status === "working");
+            const anyAgent = terminals.find((t) => t.agent && t.agent !== "zsh" && t.agent !== "bash");
+            target = workingAgent?.address || anyAgent?.address || terminals[0]?.address || "t1";
+          }
         }
 
         // 3. Format ADE prompt
+        const headerTitle = matchedProject
+          ? `[Browser Annotate] Project: ${matchedProject.spaceName}`
+          : `[Browser Annotate]`;
+
         const lines = [
-          `[Browser Annotate]`,
+          headerTitle,
           `- Page: ${pageUrl || "Unknown URL"}${pageTitle ? ` ("${pageTitle}")` : ""}`,
         ];
+
+        if (matchedProject?.folder) {
+          lines.push(`- Workspace: ${matchedProject.folder}`);
+        }
 
         if (element) {
           if (element.component) lines.push(`- Component: ${element.component}`);
