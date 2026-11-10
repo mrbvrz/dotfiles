@@ -383,13 +383,13 @@ export class Spaces {
     this.above = () => (pinned ? this.agents.groupRows(pinned, 0, view, t) : []);
 
     const activeColor = t.accent ?? t.working ?? "#E6A854";
-    const nest = (lines, row, isWorking = false) =>
+    const nest = (lines, row, railOpts = []) =>
       h_flex()
         .children(
           lines.map((l, idx) => {
-            const isTarget = isWorking && idx === lines.length - 1;
-            const col = isTarget ? activeColor : t.dim;
-            return Rail(l, 15, col, isTarget);
+            const opts = railOpts[idx] || {};
+            const col = opts.branchColor || opts.topVColor || t.dim;
+            return Rail(l, 15, col, false, opts);
           }),
         )
         .child(row.flex_1().min_w(0));
@@ -404,22 +404,53 @@ export class Spaces {
           : all.filter((a) => a.tab === tab.id && !pins.includes(a.address)).map((a) => ({ a })),
       );
       order.push(...items.filter((x) => x.a).map((x) => x.a.address));
+
+      const isItemWorking = (item) => {
+        const isAgent = Boolean(item.a);
+        const agentStatus = isAgent ? (item.a.status || this.agents?.listed?.get(item.a.address)) : null;
+        const isAgentWorking = agentStatus === "working";
+        const isTabWorking = !isAgent && item.tab && panes().some((p) => p.tab === item.tab.id && p.status === "working");
+        return isAgentWorking || isTabWorking;
+      };
+
+      const hasActiveAnywhere = items.some(isItemWorking);
       const before = tree ? [tree.startsWith("└") ? "" : "│"] : [];
+      const beforeOpts = before.map(() => ({
+        topVPulse: hasActiveAnywhere,
+        topVColor: activeColor,
+        bottomVPulse: hasActiveAnywhere,
+        bottomVColor: activeColor,
+      }));
       const hasVisibleKids = kids > 0 && !this.spaceFolded.has(w.id);
+
       return items.flatMap((x, i) => {
         const last = i === items.length - 1 && !hasVisibleKids;
-        const isAgent = Boolean(x.a);
-        const agentStatus = isAgent ? (x.a.status || this.agents?.listed?.get(x.a.address)) : null;
-        const isAgentWorking = agentStatus === "working";
-        const isTabWorking = !isAgent && x.tab && panes().some((p) => p.tab === x.tab.id && p.status === "working");
-        const isWorking = isAgentWorking || isTabWorking;
+        const isWorking = isItemWorking(x);
+        const hasActiveAtOrBelow = items.slice(i).some(isItemWorking);
+        const hasActiveBelow = items.slice(i + 1).some(isItemWorking);
+
+        const currentOpts = {
+          topVPulse: hasActiveAtOrBelow,
+          topVColor: activeColor,
+          branchPulse: isWorking,
+          branchColor: isWorking ? activeColor : t.dim,
+          bottomVPulse: hasActiveBelow,
+          bottomVColor: activeColor,
+        };
+
+        const subPipeOpts = {
+          topVPulse: hasActiveBelow,
+          topVColor: activeColor,
+          bottomVPulse: hasActiveBelow,
+          bottomVColor: activeColor,
+        };
 
         const [row, ...subs] = x.a
           ? this.agents.agentWithSubs(x.a, i, nested, t)
           : [this.agents.tabRow(w, x.tab, x.tab.id === shownTab, t)];
         return [
-          nest([...before, last ? "└" : "├"], row, isWorking),
-          ...subs.map((s) => nest([...before, last ? "" : "│"], s, false)),
+          nest([...before, last ? "└" : "├"], row, [...beforeOpts, currentOpts]),
+          ...subs.map((s) => nest([...before, last ? "" : "│"], s, [...beforeOpts, subPipeOpts])),
         ];
       });
     };

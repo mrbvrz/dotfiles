@@ -345,8 +345,8 @@ export class Agents {
             .flex_none()
             .border_color(col)
             .when(isTarget, (el) => el.loop("opacity", { from: 0.45, to: 1, period: 2200 }))
-            .when(Boolean(l), (el) => el.border_l(isTarget ? 2 : 1))
-            .when(l === "└" || l === "├", (el) => el.border_b(isTarget ? 2 : 1).rounded_bl(6));
+            .when(Boolean(l), (el) => el.border_l(1))
+            .when(l === "└" || l === "├", (el) => el.border_b(1).rounded_bl(10));
         }),
       )
       .when(Boolean(pic), (el) => el.child(div().mr(8).child(pic)))

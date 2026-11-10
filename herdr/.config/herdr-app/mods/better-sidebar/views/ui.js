@@ -101,45 +101,73 @@ export function GroupHeader({
 // One step of a tree's line, in front of a nested row: "│" carries on past it,
 // "├" branches to it, "└" ends at it, "" leaves the column blank. `mid` is how far
 // down the row its title sits, where the branch turns.
-export function Rail(kind, mid = 15, color, pulse = false) {
+export function Rail(kind, mid = 15, color, pulse = false, opts = {}) {
   const t = theme();
-  const borderCol = color ?? t.dim ?? "#6A7875";
-  const THICK = pulse ? 2 : 1;
+  const defaultCol = color ?? t.dim ?? "#6A7875";
+  const THICK = 1;
+  const RADIUS = 15;
   const isBranch = Boolean(kind && kind.startsWith("├"));
   const isEnd = Boolean(kind && kind.startsWith("└"));
   const isPipe = Boolean(kind && kind.startsWith("│"));
 
-  const vLine = (top, bottomOrH, isHeight = false) => {
+  const topVCol = opts.topVColor ?? defaultCol;
+  const topVPulse = opts.topVPulse ?? pulse;
+  const bottomVCol = opts.bottomVColor ?? defaultCol;
+  const bottomVPulse = opts.bottomVPulse ?? pulse;
+  const branchCol = opts.branchColor ?? defaultCol;
+  const branchPulse = opts.branchPulse ?? pulse;
+
+  const vLine = (top, bottomOrH, isHeight = false, vColor = topVCol, vPls = topVPulse) => {
     const el = div()
       .absolute()
-      .left(pulse ? 14 : 15)
+      .left(15)
       .top(top)
       .w(THICK)
-      .bg(borderCol);
+      .bg(vColor)
+      .when(Boolean(vPls), (e) => e.loop("opacity", { from: 0.45, to: 1, period: 2200 }));
     return isHeight ? el.h(bottomOrH) : el.bottom(bottomOrH);
   };
 
-  const roundedCorner = () =>
+  const roundedCorner = (cColor = branchCol, cPls = branchPulse) =>
     div()
       .absolute()
-      .left(pulse ? 14 : 15)
+      .left(15)
       .top(0)
-      .w(12)
+      .w(15)
       .h(mid + THICK)
       .border_l(THICK)
       .border_b(THICK)
-      .border_color(borderCol)
-      .rounded_bl(12);
+      .border_color(cColor)
+      .rounded_bl(RADIUS)
+      .when(Boolean(cPls), (e) => e.loop("opacity", { from: 0.45, to: 1, period: 2200 }));
 
-  return div()
+  const root = div()
     .relative()
     .w(24)
     .flex_none()
-    .self_stretch()
-    .when(Boolean(pulse), (el) => el.loop("opacity", { from: 0.45, to: 1, period: 2200 }))
-    .when(isPipe, (el) => el.child(vLine(0, 0)))
-    .when(isBranch, (el) => el.child(vLine(0, 0)).child(roundedCorner()))
-    .when(isEnd, (el) => el.child(roundedCorner()));
+    .self_stretch();
+
+  if (isPipe) {
+    if (topVPulse === bottomVPulse && topVCol === bottomVCol) {
+      return root.child(vLine(0, 0, false, topVCol, topVPulse));
+    }
+    return root
+      .child(vLine(0, mid, true, topVCol, topVPulse))
+      .child(vLine(mid, 0, false, bottomVCol, bottomVPulse));
+  }
+
+  if (isBranch) {
+    return root
+      .child(vLine(0, mid, true, topVCol, topVPulse))
+      .child(vLine(mid, 0, false, bottomVCol, bottomVPulse))
+      .child(roundedCorner(branchCol, branchPulse));
+  }
+
+  if (isEnd) {
+    return root.child(roundedCorner(branchCol, branchPulse));
+  }
+
+  return root;
 }
 
 // A popup anchored to its trigger.
