@@ -68,6 +68,26 @@ function getPrimaryNetwork(networks) {
   return networks[0];
 }
 
+function parseBytes(str) {
+  if (!str) return 0;
+  const match = str.trim().match(/^([\d.]+)\s*([a-zA-Z]+)/);
+  if (!match) return 0;
+  const val = parseFloat(match[1]) || 0;
+  const unit = match[2].toLowerCase();
+  if (unit.startsWith("k")) return val * 1024;
+  if (unit.startsWith("m")) return val * 1024 * 1024;
+  if (unit.startsWith("g")) return val * 1024 * 1024 * 1024;
+  if (unit.startsWith("t")) return val * 1024 * 1024 * 1024 * 1024;
+  return val;
+}
+
+function formatBytes(bytes) {
+  if (!bytes || bytes <= 0) return "0 B";
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
 export default class DockerMod extends View {
   init(_props, cx) {
     this.cx = cx;
@@ -92,6 +112,9 @@ export default class DockerMod extends View {
     this.images = [];
     this.volumes = [];
     this.stats = new Map(); // id/name -> { cpuPerc, memPerc, memUsage, netIO, pids, cpuHistory, memHistory }
+    this.globalCpuHistory = [];
+    this.totalCpu = 0;
+    this.totalMemBytes = 0;
     this.loading = false;
     this.statsLoading = false;
     this.dockerAvailable = true;
@@ -258,6 +281,9 @@ export default class DockerMod extends View {
         const res = await dockerCmd(["stats", "--no-stream", "--format", "{{json .}}"]);
         if (res.code === 0) {
           const lines = res.stdout.trim().split("\n").filter(Boolean);
+          let sumCpu = 0;
+          let sumMem = 0;
+          const seen = new Set();
           for (const line of lines) {
             try {
               const r = JSON.parse(line);
@@ -265,6 +291,14 @@ export default class DockerMod extends View {
               const name = r.Name;
               const cpuPerc = parseFloat((r.CPUPerc || "0").replace("%", "")) || 0;
               const memPerc = parseFloat((r.MemPerc || "0").replace("%", "")) || 0;
+
+              if (!seen.has(id)) {
+                seen.add(id);
+                sumCpu += cpuPerc;
+                const memUsed = (r.MemUsage || "").split("/")[0].trim();
+                sumMem += parseBytes(memUsed);
+              }
+
               const prev = this.stats.get(id) || this.stats.get(name) || { cpuHistory: [], memHistory: [] };
               const cpuHistory = [...(prev.cpuHistory || []), cpuPerc].slice(-10);
               const memHistory = [...(prev.memHistory || []), memPerc].slice(-10);
@@ -282,6 +316,9 @@ export default class DockerMod extends View {
               this.stats.set(name, statObj);
             } catch {}
           }
+          this.totalCpu = sumCpu;
+          this.totalMemBytes = sumMem;
+          this.globalCpuHistory = [...(this.globalCpuHistory || []), sumCpu].slice(-24);
         }
       } catch {}
       this.statsLoading = false;
@@ -1104,154 +1141,106 @@ export default class DockerMod extends View {
       );
   }
 
-  // ── Container Card Chart Visualization ───────────────────────────────────────
+  // ── Docker Vitals Visualization (Top of Right Sidebar) ─────────────────────
 
-  renderContainerChart(c, stat, t) {
-    const isRunning = c.state === "running";
-    if (!isRunning) return null;
+  renderVitals(t, cx) {
+    if (!this.dockerAvailable) return null;
+    const running = this.containers.filter((c) => c.state === "running");
 
-    if (!stat) {
-      return h_flex()
-        .h(16)
+    const SAMPLES = 20;
+    const cpuVal = this.totalCpu || 0;
+    const warn = (val) => {
+      if (val >= 80) return t.ansi1;
+      if (val >= 40) return t.ansi3;
+      return t.accent ?? t.ansi2;
+    };
+
+    const row = (id, label, viz, value, valueColor, tip) =>
+      h_flex()
+        .id(id)
+        .h(20)
+        .gap(8)
         .items_center()
-        .gap(6)
-        .text_size(10)
-        .text_color(t.dim)
         .child(
-          svg(`${ICONS}/refresh.svg`)
-            .size(10)
+          div()
+            .w(30)
+            .flex_none()
+            .text_size(11)
             .text_color(t.dim)
-            .spin(900),
+            .child(label),
         )
-        .child(div().child("Measuring live metrics…"));
-    }
-
-    const cpuVal = stat.cpuPerc;
-    const memVal = stat.memPerc;
-    const cpuColor = cpuVal >= 80 ? t.ansi1 : cpuVal >= 40 ? t.ansi3 : t.ansi2;
-    const memColor = memVal >= 85 ? t.ansi1 : memVal >= 60 ? t.ansi3 : t.accent || t.ansi4;
-
-    const sparkBar = (val, max = 100, color) => {
-      const hPct = Math.max(3, Math.min(100, Math.round((val / max) * 100)));
-      return div()
-        .w(3)
-        .h(14)
-        .flex_none()
-        .rounded(1)
-        .bg(t.chrome)
-        .flex()
-        .items_end()
+        .child(viz)
         .child(
           div()
-            .w_full()
-            .h(`${hPct}%`)
+            .w(76)
+            .flex_none()
+            .text_right()
+            .text_size(11.5)
+            .text_color(valueColor ?? t.foreground)
+            .truncate()
+            .child(value),
+        )
+        .when(Boolean(tip), (el) => el.tooltip(tip));
+
+    const hist = this.globalCpuHistory || [];
+    const spark = h_flex()
+      .flex_1()
+      .h(16)
+      .items_end()
+      .gap(1)
+      .children(
+        Array.from({ length: SAMPLES }, (_, i) => {
+          const v = hist[i - (SAMPLES - hist.length)];
+          return div()
+            .flex_1()
+            .min_w(1)
             .rounded(1)
-            .bg(color),
-        );
-    };
+            .h(v === undefined ? 1 : Math.max(1, Math.min(16, Math.round((v / 100) * 16))))
+            .bg(v === undefined ? t.border : i === SAMPLES - 1 ? warn(v) : warn(v) + "99");
+        }),
+      );
 
-    const miniSparkline = (history, max, color) => {
-      const hist = history && history.length ? history : [0];
-      return h_flex()
-        .h(14)
-        .items_end()
-        .gap(1)
-        .flex_none()
-        .children(
-          Array.from({ length: 8 }, (_, i) => {
-            const v = hist[i - (8 - hist.length)];
-            return sparkBar(v === undefined ? 0 : v, max, color);
-          }),
-        );
-    };
+    const memRowTip = `Total Container Memory: ${formatBytes(this.totalMemBytes || 0)}\nActive: ${running.length} container(s)`;
+    const cpuProcs = running
+      .map((c) => {
+        const s = this.stats.get(c.id) || this.stats.get(c.name);
+        return { name: c.name, cpu: s?.cpuPerc || 0 };
+      })
+      .sort((a, b) => b.cpu - a.cpu)
+      .slice(0, 5)
+      .map((p) => `${p.name}  ${p.cpu.toFixed(1)}%`)
+      .join("\n");
+    const cpuTip = `Docker CPU Usage:\n${cpuProcs || "No active containers"}`;
 
-    const progressBar = (pct, color) =>
-      div()
-        .flex_1()
-        .h(4)
-        .rounded(2)
-        .bg(t.chrome)
-        .overflow_hidden()
-        .child(
-          div()
-            .h_full()
-            .w(`${Math.max(2, Math.min(100, pct))}%`)
-            .rounded(2)
-            .bg(color),
-        );
-
-    const memUsageClean = (stat.memUsage || "").split("/")[0].trim();
+    const maxMemEst = 16 * 1024 * 1024 * 1024;
+    const memPct = Math.min(100, ((this.totalMemBytes || 0) / maxMemEst) * 100);
+    const memBar = div()
+      .flex_1()
+      .h(6)
+      .rounded(3)
+      .bg(t.border)
+      .overflow_hidden()
+      .child(
+        div()
+          .h_full()
+          .w(`${Math.max(2, Math.min(100, memPct))}%`)
+          .rounded(3)
+          .bg(t.accent || t.ansi4),
+      );
 
     return v_flex()
-      .p(6)
-      .gap(4)
-      .rounded(6)
-      .bg(t.background)
-      .border_1()
+      .px(16)
+      .pt(4)
+      .pb(8)
+      .gap(2)
+      .bg(t.chrome)
+      .border_b(1)
       .border_color(t.border)
-      // CPU Row
       .child(
-        h_flex()
-          .h(16)
-          .gap(6)
-          .items_center()
-          .text_size(10)
-          .child(div().w(26).flex_none().font_medium().text_color(t.dim).child("CPU"))
-          .child(progressBar(cpuVal, cpuColor))
-          .child(miniSparkline(stat.cpuHistory, Math.max(10, ...(stat.cpuHistory || [10])), cpuColor))
-          .child(
-            div()
-              .w(38)
-              .flex_none()
-              .text_right()
-              .font_family("monospace")
-              .font_medium()
-              .text_color(cpuColor)
-              .child(`${cpuVal.toFixed(1)}%`),
-          ),
+        row("docker-vitals-cpu", "CPU", spark, `${cpuVal.toFixed(1)}%`, warn(cpuVal), cpuTip),
       )
-      // Memory Row
       .child(
-        h_flex()
-          .h(16)
-          .gap(6)
-          .items_center()
-          .text_size(10)
-          .child(div().w(26).flex_none().font_medium().text_color(t.dim).child("MEM"))
-          .child(progressBar(memVal, memColor))
-          .when(Boolean(memUsageClean), (el) =>
-            el.child(
-              div()
-                .flex_none()
-                .truncate()
-                .font_family("monospace")
-                .text_size(9.5)
-                .text_color(t.muted)
-                .child(memUsageClean),
-            ),
-          )
-          .child(
-            div()
-              .w(38)
-              .flex_none()
-              .text_right()
-              .font_family("monospace")
-              .font_medium()
-              .text_color(memColor)
-              .child(`${memVal.toFixed(1)}%`),
-          ),
-      )
-      // Network & PIDs Row
-      .when(Boolean(stat.netIO), (el) =>
-        el.child(
-          h_flex()
-            .text_size(9.5)
-            .text_color(t.dim)
-            .items_center()
-            .justify_between()
-            .child(div().child(`Net: ${stat.netIO}`))
-            .when(Boolean(stat.pids), (b) => b.child(div().child(`PIDs: ${stat.pids}`))),
-        ),
+        row("docker-vitals-mem", "MEM", memBar, formatBytes(this.totalMemBytes || 0), t.foreground, memRowTip),
       );
   }
 
@@ -1412,8 +1401,46 @@ export default class DockerMod extends View {
               .child(c.status),
           ),
       )
-      // Live Performance Chart (CPU & Memory)
-      .child(this.renderContainerChart(c, stat, t))
+      // Container metrics summary (clean, non-card inline line)
+      .when(isRunning && Boolean(stat), (el) =>
+        el.child(
+          h_flex()
+            .gap(8)
+            .items_center()
+            .text_size(10)
+            .text_color(t.dim)
+            .child(
+              h_flex()
+                .gap(3)
+                .items_center()
+                .child(div().text_color(t.dim).child("CPU"))
+                .child(
+                  div()
+                    .font_family("monospace")
+                    .text_color(stat.cpuPerc >= 50 ? t.ansi3 : t.foreground)
+                    .child(`${(stat.cpuPerc || 0).toFixed(1)}%`),
+                ),
+            )
+            .child(div().text_color(t.border).child("•"))
+            .child(
+              h_flex()
+                .gap(3)
+                .items_center()
+                .child(div().text_color(t.dim).child("MEM"))
+                .child(
+                  div()
+                    .font_family("monospace")
+                    .text_color(t.foreground)
+                    .child((stat.memUsage || "").split("/")[0].trim() || "0B"),
+                ),
+            )
+            .when(Boolean(stat.netIO), (b) =>
+              b
+                .child(div().text_color(t.border).child("•"))
+                .child(div().child(`Net: ${stat.netIO}`)),
+            ),
+        ),
+      )
       .when(c.ports.length > 0, (el) =>
         // Ports row
         el.child(
@@ -1814,12 +1841,25 @@ export default class DockerMod extends View {
           .overflow_y_scrollbar()
           .p(8)
           .bg(t.background)
-          .child(
-            div()
-              .font_family("monospace")
-              .text_size(10.5)
-              .text_color(t.foreground)
-              .child(this.logsText),
+          .when(this.logsLoading, (el) =>
+            el.child(
+              h_flex()
+                .p(16)
+                .gap(8)
+                .items_center()
+                .justify_center()
+                .child(svg(`${ICONS}/refresh.svg`).size(14).text_color(t.accent).spin(900))
+                .child(div().text_size(12).text_color(t.dim).child("Fetching container logs…")),
+            ),
+          )
+          .when(!this.logsLoading, (el) =>
+            el.child(
+              div()
+                .font_family("monospace")
+                .text_size(10.5)
+                .text_color(t.foreground)
+                .child(this.logsText || "No logs output recorded for this container."),
+            ),
           ),
       );
   }
@@ -1877,6 +1917,7 @@ export default class DockerMod extends View {
       .size_full()
       .bg(t.background)
       .child(this.renderHeader(t, cx))
+      .when(this.tab === "containers", (el) => el.child(this.renderVitals(t, cx)))
       .child(this.renderTabs(t, cx))
       .child(this.renderToolbar(t, cx))
       .child(

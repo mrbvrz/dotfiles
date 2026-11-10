@@ -317,6 +317,8 @@ export class Agents {
     const st = kidStatus(k, this.listed);
     const pic = icon(k.program, 11, t.dim, k);
     const on = k.address === shown;
+    const isWorking = st === "working";
+    const activeColor = t.working ?? t.ansi3 ?? "#F59E0B";
     return h_flex()
       .id(`sub-${k.address}`)
       .pl(39)
@@ -331,18 +333,21 @@ export class Agents {
       .hover((s) => s.bg(t.hover))
       .on_click(() => this.peek(k.address))
       .children(
-        s.lines.map((l) =>
-          div()
+        s.lines.map((l, idx) => {
+          const isTarget = isWorking && idx === s.lines.length - 1;
+          const col = isTarget ? activeColor : (t.dim ?? "#6A7875");
+          return div()
             .self_start()
             .mt(-4)
             .w(9)
             .h(17)
             .mr(4)
             .flex_none()
-            .border_color(t.accent ?? "#E6A854")
-            .when(Boolean(l), (el) => el.border_l(1))
-            .when(l === "└" || l === "├", (el) => el.border_b(1).rounded_bl(6)),
-        ),
+            .border_color(col)
+            .when(isTarget, (el) => el.loop("opacity", { from: 0.35, to: 1, period: 1000 }))
+            .when(Boolean(l), (el) => el.border_l(isTarget ? 1.5 : 1))
+            .when(l === "└" || l === "├", (el) => el.border_b(isTarget ? 1.5 : 1).rounded_bl(6));
+        }),
       )
       .when(Boolean(pic), (el) => el.child(div().mr(8).child(pic)))
       .child(

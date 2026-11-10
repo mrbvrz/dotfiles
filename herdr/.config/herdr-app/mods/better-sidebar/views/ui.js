@@ -101,10 +101,10 @@ export function GroupHeader({
 // One step of a tree's line, in front of a nested row: "│" carries on past it,
 // "├" branches to it, "└" ends at it, "" leaves the column blank. `mid` is how far
 // down the row its title sits, where the branch turns.
-export function Rail(kind, mid = 15, color) {
+export function Rail(kind, mid = 15, color, pulse = false) {
   const t = theme();
   const borderCol = color ?? t.dim ?? "#6A7875";
-  const THICK = 1;
+  const THICK = pulse ? 1.5 : 1;
   const isBranch = Boolean(kind && kind.startsWith("├"));
   const isEnd = Boolean(kind && kind.startsWith("└"));
   const isPipe = Boolean(kind && kind.startsWith("│"));
@@ -136,6 +136,7 @@ export function Rail(kind, mid = 15, color) {
     .w(24)
     .flex_none()
     .self_stretch()
+    .when(Boolean(pulse), (el) => el.loop("opacity", { from: 0.35, to: 1, period: 1000 }))
     .when(isPipe, (el) => el.child(vLine(0, 0)))
     .when(isBranch, (el) => el.child(vLine(0, 0)).child(roundedCorner()))
     .when(isEnd, (el) => el.child(roundedCorner()));

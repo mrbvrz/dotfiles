@@ -382,7 +382,17 @@ export class Spaces {
     order.push(...pins);
     this.above = () => (pinned ? this.agents.groupRows(pinned, 0, view, t) : []);
 
-    const nest = (lines, row) => h_flex().children(lines.map((l) => Rail(l, 15, t.dim))).child(row.flex_1().min_w(0));
+    const activeColor = t.working ?? t.ansi3 ?? "#F59E0B";
+    const nest = (lines, row, isWorking = false) =>
+      h_flex()
+        .children(
+          lines.map((l, idx) => {
+            const isTarget = isWorking && idx === lines.length - 1;
+            const col = isTarget ? activeColor : t.dim;
+            return Rail(l, 15, col, isTarget);
+          }),
+        )
+        .child(row.flex_1().min_w(0));
     const shownTab = focused()?.tab;
     const plain = (tab) => !all.some((a) => a.tab === tab.id);
 
@@ -398,10 +408,19 @@ export class Spaces {
       const hasVisibleKids = kids > 0 && !this.spaceFolded.has(w.id);
       return items.flatMap((x, i) => {
         const last = i === items.length - 1 && !hasVisibleKids;
+        const isAgent = Boolean(x.a);
+        const agentStatus = isAgent ? (x.a.status || this.agents?.listed?.get(x.a.address)) : null;
+        const isAgentWorking = agentStatus === "working";
+        const isTabWorking = !isAgent && x.tab && panes().some((p) => p.tab === x.tab.id && p.status === "working");
+        const isWorking = isAgentWorking || isTabWorking;
+
         const [row, ...subs] = x.a
           ? this.agents.agentWithSubs(x.a, i, nested, t)
           : [this.agents.tabRow(w, x.tab, x.tab.id === shownTab, t)];
-        return [nest([...before, last ? "└" : "├"], row), ...subs.map((s) => nest([...before, last ? "" : "│"], s))];
+        return [
+          nest([...before, last ? "└" : "├"], row, isWorking),
+          ...subs.map((s) => nest([...before, last ? "" : "│"], s, false)),
+        ];
       });
     };
 
