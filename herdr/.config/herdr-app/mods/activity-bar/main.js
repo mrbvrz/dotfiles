@@ -83,18 +83,6 @@ export default class ActivityBar extends View {
         .tooltip(item.tooltip)
         .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
         .on_click(() => this.togglePanel(item.id))
-        .when(on, (el) =>
-          el.child(
-            div()
-              .absolute()
-              .left(0)
-              .top(6)
-              .bottom(6)
-              .w(2.5)
-              .rounded_r(2)
-              .bg(t.done ?? "#74BBA2")
-          )
-        )
         .child(svg(item.icon).size(18))
         .when(hasBadge, (el) =>
           el.child(
