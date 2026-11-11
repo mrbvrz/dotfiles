@@ -1,6 +1,6 @@
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex, Input, InputState } from "gpui-base";
-import { theme, settings, exec, notify } from "herdr";
+import { theme, settings, exec, notify, home, readTextFile, writeTextFile } from "herdr";
 
 const NAME = "ports";
 const uiSize = () => Number(settings()?.ui_font_size) || 13;
@@ -22,6 +22,77 @@ async function sh(cmd, args) {
 
 function unescapeLsof(s) {
   return s.replace(/\\x([0-9a-fA-F]{2})/g, (_m, h) => String.fromCharCode(parseInt(h, 16)));
+}
+
+
+// ---- Tunnel providers -------------------------------------------------
+const TUNNEL_DIR = () => `${home()}/.config/herdr-app/tunnels`;
+const TUNNEL_STATE = () => `${home()}/.config/herdr-app/tunnels.json`;
+const shq = (x) => `'${String(x).replace(/'/g, `'\\''`)}'`;
+
+const PROVIDERS = [
+  {
+    id: "cloudflare", label: "Cloudflare", bin: "cloudflared", hint: "brew install cloudflared",
+    args: (p) => ["tunnel", "--no-autoupdate", "--url", `http://localhost:${p}`],
+    url: /(https:\/\/[a-z0-9-]+\.trycloudflare\.com)/i,
+    err: /(ERR|failed|error)/i,
+  },
+  {
+    id: "ngrok", label: "ngrok", bin: "ngrok", hint: "brew install ngrok && ngrok config add-authtoken <token>",
+    args: (p) => ["http", String(p), "--log=stdout", "--log-format=logfmt"],
+    url: /\burl=(https:\/\/\S+)/i,
+    err: /(ERR_NGROK_\d+|authentication failed|err=)/i,
+  },
+  {
+    id: "localhostrun", label: "localhost.run", bin: "ssh", hint: "uses ssh (no install)",
+    args: (p) => ["-o", "StrictHostKeyChecking=accept-new", "-o", "ServerAliveInterval=30", "-o", "ExitOnForwardFailure=yes", "-R", `80:localhost:${p}`, "nokey@localhost.run"],
+    url: /(https:\/\/[a-z0-9-]+\.lhr\.life)/i,
+    err: /(denied|refused|failed|error)/i,
+  },
+];
+
+async function resolveBin(name) {
+  const script = `for p in /opt/homebrew/bin/${name} /usr/local/bin/${name} /usr/bin/${name}; do [ -x "$p" ] && echo "$p" && exit 0; done; command -v ${name}`;
+  const r = await exec("/bin/sh", ["-c", script]).catch(() => null);
+  const out = String(r?.stdout || "").trim().split("\n")[0];
+  return out || null;
+}
+
+async function loadTunnels() {
+  try {
+    const raw = await readTextFile(TUNNEL_STATE());
+    const v = raw ? JSON.parse(raw) : [];
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveTunnels(list) {
+  return writeTextFile(TUNNEL_STATE(), JSON.stringify(list, null, 2), null).catch(() => {});
+}
+
+async function startTunnel(provider, bin, port) {
+  const dir = TUNNEL_DIR();
+  await exec("/bin/mkdir", ["-p", dir]);
+  const id = `${provider.id}-${port}-${Date.now().toString(36)}`;
+  const log = `${dir}/${id}.log`;
+  const cmd = [bin, ...provider.args(port)].map(shq).join(" ");
+  const r = await exec("/bin/sh", ["-c", `nohup ${cmd} >${shq(log)} 2>&1 </dev/null & echo $!`]);
+  const pid = Number(String(r.stdout || "").trim());
+  if (!pid) throw new Error("could not start tunnel");
+  return { id, provider: provider.id, port, pid, log, url: null, status: "starting", startedAt: Date.now(), error: null };
+}
+
+async function aliveSet(pids) {
+  if (!pids.length) return new Set();
+  const r = await exec("/bin/ps", ["-p", pids.join(","), "-o", "pid="]).catch(() => null);
+  return new Set(String(r?.stdout || "").split("\n").map((l) => Number(l.trim())).filter(Boolean));
+}
+
+async function stopTunnel(t) {
+  await exec("/bin/kill", ["-TERM", String(t.pid)]).catch(() => {});
+  await exec("/bin/rm", ["-f", t.log]).catch(() => {});
 }
 
 async function listPorts() {
@@ -79,6 +150,10 @@ export default class PortsMod extends View {
     this.confirmKey = null;
     this.confirmTimer = null;
     this.updatedAt = 0;
+    this.tunnels = [];
+    this.bins = {};
+    this.pickKey = null;
+    this.starting = new Set();
 
     this.search = InputState.new({ placeholder: "Filter port, process, command..." });
     this.search.on("change", (_e, cx) => {
@@ -87,7 +162,98 @@ export default class PortsMod extends View {
     });
 
     this.refresh(cx);
-    cx.timer.every(4000, () => this.refresh(cx, true));
+    cx.timer.every(4000, () => { this.refresh(cx, true); this.pollTunnels(cx); });
+
+    cx.spawn(async (cx) => {
+      for (const p of PROVIDERS) this.bins[p.id] = await resolveBin(p.bin);
+      this.tunnels = await loadTunnels();
+      await this.pollTunnels(cx);
+      cx.notify();
+    });
+  }
+
+  async pollTunnels(cx) {
+    if (!this.tunnels.length || this.polling) return;
+    this.polling = true;
+    try {
+      const alive = await aliveSet(this.tunnels.map((t) => t.pid));
+      let changed = false;
+      for (const t of this.tunnels) {
+        if (t.status === "stopped" || t.status === "error") continue;
+        const prov = PROVIDERS.find((p) => p.id === t.provider);
+        const up = alive.has(t.pid);
+        let text = "";
+        if (!t.url || !up) {
+          try { text = String((await readTextFile(t.log)) || ""); } catch {}
+        }
+        if (!t.url && prov) {
+          const m = text.match(prov.url);
+          if (m) { t.url = m[1]; t.status = "live"; changed = true; }
+        }
+        if (!up) {
+          t.status = t.url ? "stopped" : "error";
+          if (!t.url) {
+            const lines = text.split("\n").filter((l) => l.trim());
+            const bad = lines.reverse().find((l) => prov?.err.test(l)) ?? lines[0] ?? "tunnel exited";
+            t.error = bad.replace(/\x1b\[[0-9;]*m/g, "").slice(0, 200);
+          }
+          changed = true;
+        }
+      }
+      if (changed) { await saveTunnels(this.tunnels); cx.notify(); }
+    } finally {
+      this.polling = false;
+    }
+  }
+
+  tunnelFor(port) {
+    return this.tunnels.find((t) => t.port === port && (t.status === "starting" || t.status === "live"));
+  }
+
+  startShare(r, provider, cx) {
+    const bin = this.bins[provider.id];
+    const key = `${r.port}:${provider.id}`;
+    if (!bin) {
+      notify({ title: `${provider.label} not installed`, body: provider.hint, level: "warning", timeout: 5000 });
+      return;
+    }
+    this.pickKey = null;
+    this.starting.add(key);
+    cx.notify();
+    cx.spawn(async (cx) => {
+      try {
+        const t = await startTunnel(provider, bin, r.port);
+        this.tunnels.unshift(t);
+        await saveTunnels(this.tunnels);
+        notify({ title: `Starting ${provider.label}`, body: `localhost:${r.port}`, level: "info", timeout: 1800 });
+        setTimeout(() => this.pollTunnels(cx), 1500);
+        setTimeout(() => this.pollTunnels(cx), 3500);
+      } catch (e) {
+        notify({ title: "Tunnel failed", body: String(e?.message ?? e), level: "error" });
+      } finally {
+        this.starting.delete(key);
+        cx.notify();
+      }
+    });
+  }
+
+  endTunnel(t, cx) {
+    this.tunnels = this.tunnels.filter((x) => x.id !== t.id);
+    cx.notify();
+    cx.spawn(async () => {
+      await stopTunnel(t);
+      await saveTunnels(this.tunnels);
+    });
+  }
+
+  copyUrl(t, cx) {
+    if (!t.url) return;
+    cx.write_to_clipboard(t.url);
+    notify({ title: "Public URL copied", body: t.url, level: "info", timeout: 1800 });
+  }
+
+  openUrl(t, cx) {
+    if (t.url) cx.spawn(async () => { await exec("/usr/bin/open", [t.url]).catch(() => {}); });
   }
 
   refresh(cx, quiet = false) {
@@ -181,6 +347,8 @@ export default class PortsMod extends View {
     const confirming = this.confirmKey === key;
     const label = KNOWN[r.port];
     const danger = t.error ?? "#e5736f";
+    const tun = this.tunnelFor(r.port);
+    const pick = this.pickKey === key && !tun;
     return v_flex()
       .id(`port-${key}`)
       .rounded(8)
@@ -227,6 +395,16 @@ export default class PortsMod extends View {
               .child(this.iconBtn(`o-${key}`, "mods/ports/icons/open.svg", `Open http://localhost:${r.port}`, t, null, () => this.openBrowser(r, cx)))
               .child(this.iconBtn(`c-${key}`, "mods/filetree/copy.svg", "Copy port", t, null, (_e, cx) => this.copyPort(r, cx)))
               .child(
+                this.iconBtn(
+                  `s-${key}`,
+                  "mods/ports/icons/share.svg",
+                  tun ? "Tunnel active" : "Share via tunnel (Cloudflare, ngrok, ...)",
+                  t,
+                  t.done ?? "#74BBA2",
+                  (_e, cx) => { this.pickKey = this.pickKey === key ? null : key; cx.notify(); }
+                )
+              )
+              .child(
                 confirming
                   ? div()
                       .id(`k-${key}`)
@@ -254,6 +432,35 @@ export default class PortsMod extends View {
           .truncate()
           .child([`PID ${r.pid}`, r.user, r.addr === "*" ? "all interfaces" : r.addr, label].filter(Boolean).join(" · "))
       )
+      .when(pick, (el) =>
+        el.child(
+          h_flex()
+            .gap(6)
+            .items_center()
+            .pt(4)
+            .child(div().text_size(10.5).text_color(t.dim).child("Share via"))
+            .children(
+              PROVIDERS.map((p) => {
+                const ok = !!this.bins[p.id];
+                return div()
+                  .id(`sp-${key}-${p.id}`)
+                  .px(8)
+                  .py(3)
+                  .rounded(6)
+                  .cursor_pointer()
+                  .border(1)
+                  .border_color(t.border)
+                  .text_size(11)
+                  .text_color(ok ? t.foreground : t.dim)
+                  .hover((s) => s.bg(t.hover))
+                  .tooltip(ok ? `Expose localhost:${r.port} with ${p.label}` : `${p.label} not installed: ${p.hint}`)
+                  .on_click((_e, cx) => this.startShare(r, p, cx))
+                  .child(this.starting.has(`${r.port}:${p.id}`) ? "..." : p.label);
+              })
+            )
+        )
+      )
+      .when(!!tun, (el) => el.child(this.renderTunnel(tun, t, cx, true)))
       .when(r.full && r.full !== r.cmd, (el) =>
         el.child(
           div()
@@ -261,6 +468,40 @@ export default class PortsMod extends View {
             .text_color(t.dim)
             .truncate()
             .child(r.full)
+        )
+      );
+  }
+
+  renderTunnel(tun, t, cx, inline = false) {
+    const prov = PROVIDERS.find((p) => p.id === tun.provider);
+    const live = tun.status === "live";
+    const bad = tun.status === "error";
+    const danger = t.error ?? "#e5736f";
+    const color = bad ? danger : live ? (t.done ?? "#74BBA2") : t.dim;
+    const text = live ? tun.url : bad ? tun.error || "tunnel failed" : tun.status === "stopped" ? `stopped · ${tun.url ?? ""}` : "connecting...";
+    return h_flex()
+      .id(`tun-${tun.id}${inline ? "-i" : ""}`)
+      .gap(6)
+      .items_center()
+      .rounded(6)
+      .px(8)
+      .py(5)
+      .bg(t.selected)
+      .child(div().text_size(10).font_medium().text_color(color).flex_none().child(`${prov?.label ?? tun.provider}${inline ? "" : ` :${tun.port}`}`))
+      .child(div().flex_1().min_w(0).truncate().text_size(11).text_color(live ? t.foreground : color).child(text))
+      .when(live, (el) =>
+        el
+          .child(this.iconBtn(`tc-${tun.id}${inline ? "-i" : ""}`, "mods/filetree/copy.svg", "Copy public URL", t, null, (_e, cx) => this.copyUrl(tun, cx)))
+          .child(this.iconBtn(`to-${tun.id}${inline ? "-i" : ""}`, "mods/ports/icons/open.svg", "Open public URL", t, null, (_e, cx) => this.openUrl(tun, cx)))
+      )
+      .child(
+        this.iconBtn(
+          `tx-${tun.id}${inline ? "-i" : ""}`,
+          "mods/ports/icons/stop.svg",
+          live || tun.status === "starting" ? "Stop tunnel" : "Dismiss",
+          t,
+          danger,
+          (_e, cx) => this.endTunnel(tun, cx)
         )
       );
   }
@@ -339,6 +580,18 @@ export default class PortsMod extends View {
           .px(10)
           .pb(10)
           .gap(6)
+          .when(this.tunnels.some((x) => !this.ports.some((r) => r.port === x.port) || x.status === "error" || x.status === "stopped"), (el) =>
+            el.child(
+              v_flex()
+                .gap(4)
+                .child(div().text_size(10.5).text_color(t.dim).child("Tunnels"))
+                .children(
+                  this.tunnels
+                    .filter((x) => !this.ports.some((r) => r.port === x.port) || x.status === "error" || x.status === "stopped")
+                    .map((x) => this.renderTunnel(x, t, cx))
+                )
+            )
+          )
           .when(!!this.error, (el) =>
             el.child(div().text_size(12).text_color(t.error ?? "#e5736f").child(this.error))
           )
