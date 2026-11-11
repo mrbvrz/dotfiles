@@ -86,6 +86,7 @@ const DEFAULT_SNIPPETS = [
 
 export default class SnippetsMod extends View {
   init(_props, cx) {
+    this.handle = cx.focus_handle();
     this.snippets = [];
     this.searchQuery = "";
     this.activeLanguage = "all";
@@ -175,7 +176,7 @@ export default class SnippetsMod extends View {
       font_family: monoFont(),
       font_size: codeSize(),
     });
-    cx.notify();
+    if (cx) cx.notify();
   }
 
   openEditForm(id, cx) {
@@ -183,7 +184,7 @@ export default class SnippetsMod extends View {
     if (!s) return;
     this.editingId = id;
     this.isFormOpen = true;
-    this.formTitle.set_value(s.title);
+    this.formTitle.set_value(s.title || "");
     this.formLang.set_value(s.language || "bash");
     this.formTags.set_value(Array.isArray(s.tags) ? s.tags.join(", ") : "");
     this.formDesc.set_value(s.description || "");
@@ -196,25 +197,25 @@ export default class SnippetsMod extends View {
       font_family: monoFont(),
       font_size: codeSize(),
     });
-    cx.notify();
+    if (cx) cx.notify();
   }
 
   closeForm(cx) {
     this.isFormOpen = false;
     this.editingId = null;
     this.formEditor = null;
-    cx.notify();
+    if (cx) cx.notify();
   }
 
   saveForm(cx) {
     const title = this.formTitle.value().trim();
     const code = this.formEditor ? this.formEditor.value().trim() : "";
     if (!title) {
-      notify({ title: "Snippet Title Required", body: "Please enter a title for this snippet", level: "warning" });
+      notify({ title: "Title Required", body: "Please enter a snippet title", level: "warning" });
       return;
     }
     if (!code) {
-      notify({ title: "Code Content Required", body: "Snippet code cannot be empty", level: "warning" });
+      notify({ title: "Code Required", body: "Snippet code cannot be empty", level: "warning" });
       return;
     }
 
@@ -259,16 +260,16 @@ export default class SnippetsMod extends View {
     this.snippets = this.snippets.filter((x) => x.id !== id);
     this.save(cx);
     notify({ title: "Snippet Deleted", body: s?.title || "", level: "info", timeout: 1500 });
-    cx.notify();
+    if (cx) cx.notify();
   }
 
   copySnippet(snippet, cx) {
-    cx.write_to_clipboard(snippet.code);
+    if (cx) cx.write_to_clipboard(snippet.code);
     notify({ title: "Copied to Clipboard", body: snippet.title, level: "info", timeout: 1800 });
   }
 
   sendToTerminal(snippet, cx) {
-    cx.write_to_clipboard(snippet.code);
+    if (cx) cx.write_to_clipboard(snippet.code);
     run("terminal.paste");
     notify({ title: "Inserted into Terminal", body: snippet.title, level: "info", timeout: 1800 });
   }
@@ -284,7 +285,11 @@ export default class SnippetsMod extends View {
 
   render(cx) {
     const t = theme();
-    const stop = (_e, cx) => cx.stop_propagation();
+
+    // If form is open, render dedicated full editor form view
+    if (this.isFormOpen) {
+      return this.renderForm(t, cx);
+    }
 
     // Filter snippets
     const filtered = this.snippets.filter((s) => {
@@ -356,8 +361,7 @@ export default class SnippetsMod extends View {
                   .text_color(t.muted)
                   .hover((s) => s.bg(t.hover).text_color(t.foreground))
                   .tooltip("Create snippet from clipboard")
-                  .on_mouse_down("left", stop)
-                  .on_click(() => this.createFromClipboard(cx))
+                  .on_click((_e, cx) => this.createFromClipboard(cx))
                   .child(svg("mods/filetree/copy.svg").size(12))
                   .child(div().text_size(11.5).child("From Clip"))
               )
@@ -370,22 +374,16 @@ export default class SnippetsMod extends View {
                   .items_center()
                   .rounded(6)
                   .cursor_pointer()
-                  .bg(this.isFormOpen ? t.hover : t.selected)
+                  .bg(t.selected)
                   .text_color(t.foreground)
                   .hover((s) => s.bg(t.hover))
-                  .tooltip(this.isFormOpen ? "Cancel" : "Add new snippet")
-                  .on_mouse_down("left", stop)
-                  .on_click(() => {
-                    if (this.isFormOpen) this.closeForm(cx);
-                    else this.openCreateForm("", cx);
-                  })
-                  .child(svg(this.isFormOpen ? "mods/filetree/x.svg" : "mods/workspace-chrome/plus.svg").size(13))
-                  .child(div().text_size(11.5).font_medium().child(this.isFormOpen ? "Cancel" : "New"))
+                  .tooltip("Add new snippet")
+                  .on_click((_e, cx) => this.openCreateForm("", cx))
+                  .child(svg("mods/workspace-chrome/plus.svg").size(13))
+                  .child(div().text_size(11.5).font_medium().child("New"))
               )
           )
       )
-      // Form Area (when open)
-      .when(this.isFormOpen, (el) => el.child(this.renderForm(t, stop, cx)))
       // Search and Filter Bar
       .child(
         v_flex()
@@ -417,7 +415,7 @@ export default class SnippetsMod extends View {
                     .cursor_pointer()
                     .text_color(t.dim)
                     .hover((s) => s.text_color(t.foreground))
-                    .on_click(() => {
+                    .on_click((_e, cx) => {
                       this.searchInput.set_value("");
                       this.searchQuery = "";
                       cx.notify();
@@ -442,7 +440,7 @@ export default class SnippetsMod extends View {
                   .when(this.activeLanguage === "all", (el) => el.bg(t.selected))
                   .text_color(this.activeLanguage === "all" ? t.foreground : t.dim)
                   .hover((s) => s.bg(t.hover).text_color(t.foreground))
-                  .on_click(() => {
+                  .on_click((_e, cx) => {
                     this.activeLanguage = "all";
                     cx.notify();
                   })
@@ -460,7 +458,7 @@ export default class SnippetsMod extends View {
                     .when(this.activeLanguage === lang, (el) => el.bg(t.selected))
                     .text_color(this.activeLanguage === lang ? (t.done ?? "#74BBA2") : t.dim)
                     .hover((s) => s.bg(t.hover).text_color(t.foreground))
-                    .on_click(() => {
+                    .on_click((_e, cx) => {
                       this.activeLanguage = lang;
                       cx.notify();
                     })
@@ -499,178 +497,206 @@ export default class SnippetsMod extends View {
                     .text_color(t.done ?? "#74BBA2")
                     .text_size(11.5)
                     .hover((s) => s.underline())
-                    .on_click(() => this.openCreateForm("", cx))
+                    .on_click((_e, cx) => this.openCreateForm("", cx))
                     .child("+ Add a new snippet")
                 )
             )
           )
-          .children(filtered.map((snippet) => this.renderCard(snippet, t, stop, cx)))
+          .children(filtered.map((snippet) => this.renderCard(snippet, t, cx)))
       );
   }
 
-  renderForm(t, stop, cx) {
+  renderForm(t, cx) {
     return v_flex()
-      .p(10)
-      .gap(8)
-      .border_b(1)
-      .border_color(t.border)
-      .bg(t.surface ?? t.chrome)
-      .child(
-        div()
-          .font_semibold()
-          .text_size(12.5)
-          .text_color(t.foreground)
-          .child(this.editingId ? "Edit Snippet" : "Add New Snippet")
-      )
-      // Title Row
-      .child(
-        v_flex()
-          .gap(3)
-          .child(div().text_size(11).text_color(t.muted).child("Title *"))
-          .child(
-            h_flex()
-              .h(28)
-              .px(8)
-              .items_center()
-              .rounded(6)
-              .border(1)
-              .border_color(t.border)
-              .bg(t.input ?? t.background)
-              .child(Input.new(this.formTitle).flex_1().h_full().text_size(12).text_color(t.foreground))
-          )
-      )
-      // Language and Tags Row
+      .id("snippets-form-view")
+      .size_full()
+      .bg(t.chrome)
+      // Form Top Header
       .child(
         h_flex()
-          .gap(8)
-          .child(
-            v_flex()
-              .flex_1()
-              .gap(3)
-              .child(div().text_size(11).text_color(t.muted).child("Language (bash, git, docker, js, php, sql)"))
-              .child(
-                h_flex()
-                  .h(28)
-                  .px(8)
-                  .items_center()
-                  .rounded(6)
-                  .border(1)
-                  .border_color(t.border)
-                  .bg(t.input ?? t.background)
-                  .child(Input.new(this.formLang).flex_1().h_full().text_size(12).text_color(t.foreground))
-              )
-          )
-          .child(
-            v_flex()
-              .flex_1()
-              .gap(3)
-              .child(div().text_size(11).text_color(t.muted).child("Tags (comma separated)"))
-              .child(
-                h_flex()
-                  .h(28)
-                  .px(8)
-                  .items_center()
-                  .rounded(6)
-                  .border(1)
-                  .border_color(t.border)
-                  .bg(t.input ?? t.background)
-                  .child(Input.new(this.formTags).flex_1().h_full().text_size(12).text_color(t.foreground))
-              )
-          )
-      )
-      // Description Row
-      .child(
-        v_flex()
-          .gap(3)
-          .child(div().text_size(11).text_color(t.muted).child("Description (optional)"))
+          .h(38)
+          .px(10)
+          .items_center()
+          .justify_between()
+          .border_b(1)
+          .border_color(t.border)
           .child(
             h_flex()
-              .h(28)
-              .px(8)
+              .gap(6)
               .items_center()
-              .rounded(6)
-              .border(1)
-              .border_color(t.border)
-              .bg(t.input ?? t.background)
-              .child(Input.new(this.formDesc).flex_1().h_full().text_size(12).text_color(t.foreground))
-          )
-      )
-      // Code Editor Area
-      .child(
-        v_flex()
-          .gap(3)
-          .child(
-            h_flex()
-              .justify_between()
-              .items_center()
-              .child(div().text_size(11).text_color(t.muted).child("Snippet Code *"))
+              .cursor_pointer()
+              .hover((s) => s.text_color(t.foreground))
+              .on_click((_e, cx) => this.closeForm(cx))
+              .child(svg("mods/filetree/chevron-left.svg").size(14).text_color(t.muted))
               .child(
                 div()
-                  .cursor_pointer()
-                  .text_size(11)
-                  .text_color(t.done ?? "#74BBA2")
-                  .hover((s) => s.underline())
-                  .on_click(() => {
-                    const text = cx.read_from_clipboard();
-                    if (text && this.formEditor) {
-                      this.formEditor.set_value(text.trim());
-                      cx.notify();
-                    }
-                  })
-                  .child("Paste from Clipboard")
+                  .font_semibold()
+                  .text_size(13)
+                  .text_color(t.foreground)
+                  .child(this.editingId ? "Edit Snippet" : "New Snippet")
               )
           )
           .child(
-            div()
-              .h(120)
-              .w_full()
-              .p(6)
-              .rounded(6)
-              .border(1)
-              .border_color(t.border)
-              .bg(t.background)
-              .child(this.formEditor ? Editor.new(this.formEditor).size_full() : div())
+            h_flex()
+              .gap(6)
+              .items_center()
+              .child(
+                h_flex()
+                  .h(26)
+                  .px(9)
+                  .items_center()
+                  .rounded(6)
+                  .cursor_pointer()
+                  .bg(t.surface ?? t.chrome)
+                  .text_color(t.muted)
+                  .hover((s) => s.bg(t.hover).text_color(t.foreground))
+                  .on_click((_e, cx) => this.closeForm(cx))
+                  .child(div().text_size(11.5).child("Cancel"))
+              )
+              .child(
+                h_flex()
+                  .h(26)
+                  .px(12)
+                  .items_center()
+                  .rounded(6)
+                  .cursor_pointer()
+                  .bg(t.done ?? "#74BBA2")
+                  .text_color(t.background ?? "#131718")
+                  .hover((s) => s.opacity(0.9))
+                  .on_click((_e, cx) => this.saveForm(cx))
+                  .child(
+                    div()
+                      .text_size(11.5)
+                      .font_semibold()
+                      .child(this.editingId ? "Save Changes" : "Create Snippet")
+                  )
+              )
           )
       )
-      // Form Action Buttons
+      // Form Body (Scrollable)
       .child(
-        h_flex()
-          .gap(6)
-          .justify_end()
-          .items_center()
-          .pt(4)
+        v_flex()
+          .flex_1()
+          .min_h(0)
+          .overflow_y_scroll()
+          .p(12)
+          .gap(10)
+          // Title Field
           .child(
-            h_flex()
-              .h(26)
-              .px(10)
-              .items_center()
-              .rounded(6)
-              .cursor_pointer()
-              .bg(t.hover)
-              .text_color(t.muted)
-              .hover((s) => s.text_color(t.foreground))
-              .on_mouse_down("left", stop)
-              .on_click(() => this.closeForm(cx))
-              .child(div().text_size(11.5).child("Cancel"))
+            v_flex()
+              .gap(4)
+              .child(div().text_size(11.5).font_medium().text_color(t.muted).child("Snippet Title *"))
+              .child(
+                h_flex()
+                  .h(30)
+                  .px(8)
+                  .items_center()
+                  .rounded(6)
+                  .border(1)
+                  .border_color(t.border)
+                  .bg(t.input ?? t.background)
+                  .child(Input.new(this.formTitle).flex_1().h_full().text_size(12).text_color(t.foreground))
+              )
           )
+          // Language and Tags
           .child(
             h_flex()
-              .h(26)
-              .px(12)
-              .items_center()
-              .rounded(6)
-              .cursor_pointer()
-              .bg(t.done ?? "#74BBA2")
-              .text_color(t.background ?? "#131718")
-              .hover((s) => s.opacity(0.9))
-              .on_mouse_down("left", stop)
-              .on_click(() => this.saveForm(cx))
-              .child(div().text_size(11.5).font_semibold().child(this.editingId ? "Update Snippet" : "Save Snippet"))
+              .gap(10)
+              .child(
+                v_flex()
+                  .flex_1()
+                  .gap(4)
+                  .child(div().text_size(11.5).font_medium().text_color(t.muted).child("Language (bash, git, docker, js, php, sql)"))
+                  .child(
+                    h_flex()
+                      .h(30)
+                      .px(8)
+                      .items_center()
+                      .rounded(6)
+                      .border(1)
+                      .border_color(t.border)
+                      .bg(t.input ?? t.background)
+                      .child(Input.new(this.formLang).flex_1().h_full().text_size(12).text_color(t.foreground))
+                  )
+              )
+              .child(
+                v_flex()
+                  .flex_1()
+                  .gap(4)
+                  .child(div().text_size(11.5).font_medium().text_color(t.muted).child("Tags (comma separated)"))
+                  .child(
+                    h_flex()
+                      .h(30)
+                      .px(8)
+                      .items_center()
+                      .rounded(6)
+                      .border(1)
+                      .border_color(t.border)
+                      .bg(t.input ?? t.background)
+                      .child(Input.new(this.formTags).flex_1().h_full().text_size(12).text_color(t.foreground))
+                  )
+              )
+          )
+          // Description Field
+          .child(
+            v_flex()
+              .gap(4)
+              .child(div().text_size(11.5).font_medium().text_color(t.muted).child("Description / Usage tip (optional)"))
+              .child(
+                h_flex()
+                  .h(30)
+                  .px(8)
+                  .items_center()
+                  .rounded(6)
+                  .border(1)
+                  .border_color(t.border)
+                  .bg(t.input ?? t.background)
+                  .child(Input.new(this.formDesc).flex_1().h_full().text_size(12).text_color(t.foreground))
+              )
+          )
+          // Code Editor Area
+          .child(
+            v_flex()
+              .flex_1()
+              .min_h(180)
+              .gap(4)
+              .child(
+                h_flex()
+                  .justify_between()
+                  .items_center()
+                  .child(div().text_size(11.5).font_medium().text_color(t.muted).child("Snippet Code *"))
+                  .child(
+                    div()
+                      .cursor_pointer()
+                      .text_size(11)
+                      .text_color(t.done ?? "#74BBA2")
+                      .hover((s) => s.underline())
+                      .on_click((_e, cx) => {
+                        const text = cx.read_from_clipboard();
+                        if (text && this.formEditor) {
+                          this.formEditor.set_value(text.trim());
+                          cx.notify();
+                        }
+                      })
+                      .child("Paste from Clipboard")
+                  )
+              )
+              .child(
+                div()
+                  .h(200)
+                  .w_full()
+                  .p(8)
+                  .rounded(6)
+                  .border(1)
+                  .border_color(t.border)
+                  .bg(t.background)
+                  .child(this.formEditor ? Editor.new(this.formEditor).size_full() : div())
+              )
           )
       );
   }
 
-  renderCard(snippet, t, stop, cx) {
+  renderCard(snippet, t, cx) {
     const lines = (snippet.code || "").split("\n");
     const isMultiLine = lines.length > 1;
 
@@ -716,7 +742,7 @@ export default class SnippetsMod extends View {
           // Action Buttons: Copy, Run, Edit, Delete
           .child(
             h_flex()
-              .gap(3)
+              .gap(4)
               .items_center()
               .flex_none()
               // Copy Button
@@ -731,8 +757,7 @@ export default class SnippetsMod extends View {
                   .text_color(t.dim)
                   .hover((s) => s.bg(t.hover).text_color(t.foreground))
                   .tooltip("Copy snippet to clipboard")
-                  .on_mouse_down("left", stop)
-                  .on_click(() => this.copySnippet(snippet, cx))
+                  .on_click((_e, cx) => this.copySnippet(snippet, cx))
                   .child(svg("mods/filetree/copy.svg").size(13))
               )
               // Insert to Terminal Button
@@ -747,8 +772,7 @@ export default class SnippetsMod extends View {
                   .text_color(t.dim)
                   .hover((s) => s.bg(t.hover).text_color(t.done ?? "#74BBA2"))
                   .tooltip("Insert snippet into active terminal")
-                  .on_mouse_down("left", stop)
-                  .on_click(() => this.sendToTerminal(snippet, cx))
+                  .on_click((_e, cx) => this.sendToTerminal(snippet, cx))
                   .child(svg("mods/workspace-chrome/terminal.svg").size(13))
               )
               // Edit Button
@@ -763,8 +787,7 @@ export default class SnippetsMod extends View {
                   .text_color(t.dim)
                   .hover((s) => s.bg(t.hover).text_color(t.foreground))
                   .tooltip("Edit snippet")
-                  .on_mouse_down("left", stop)
-                  .on_click(() => this.openEditForm(snippet.id, cx))
+                  .on_click((_e, cx) => this.openEditForm(snippet.id, cx))
                   .child(svg("mods/snippets/icons/pencil.svg").size(12))
               )
               // Delete Button
@@ -779,8 +802,7 @@ export default class SnippetsMod extends View {
                   .text_color(t.dim)
                   .hover((s) => s.bg(t.hover).text_color(t.blocked ?? "#d4708a"))
                   .tooltip("Delete snippet")
-                  .on_mouse_down("left", stop)
-                  .on_click(() => this.deleteSnippet(snippet.id, cx))
+                  .on_click((_e, cx) => this.deleteSnippet(snippet.id, cx))
                   .child(svg("mods/filetree/trash.svg").size(12))
               )
           )
@@ -800,12 +822,11 @@ export default class SnippetsMod extends View {
           .cursor_pointer()
           .hover((s) => s.border_color(t.selected))
           .tooltip("Click to copy")
-          .on_mouse_down("left", stop)
-          .on_click(() => this.copySnippet(snippet, cx))
+          .on_click((_e, cx) => this.copySnippet(snippet, cx))
           .children(
             lines.slice(0, 6).map((line, idx) =>
               h_flex()
-                .id(`line-${idx}`)
+                .id(`line-${snippet.id}-${idx}`)
                 .gap(8)
                 .items_start()
                 .when(isMultiLine, (el) =>
