@@ -1,5 +1,5 @@
 // Agent Management & Mission Control for Herdr
-// Cockpit, Task Dispatcher with Persona Templates, Live Hierarchy, and Supervision
+// Cockpit, Task Dispatcher with Persona Templates, Live Hierarchy, and Full Persona Studio (CRUD)
 
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex, Input, InputState, Textarea, TextareaState } from "gpui-base";
@@ -12,6 +12,7 @@ import {
   run,
   hc,
   exec,
+  home,
   theme,
   shared,
   setShared,
@@ -20,13 +21,13 @@ import {
 } from "herdr";
 
 const ICONS = "mods/agent-manager/icons";
+const SCRIPT_PATH = `${home()}/.config/herdr-app/mods/agent-manager/scripts/templates.py`;
 
 const PERSONAS_META = {
   begu: {
     name: "Begu",
     cmd: "agy",
     desc: "Senior Fullstack Web Developer & Software Architect",
-    icon: "antigravity.svg",
     color: "#61afef",
     badge: "Fullstack",
   },
@@ -34,7 +35,6 @@ const PERSONAS_META = {
     name: "Ipos",
     cmd: "agy",
     desc: "Elite UI/UX Designer & Frontend Polisher",
-    icon: "antigravity.svg",
     color: "#e5c07b",
     badge: "UI/UX",
   },
@@ -42,7 +42,6 @@ const PERSONAS_META = {
     name: "Bodat",
     cmd: "claude",
     desc: "Senior Code Reviewer & Security Auditor",
-    icon: "claude.svg",
     color: "#e06c75",
     badge: "Security",
   },
@@ -50,7 +49,6 @@ const PERSONAS_META = {
     name: "Datu",
     cmd: "codex --no-daemon",
     desc: "Database Architect & Query Optimizer",
-    icon: "codex.svg",
     color: "#98c379",
     badge: "Database",
   },
@@ -58,7 +56,6 @@ const PERSONAS_META = {
     name: "Basing",
     cmd: "opencode",
     desc: "Code Janitor, Linter & Refactoring Specialist",
-    icon: "opencode.svg",
     color: "#56b6c2",
     badge: "Janitor",
   },
@@ -66,7 +63,6 @@ const PERSONAS_META = {
     name: "Pangulubalang",
     cmd: "agy",
     desc: "DevOps Guardian, Linux Server & CI/CD Engineer",
-    icon: "antigravity.svg",
     color: "#d19a66",
     badge: "DevOps",
   },
@@ -74,7 +70,6 @@ const PERSONAS_META = {
     name: "Parhata",
     cmd: "agy",
     desc: "Lead Technical Writer & Documentation Scribe",
-    icon: "antigravity.svg",
     color: "#c678dd",
     badge: "Docs",
   },
@@ -82,7 +77,6 @@ const PERSONAS_META = {
     name: "Tombak",
     cmd: "claude",
     desc: "QA Automation, Adversarial Testing & Edge-Case Hunter",
-    icon: "claude.svg",
     color: "#be5046",
     badge: "QA / Test",
   },
@@ -96,11 +90,13 @@ const PROMPT_SUGGESTIONS = [
   "Optimasi query database lambat dan periksa index yang hilang",
 ];
 
+const QUICK_COMMANDS = ["agy", "claude", "opencode", "codex", "gemini"];
+
 function duration(ms) {
   const m = Math.floor(ms / 60000);
   if (m < 1) return "<1m";
   if (m < 60) return `${m}m`;
-  const h = Math.floor(ms / 60);
+  const h = Math.floor(m / 60);
   return h < 24 ? `${h}h` : `${Math.floor(h / 24)}d`;
 }
 
@@ -110,6 +106,7 @@ export default class AgentManager extends View {
     try {
       this.tab = localStorage.getItem("agents.activeTab") || "cockpit";
     } catch {}
+
     this.filterStatus = "all"; // "all" | "blocked" | "working" | "done" | "idle"
     this.sessionFilter = "agents"; // "agents" | "all"
     this.selectedPersona = "begu";
@@ -121,6 +118,13 @@ export default class AgentManager extends View {
     this.templatesList = [];
     this.notice = null;
     this.changed = {};
+
+    // Persona Studio CRUD state
+    this.isPersonaFormOpen = false;
+    this.personaFormMode = "create"; // "create" | "edit"
+    this.personaEditingId = null;
+    this.personaConfirmDeleteId = null;
+    this.expandedDirectives = new Set();
 
     try {
       this.changed = JSON.parse(localStorage.getItem("agents.changed") ?? "{}");
@@ -143,6 +147,33 @@ export default class AgentManager extends View {
       rows: 2,
     });
     this.msgInput.on("change", (_e, cx) => cx.notify());
+
+    // CRUD Persona Inputs
+    this.formIdInput = InputState.new({
+      placeholder: "ID unik (huruf kecil & tanda hubung, misal: reviewer, tester)...",
+    });
+    this.formIdInput.on("change", (_e, cx) => cx.notify());
+
+    this.formNameInput = InputState.new({
+      placeholder: "Nama Agent (misal: Begu, Code Reviewer)...",
+    });
+    this.formNameInput.on("change", (_e, cx) => cx.notify());
+
+    this.formCmdInput = InputState.new({
+      placeholder: "CLI Command (agy, claude, opencode, codex, dll)...",
+    });
+    this.formCmdInput.on("change", (_e, cx) => cx.notify());
+
+    this.formDescInput = InputState.new({
+      placeholder: "Deskripsi singkat keahlian agent...",
+    });
+    this.formDescInput.on("change", (_e, cx) => cx.notify());
+
+    this.formPromptInput = TextareaState.new({
+      placeholder: "System Directives & Core Instructions (Markdown format)...",
+      rows: 8,
+    });
+    this.formPromptInput.on("change", (_e, cx) => cx.notify());
 
     // Auto refresh timer
     cx.timer.every(2500, (timerCx) => {
@@ -171,20 +202,72 @@ export default class AgentManager extends View {
 
   async loadTemplates() {
     try {
+      const res = await exec("python3", [SCRIPT_PATH, "list"]);
+      if (res && res.stdout) {
+        const list = JSON.parse(res.stdout.trim());
+        if (Array.isArray(list) && list.length > 0) {
+          this.templatesList = list;
+          return;
+        }
+      }
+    } catch {}
+
+    // Fallback if script fails
+    try {
       const res = await hc(["templates", "--json"]);
       if (res && res.stdout) {
         const data = JSON.parse(res.stdout);
         if (Array.isArray(data.templates)) {
-          this.templatesList = data.templates;
+          this.templatesList = data.templates.map((t) => ({
+            name: t.name,
+            displayName: t.name.charAt(0).toUpperCase() + t.name.slice(1),
+            description: t.description,
+            command: t.command,
+            prompt: "",
+          }));
+          return;
         }
       }
-    } catch {
-      this.templatesList = Object.entries(PERSONAS_META).map(([id, meta]) => ({
-        name: id,
-        description: meta.desc,
-        command: meta.cmd,
-      }));
+    } catch {}
+
+    // Fallback to static templates
+    this.templatesList = Object.entries(PERSONAS_META).map(([id, meta]) => ({
+      name: id,
+      displayName: meta.name,
+      description: meta.desc,
+      command: meta.cmd,
+      prompt: "",
+    }));
+  }
+
+  getPersonas() {
+    if (this.templatesList && this.templatesList.length > 0) {
+      return this.templatesList.map((tpl) => {
+        const id = tpl.name.toLowerCase();
+        const meta = PERSONAS_META[id] || {};
+        return {
+          id: id,
+          name: tpl.displayName || meta.name || tpl.name,
+          cmd: tpl.command || meta.cmd || "agy",
+          desc: tpl.description || meta.desc || "",
+          icon: meta.icon || "bot.svg",
+          color: meta.color || "#61afef",
+          badge: meta.badge || tpl.command || "Agent",
+          prompt: tpl.prompt || "",
+        };
+      });
     }
+
+    return Object.entries(PERSONAS_META).map(([id, meta]) => ({
+      id,
+      name: meta.name,
+      cmd: meta.cmd,
+      desc: meta.desc,
+      icon: "bot.svg",
+      color: meta.color,
+      badge: meta.badge,
+      prompt: "",
+    }));
   }
 
   async loadHistory() {
@@ -347,6 +430,101 @@ export default class AgentManager extends View {
     });
   }
 
+  // ── Persona Studio CRUD Actions ──────────────────────────────────────────────
+
+  openCreatePersonaForm() {
+    this.isPersonaFormOpen = true;
+    this.personaFormMode = "create";
+    this.personaEditingId = null;
+    this.personaConfirmDeleteId = null;
+
+    this.formIdInput.set_value("");
+    this.formNameInput.set_value("");
+    this.formCmdInput.set_value("agy");
+    this.formDescInput.set_value("");
+    this.formPromptInput.set_value("You are an expert AI agent.\n\n## Core Directives\n1. Focus on code quality and defensive programming.\n2. Work iteratively and report progress concisely.");
+  }
+
+  openEditPersonaForm(tpl) {
+    this.isPersonaFormOpen = true;
+    this.personaFormMode = "edit";
+    this.personaEditingId = tpl.name;
+    this.personaConfirmDeleteId = null;
+
+    this.formIdInput.set_value(tpl.name);
+    this.formNameInput.set_value(tpl.displayName || tpl.name);
+    this.formCmdInput.set_value(tpl.command || "agy");
+    this.formDescInput.set_value(tpl.description || "");
+    this.formPromptInput.set_value(tpl.prompt || "");
+  }
+
+  closePersonaForm() {
+    this.isPersonaFormOpen = false;
+    this.personaEditingId = null;
+    this.personaConfirmDeleteId = null;
+  }
+
+  savePersona(cx) {
+    const id = this.formIdInput.value().trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-");
+    const name = this.formNameInput.value().trim();
+    const cmd = this.formCmdInput.value().trim();
+    const desc = this.formDescInput.value().trim();
+    const prompt = this.formPromptInput.value().trim();
+
+    if (!id) {
+      this.showNotice("ID Persona tidak boleh kosong.", cx);
+      return;
+    }
+    if (!name) {
+      this.showNotice("Nama Agent tidak boleh kosong.", cx);
+      return;
+    }
+    if (!cmd) {
+      this.showNotice("CLI Command tidak boleh kosong.", cx);
+      return;
+    }
+
+    cx.spawn(async (cx) => {
+      try {
+        const res = await exec("python3", [SCRIPT_PATH, "save", id, name, cmd, desc, prompt]);
+        if (res && res.stdout && res.stdout.includes('"ok": true')) {
+          notify({ title: "Persona Tersimpan", body: `${name} (${cmd}) siap digunakan`, level: "success", timeout: 3000 });
+          this.showNotice(`Persona ${name} berhasil disimpan!`, cx);
+          await this.loadTemplates();
+          this.isPersonaFormOpen = false;
+          this.personaEditingId = null;
+          cx.notify();
+        } else {
+          this.showNotice(`Gagal menyimpan: ${res?.stderr || res?.stdout || "Unknown error"}`, cx);
+        }
+      } catch (err) {
+        this.showNotice(`Gagal menyimpan persona: ${err.message || err}`, cx);
+      }
+    });
+  }
+
+  deletePersona(id, cx) {
+    cx.spawn(async (cx) => {
+      try {
+        const res = await exec("python3", [SCRIPT_PATH, "delete", id]);
+        if (res && res.stdout && res.stdout.includes('"ok": true')) {
+          notify({ title: "Persona Dihapus", body: `Template ${id} telah dihapus`, level: "info", timeout: 2500 });
+          this.showNotice(`Template ${id} berhasil dihapus!`, cx);
+          this.personaConfirmDeleteId = null;
+          await this.loadTemplates();
+          if (this.selectedPersona === id) {
+            this.selectedPersona = "begu";
+          }
+          cx.notify();
+        } else {
+          this.showNotice(`Gagal menghapus: ${res?.stderr || res?.stdout || "Unknown error"}`, cx);
+        }
+      } catch (err) {
+        this.showNotice(`Gagal menghapus persona: ${err.message || err}`, cx);
+      }
+    });
+  }
+
   // ── Render Components ────────────────────────────────────────────────────────
 
   renderHeader(stats, t) {
@@ -363,6 +541,9 @@ export default class AgentManager extends View {
         .when(!active, (el) => el.text_color(t.muted).hover((s) => s.bg(t.hover).text_color(t.foreground)))
         .on_click((_e, cx) => {
           this.tab = id;
+          try {
+            localStorage.setItem("agents.activeTab", id);
+          } catch {}
           if (id === "history") this.loadHistory();
           if (id === "personas") this.loadTemplates();
           cx.notify();
@@ -1100,6 +1281,7 @@ export default class AgentManager extends View {
   renderLaunchMission(t) {
     const allSpaces = spaces();
     const activeSpace = allSpaces.find((s) => s.id === this.selectedSpaceId) || allSpaces.find((s) => s.active) || allSpaces[0];
+    const personas = this.getPersonas();
 
     const modeChip = (id, label, icon) => {
       const active = this.launchMode === id;
@@ -1144,15 +1326,15 @@ export default class AgentManager extends View {
                     this.tab = "personas";
                     cx.notify();
                   })
-                  .child("Lihat Directives »"),
+                  .child("Kelola Persona »"),
               ),
           )
           .child(
             v_flex()
               .gap(6)
               .children(
-                Object.entries(PERSONAS_META).map(([id, meta]) => {
-                  const on = this.selectedPersona === id;
+                personas.map((meta) => {
+                  const on = this.selectedPersona === meta.id;
                   return h_flex()
                     .p(7)
                     .gap(8)
@@ -1164,7 +1346,7 @@ export default class AgentManager extends View {
                     .cursor_pointer()
                     .hover((s) => s.bg(t.hover))
                     .on_click((_e, cx) => {
-                      this.selectedPersona = id;
+                      this.selectedPersona = meta.id;
                       cx.notify();
                     })
                     .child(
@@ -1319,38 +1501,305 @@ export default class AgentManager extends View {
           .text_size(12)
           .on_click((_e, cx) => this.handleLaunch(cx))
           .child(svg(`${ICONS}/play.svg`).size(13))
-          .child(`Dispatch Mission ke ${PERSONAS_META[this.selectedPersona]?.name || "Agent"}`),
+          .child(`Dispatch Mission ke ${personas.find((p) => p.id === this.selectedPersona)?.name || "Agent"}`),
       );
   }
 
-  // ── Personas Studio (Templates View) ─────────────────────────────────────────
+  // ── Personas Studio (Full CRUD: List, Add, Edit, Delete) ─────────────────────
 
-  renderPersonasStudio(t) {
+  renderPersonaForm(t) {
+    const isEdit = this.personaFormMode === "edit";
+
     return v_flex()
       .flex_1()
       .p(10)
       .gap(10)
       .overflow_y_scrollbar()
+      // Form Top Bar
       .child(
-        v_flex()
-          .gap(3)
-          .child(div().font_bold().text_size(12).text_color(t.foreground).child("Persona Templates Studio"))
+        h_flex()
+          .items_center()
+          .justify_between()
           .child(
-            div()
-              .text_size(10.5)
-              .text_color(t.dim)
-              .child("Daftar template system directives yang terkonfigurasi di ~/.config/herdr-core/templates/"),
+            h_flex()
+              .gap(6)
+              .items_center()
+              .child(
+                div()
+                  .px(6)
+                  .h(22)
+                  .rounded(4)
+                  .bg(t.raised)
+                  .cursor_pointer()
+                  .hover((s) => s.bg(t.hover).text_color(t.foreground))
+                  .text_color(t.muted)
+                  .text_size(10.5)
+                  .flex()
+                  .items_center()
+                  .on_click((_e, cx) => {
+                    this.closePersonaForm();
+                    cx.notify();
+                  })
+                  .child("« Kembali"),
+              )
+              .child(
+                div()
+                  .font_bold()
+                  .text_size(12.5)
+                  .text_color(t.foreground)
+                  .child(isEdit ? `Edit Persona: ${this.personaEditingId}` : "Tambah Persona Baru"),
+              ),
           ),
       )
+      // Form Fields Container
+      .child(
+        v_flex()
+          .p(10)
+          .gap(9)
+          .rounded(8)
+          .border_1()
+          .border_color(t.border)
+          .bg(t.chrome)
+          // 1. Template ID (File Name)
+          .child(
+            v_flex()
+              .gap(4)
+              .child(
+                h_flex()
+                  .gap(4)
+                  .items_center()
+                  .child(div().text_size(10.5).font_semibold().text_color(t.foreground).child("ID File Template"))
+                  .child(div().text_size(9.5).text_color(t.dim).child("(.md di ~/.config/herdr-core/templates/)")),
+              )
+              .child(
+                h_flex()
+                  .h(28)
+                  .px(8)
+                  .items_center()
+                  .rounded(6)
+                  .border_1()
+                  .border_color(t.border)
+                  .bg(isEdit ? t.raised : t.background)
+                  .child(Input.new(this.formIdInput).flex_1().h_full().text_size(11.5).text_color(t.foreground)),
+              ),
+          )
+          // 2. Display Name
+          .child(
+            v_flex()
+              .gap(4)
+              .child(div().text_size(10.5).font_semibold().text_color(t.foreground).child("Nama Tampilan Agent"))
+              .child(
+                h_flex()
+                  .h(28)
+                  .px(8)
+                  .items_center()
+                  .rounded(6)
+                  .border_1()
+                  .border_color(t.border)
+                  .bg(t.background)
+                  .child(Input.new(this.formNameInput).flex_1().h_full().text_size(11.5).text_color(t.foreground)),
+              ),
+          )
+          // 3. CLI Command
+          .child(
+            v_flex()
+              .gap(4)
+              .child(
+                h_flex()
+                  .justify_between()
+                  .items_center()
+                  .child(div().text_size(10.5).font_semibold().text_color(t.foreground).child("CLI Command yang Dijalankan"))
+                  .child(
+                    h_flex()
+                      .gap(3)
+                      .items_center()
+                      .children(
+                        QUICK_COMMANDS.map((qc) =>
+                          div()
+                            .px(4.5)
+                            .h(16)
+                            .rounded(3)
+                            .bg(t.raised)
+                            .cursor_pointer()
+                            .text_size(9)
+                            .text_color(t.dim)
+                            .hover((s) => s.bg(t.hover).text_color(t.foreground))
+                            .on_click((_e, cx) => {
+                              this.formCmdInput.set_value(qc);
+                              cx.notify();
+                            })
+                            .child(qc),
+                        ),
+                      ),
+                  ),
+              )
+              .child(
+                h_flex()
+                  .h(28)
+                  .px(8)
+                  .items_center()
+                  .rounded(6)
+                  .border_1()
+                  .border_color(t.border)
+                  .bg(t.background)
+                  .child(Input.new(this.formCmdInput).flex_1().h_full().text_size(11.5).text_color(t.foreground)),
+              ),
+          )
+          // 4. Description
+          .child(
+            v_flex()
+              .gap(4)
+              .child(div().text_size(10.5).font_semibold().text_color(t.foreground).child("Deskripsi Singkat Keahlian"))
+              .child(
+                h_flex()
+                  .h(28)
+                  .px(8)
+                  .items_center()
+                  .rounded(6)
+                  .border_1()
+                  .border_color(t.border)
+                  .bg(t.background)
+                  .child(Input.new(this.formDescInput).flex_1().h_full().text_size(11.5).text_color(t.foreground)),
+              ),
+          )
+          // 5. System Directives & Instructions Prompt
+          .child(
+            v_flex()
+              .gap(4)
+              .child(div().text_size(10.5).font_semibold().text_color(t.foreground).child("System Directives / Prompt Instruksi"))
+              .child(
+                div()
+                  .p(6)
+                  .h(140)
+                  .rounded(6)
+                  .border_1()
+                  .border_color(t.border)
+                  .bg(t.background)
+                  .child(Textarea.new(this.formPromptInput).size_full().text_size(11.5).text_color(t.foreground)),
+              ),
+          )
+          // Form Actions
+          .child(
+            h_flex()
+              .mt(4)
+              .gap(6)
+              .justify_end()
+              .child(
+                h_flex()
+                  .h(28)
+                  .px(10)
+                  .items_center()
+                  .rounded(6)
+                  .bg(t.raised)
+                  .cursor_pointer()
+                  .hover((s) => s.bg(t.hover))
+                  .text_color(t.muted)
+                  .text_size(11)
+                  .on_click((_e, cx) => {
+                    this.closePersonaForm();
+                    cx.notify();
+                  })
+                  .child("Batal"),
+              )
+              .child(
+                h_flex()
+                  .h(28)
+                  .px(14)
+                  .gap(5)
+                  .items_center()
+                  .rounded(6)
+                  .bg(t.accent || t.ansi4)
+                  .cursor_pointer()
+                  .hover((s) => s.opacity(0.9))
+                  .text_color(t.accent_foreground || "#ffffff")
+                  .text_size(11)
+                  .font_semibold()
+                  .on_click((_e, cx) => this.savePersona(cx))
+                  .child(svg(`${ICONS}/check.svg`).size(11))
+                  .child(isEdit ? "Perbarui Persona" : "Simpan Persona Baru"),
+              ),
+          ),
+      );
+  }
+
+  renderPersonasStudio(t) {
+    if (this.isPersonaFormOpen) {
+      return this.renderPersonaForm(t);
+    }
+
+    const personas = this.getPersonas();
+
+    return v_flex()
+      .flex_1()
+      .p(10)
+      .gap(10)
+      .overflow_y_scrollbar()
+      // Top Title & Add Button Bar
+      .child(
+        h_flex()
+          .items_center()
+          .justify_between()
+          .child(
+            v_flex()
+              .gap(2)
+              .child(
+                h_flex()
+                  .gap(6)
+                  .items_center()
+                  .child(div().font_bold().text_size(12.5).text_color(t.foreground).child("Persona Templates Studio"))
+                  .child(
+                    div()
+                      .px(5)
+                      .h(15)
+                      .rounded(3)
+                      .bg(t.raised)
+                      .text_size(9.5)
+                      .text_color(t.dim)
+                      .child(`${personas.length} Templates`),
+                  ),
+              )
+              .child(
+                div()
+                  .text_size(10)
+                  .text_color(t.dim)
+                  .child("Kelola, tambah, edit, atau hapus system prompt persona agent."),
+              ),
+          )
+          .child(
+            h_flex()
+              .h(26)
+              .px(8)
+              .gap(4)
+              .items_center()
+              .rounded(6)
+              .bg(t.accent || t.ansi4)
+              .cursor_pointer()
+              .hover((s) => s.opacity(0.9))
+              .text_color(t.accent_foreground || "#ffffff")
+              .on_click((_e, cx) => {
+                this.openCreatePersonaForm();
+                cx.notify();
+              })
+              .child(svg(`${ICONS}/plus.svg`).size(11))
+              .child(div().text_size(11).font_medium().child("Tambah")),
+          ),
+      )
+      // Persona Cards List
       .children(
-        Object.entries(PERSONAS_META).map(([id, meta]) => {
+        personas.map((meta) => {
+          const rawTpl = this.templatesList.find((x) => x.name.toLowerCase() === meta.id) || meta;
+          const isExpanded = this.expandedDirectives.has(meta.id);
+          const isConfirmDelete = this.personaConfirmDeleteId === meta.id;
+
           return v_flex()
+            .id(`persona-card-${meta.id}`)
             .p(8)
             .gap(6)
             .rounded(8)
             .border_1()
-            .border_color(t.border)
+            .border_color(isConfirmDelete ? (t.blocked || "#e06c75") : t.border)
             .bg(t.chrome)
+            // Header Row
             .child(
               h_flex()
                 .gap(7)
@@ -1368,6 +1817,7 @@ export default class AgentManager extends View {
                 .child(
                   v_flex()
                     .flex_1()
+                    .min_w(0)
                     .gap(1)
                     .child(
                       h_flex()
@@ -1386,30 +1836,177 @@ export default class AgentManager extends View {
                             .child(meta.badge),
                         ),
                     )
-                    .child(div().text_size(10).text_color(t.dim).child(`CLI Command: ${meta.cmd}`)),
+                    .child(
+                      h_flex()
+                        .gap(4)
+                        .items_center()
+                        .child(div().text_size(10).text_color(t.dim).child(`CLI: ${meta.cmd}`))
+                        .child(div().text_size(10).text_color(t.dim).child(`· id: ${meta.id}`)),
+                    ),
                 )
+                // Actions (Pakai, Edit, Hapus)
                 .child(
                   h_flex()
-                    .h(24)
-                    .px(8)
-                    .gap(4)
+                    .gap(3)
                     .items_center()
-                    .rounded(5)
-                    .bg(t.raised)
-                    .cursor_pointer()
-                    .hover((s) => s.bg(t.hover).text_color(t.foreground))
-                    .text_color(t.muted)
-                    .text_size(10.5)
-                    .on_click((_e, cx) => {
-                      this.selectedPersona = id;
-                      this.tab = "launch";
-                      cx.notify();
-                    })
-                    .child(svg(`${ICONS}/play.svg`).size(10))
-                    .child("Pakai"),
+                    // Pakai / Launch
+                    .child(
+                      h_flex()
+                        .h(22)
+                        .px(7)
+                        .gap(3)
+                        .items_center()
+                        .rounded(4)
+                        .bg(t.raised)
+                        .cursor_pointer()
+                        .hover((s) => s.bg(t.hover).text_color(t.foreground))
+                        .text_color(t.muted)
+                        .text_size(10.5)
+                        .tooltip("Pilih persona ini di New Mission")
+                        .on_click((_e, cx) => {
+                          this.selectedPersona = meta.id;
+                          this.tab = "launch";
+                          cx.notify();
+                        })
+                        .child(svg(`${ICONS}/play.svg`).size(9.5))
+                        .child("Pakai"),
+                    )
+                    // Edit
+                    .child(
+                      h_flex()
+                        .size(22)
+                        .items_center()
+                        .justify_center()
+                        .rounded(4)
+                        .bg(t.raised)
+                        .cursor_pointer()
+                        .hover((s) => s.bg(t.hover).text_color(t.foreground))
+                        .text_color(t.dim)
+                        .tooltip("Edit direktif dan pengaturan persona")
+                        .on_click((_e, cx) => {
+                          this.openEditPersonaForm(rawTpl);
+                          cx.notify();
+                        })
+                        .child(svg(`${ICONS}/pencil.svg`).size(10.5)),
+                    )
+                    // Hapus
+                    .child(
+                      h_flex()
+                        .size(22)
+                        .items_center()
+                        .justify_center()
+                        .rounded(4)
+                        .bg(t.raised)
+                        .cursor_pointer()
+                        .hover((s) => s.bg(t.hover).text_color(t.blocked || "#e06c75"))
+                        .text_color(t.dim)
+                        .tooltip("Hapus template persona ini")
+                        .on_click((_e, cx) => {
+                          this.personaConfirmDeleteId = isConfirmDelete ? null : meta.id;
+                          cx.notify();
+                        })
+                        .child(svg(`${ICONS}/trash.svg`).size(10.5)),
+                    ),
                 ),
             )
-            .child(div().text_size(11).text_color(t.muted).child(meta.desc));
+            // Description
+            .child(div().text_size(11).text_color(t.muted).child(meta.desc || "Tidak ada deskripsi."))
+            // Directives Toggle
+            .child(
+              h_flex()
+                .gap(4)
+                .items_center()
+                .cursor_pointer()
+                .on_click((_e, cx) => {
+                  if (isExpanded) this.expandedDirectives.delete(meta.id);
+                  else this.expandedDirectives.add(meta.id);
+                  cx.notify();
+                })
+                .child(
+                  svg(`${ICONS}/${isExpanded ? "chevron-down" : "chevron-right"}.svg`)
+                    .size(10)
+                    .text_color(t.dim),
+                )
+                .child(
+                  div()
+                    .text_size(10)
+                    .font_medium()
+                    .text_color(t.dim)
+                    .hover((s) => s.text_color(t.foreground))
+                    .child(isExpanded ? "Tutup System Directives" : "Lihat System Directives"),
+                ),
+            )
+            // Expanded Directives Preview
+            .when(isExpanded, (el) =>
+              el.child(
+                div()
+                  .p(8)
+                  .rounded(6)
+                  .bg(t.background)
+                  .border_1()
+                  .border_color(t.border)
+                  .text_size(10.5)
+                  .text_color(t.dim)
+                  .child(meta.prompt || "Belum ada instruksi prompt tersimpan."),
+              ),
+            )
+            // Confirm Delete Banner
+            .when(isConfirmDelete, (el) =>
+              el.child(
+                h_flex()
+                  .p(6)
+                  .gap(6)
+                  .items_center()
+                  .justify_between()
+                  .rounded(5)
+                  .bg((t.blocked || "#e06c75") + "15")
+                  .border_1()
+                  .border_color((t.blocked || "#e06c75") + "40")
+                  .child(
+                    div()
+                      .text_size(10.5)
+                      .font_medium()
+                      .text_color(t.blocked || "#e06c75")
+                      .child(`Yakin hapus template "${meta.name}"?`),
+                  )
+                  .child(
+                    h_flex()
+                      .gap(4)
+                      .child(
+                        h_flex()
+                          .h(20)
+                          .px(6)
+                          .items_center()
+                          .rounded(4)
+                          .bg(t.raised)
+                          .cursor_pointer()
+                          .hover((s) => s.bg(t.hover))
+                          .text_size(10)
+                          .text_color(t.muted)
+                          .on_click((_e, cx) => {
+                            this.personaConfirmDeleteId = null;
+                            cx.notify();
+                          })
+                          .child("Batal"),
+                      )
+                      .child(
+                        h_flex()
+                          .h(20)
+                          .px(8)
+                          .items_center()
+                          .rounded(4)
+                          .bg(t.blocked || "#e06c75")
+                          .cursor_pointer()
+                          .hover((s) => s.opacity(0.85))
+                          .text_size(10)
+                          .font_semibold()
+                          .text_color("#ffffff")
+                          .on_click((_e, cx) => this.deletePersona(meta.id, cx))
+                          .child("Hapus"),
+                      ),
+                  ),
+              ),
+            );
         }),
       );
   }
