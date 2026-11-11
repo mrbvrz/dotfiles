@@ -689,6 +689,7 @@ export class Agents {
     const when = this.since(a);
     // An agent on another machine (`vps/t7`) says which.
     const machine = a.address.includes("/") ? a.address.split("/")[0] : null;
+    const timeColor = isWorking ? activeColor : (isDone ? doneColor : t.dim);
     return h_flex()
       .id(`ag-${a.address}`)
       .px(8)
@@ -718,7 +719,8 @@ export class Agents {
           div()
             .flex_none()
             .text_size(TEXT.caption)
-            .text_color(t.dim)
+            .text_color(timeColor)
+            .when(isWorking, (d) => d.loop("opacity", { from: 0.45, to: 1, period: 2200 }))
             .child(duration(view.now - when)),
         ),
       )
