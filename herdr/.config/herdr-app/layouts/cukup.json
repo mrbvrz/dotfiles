@@ -252,6 +252,17 @@
         }
       ],
       "resizable": false
+    },
+    {
+      "id": "activity-bar",
+      "type": "block",
+      "content": {
+        "mod": "activity-bar"
+      },
+      "size": {
+        "px": 44
+      },
+      "resizable": false
     }
   ],
   "background": "canvas",
