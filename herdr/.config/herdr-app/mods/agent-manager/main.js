@@ -83,11 +83,11 @@ const PERSONAS_META = {
 };
 
 const PROMPT_SUGGESTIONS = [
-  "Review git diff terakhir dan audit potensi celah keamanan atau bug",
-  "Refactor kode yang berantakan, bersihkan dead code dan unused imports",
-  "Rancang arsitektur komponen UI baru dengan styling modern dan rapi",
-  "Buatkan unit test dan edge-case testing untuk fitur yang baru dibuat",
-  "Optimasi query database lambat dan periksa index yang hilang",
+  "Review the latest git diff and audit potential bugs or security issues",
+  "Refactor messy code, remove dead code and unused imports",
+  "Architect and build a modern, polished UI component with clean styling",
+  "Write comprehensive unit tests and edge-case testing for recent changes",
+  "Optimize slow database queries and inspect missing indexes",
 ];
 
 const QUICK_COMMANDS = ["agy", "claude", "opencode", "codex", "gemini"];
@@ -137,35 +137,35 @@ export default class AgentManager extends View {
     this.searchInput.on("change", (_e, cx) => cx.notify());
 
     this.taskInput = TextareaState.new({
-      placeholder: "Tuliskan instruksi atau tugas spesifik untuk agent di sini...",
+      placeholder: "Enter detailed task instructions or prompt for the agent...",
       rows: 4,
     });
     this.taskInput.on("change", (_e, cx) => cx.notify());
 
     this.msgInput = TextareaState.new({
-      placeholder: "Kirim prompt tambahan atau jawaban...",
+      placeholder: "Send additional instructions or reply...",
       rows: 2,
     });
     this.msgInput.on("change", (_e, cx) => cx.notify());
 
     // CRUD Persona Inputs
     this.formIdInput = InputState.new({
-      placeholder: "ID unik (huruf kecil & tanda hubung, misal: reviewer, tester)...",
+      placeholder: "Unique ID (lowercase & hyphens, e.g. reviewer, tester)...",
     });
     this.formIdInput.on("change", (_e, cx) => cx.notify());
 
     this.formNameInput = InputState.new({
-      placeholder: "Nama Agent (misal: Begu, Code Reviewer)...",
+      placeholder: "Agent Name (e.g. Begu, Code Reviewer)...",
     });
     this.formNameInput.on("change", (_e, cx) => cx.notify());
 
     this.formCmdInput = InputState.new({
-      placeholder: "CLI Command (agy, claude, opencode, codex, dll)...",
+      placeholder: "CLI Command (agy, claude, opencode, codex, etc)...",
     });
     this.formCmdInput.on("change", (_e, cx) => cx.notify());
 
     this.formDescInput = InputState.new({
-      placeholder: "Deskripsi singkat keahlian agent...",
+      placeholder: "Brief description of agent capabilities...",
     });
     this.formDescInput.on("change", (_e, cx) => cx.notify());
 
@@ -321,7 +321,7 @@ export default class AgentManager extends View {
   handleLaunch(cx) {
     const task = this.taskInput.value().trim();
     if (!task) {
-      this.showNotice("Silakan isi instruksi tugas terlebih dahulu.", cx);
+      this.showNotice("Please enter task instructions first.", cx);
       return;
     }
 
@@ -340,26 +340,26 @@ export default class AgentManager extends View {
             argv: ["hc", "run", persona, task],
             name: `${persona}: ${task.slice(0, 16)}...`,
           });
-          notify({ title: `Agent ${persona} Diluncurkan`, body: `Misi dimulai di Tab Baru`, level: "success", timeout: 3000 });
-          this.showNotice(`Agent ${persona} diluncurkan di Tab Baru!`, cx);
+          notify({ title: `Agent ${persona} Launched`, body: `Mission started in New Tab`, level: "success", timeout: 3000 });
+          this.showNotice(`Agent ${persona} launched in New Tab!`, cx);
         } else if (this.launchMode === "split") {
           run("pane.split", {
             direction: "right",
             argv: ["hc", "run", persona, task],
           });
-          notify({ title: `Agent ${persona} Diluncurkan`, body: `Misi dimulai di Split Pane`, level: "success", timeout: 3000 });
-          this.showNotice(`Agent ${persona} diluncurkan di Split Pane!`, cx);
+          notify({ title: `Agent ${persona} Launched`, body: `Mission started in Split Pane`, level: "success", timeout: 3000 });
+          this.showNotice(`Agent ${persona} launched in Split Pane!`, cx);
         } else if (this.launchMode === "bg") {
           await hc(["run", "--bg", "--cwd", folder || "", persona, task]);
-          notify({ title: `Agent ${persona} Diluncurkan`, body: `Misi berjalan di background`, level: "info", timeout: 3000 });
-          this.showNotice(`Agent ${persona} berjalan di latar belakang!`, cx);
+          notify({ title: `Agent ${persona} Launched`, body: `Mission running in background`, level: "info", timeout: 3000 });
+          this.showNotice(`Agent ${persona} running in background!`, cx);
         }
 
         this.taskInput.set_value("");
         this.tab = "cockpit";
         cx.notify();
       } catch (err) {
-        this.showNotice(`Gagal meluncurkan agent: ${err.message || err}`, cx);
+        this.showNotice(`Failed to launch agent: ${err.message || err}`, cx);
       }
     });
   }
@@ -368,10 +368,10 @@ export default class AgentManager extends View {
     cx.spawn(async (cx) => {
       try {
         await hc(["interrupt", address]);
-        notify({ title: "Sinyal Stop", body: `Stop dikirim ke ${address}`, level: "warning", timeout: 2000 });
-        this.showNotice(`Sinyal stop dikirim ke ${address}`, cx);
+        notify({ title: "Stop Signal", body: `Stop sent to ${address}`, level: "warning", timeout: 2000 });
+        this.showNotice(`Stop signal sent to ${address}`, cx);
       } catch (err) {
-        this.showNotice(`Gagal interrupt: ${err.message || err}`, cx);
+        this.showNotice(`Failed to interrupt: ${err.message || err}`, cx);
       }
     });
   }
@@ -380,11 +380,11 @@ export default class AgentManager extends View {
     cx.spawn(async (cx) => {
       try {
         await hc(["kill", address]);
-        notify({ title: "Agent Terminated", body: `Terminal ${address} dihentikan`, level: "info", timeout: 2000 });
-        this.showNotice(`Terminal ${address} telah dihentikan`, cx);
+        notify({ title: "Agent Terminated", body: `Terminal ${address} terminated`, level: "info", timeout: 2000 });
+        this.showNotice(`Terminal ${address} terminated`, cx);
         cx.notify();
       } catch (err) {
-        this.showNotice(`Gagal menghentikan: ${err.message || err}`, cx);
+        this.showNotice(`Failed to terminate: ${err.message || err}`, cx);
       }
     });
   }
@@ -397,11 +397,11 @@ export default class AgentManager extends View {
         await hc(["send", address, text]);
         this.msgInput.set_value("");
         this.activeMessageAgent = null;
-        notify({ title: "Pesan Terkirim", body: `Input diteruskan ke ${address}`, level: "success", timeout: 2000 });
-        this.showNotice(`Pesan terkirim ke ${address}`, cx);
+        notify({ title: "Message Sent", body: `Input forwarded to ${address}`, level: "success", timeout: 2000 });
+        this.showNotice(`Message sent to ${address}`, cx);
         cx.notify();
       } catch (err) {
-        this.showNotice(`Gagal mengirim pesan: ${err.message || err}`, cx);
+        this.showNotice(`Failed to send message: ${err.message || err}`, cx);
       }
     });
   }
@@ -423,8 +423,8 @@ export default class AgentManager extends View {
           await hc(["rm", t.address]);
         }
         await this.loadHistory();
-        notify({ title: "History Cleaned", body: "Seluruh riwayat dibersihkan", level: "info", timeout: 2000 });
-        this.showNotice("Seluruh riwayat terminal selesai dibersihkan", cx);
+        notify({ title: "History Cleared", body: "All finished terminals removed", level: "info", timeout: 2000 });
+        this.showNotice("All finished terminals cleared", cx);
         cx.notify();
       } catch {}
     });
@@ -472,15 +472,15 @@ export default class AgentManager extends View {
     const prompt = this.formPromptInput.value().trim();
 
     if (!id) {
-      this.showNotice("ID Persona tidak boleh kosong.", cx);
+      this.showNotice("Persona ID cannot be empty.", cx);
       return;
     }
     if (!name) {
-      this.showNotice("Nama Agent tidak boleh kosong.", cx);
+      this.showNotice("Agent name cannot be empty.", cx);
       return;
     }
     if (!cmd) {
-      this.showNotice("CLI Command tidak boleh kosong.", cx);
+      this.showNotice("CLI command cannot be empty.", cx);
       return;
     }
 
@@ -488,17 +488,17 @@ export default class AgentManager extends View {
       try {
         const res = await exec("python3", [SCRIPT_PATH, "save", id, name, cmd, desc, prompt]);
         if (res && res.stdout && res.stdout.includes('"ok": true')) {
-          notify({ title: "Persona Tersimpan", body: `${name} (${cmd}) siap digunakan`, level: "success", timeout: 3000 });
-          this.showNotice(`Persona ${name} berhasil disimpan!`, cx);
+          notify({ title: "Persona Saved", body: `${name} (${cmd}) is ready to use`, level: "success", timeout: 3000 });
+          this.showNotice(`Persona ${name} saved successfully!`, cx);
           await this.loadTemplates();
           this.isPersonaFormOpen = false;
           this.personaEditingId = null;
           cx.notify();
         } else {
-          this.showNotice(`Gagal menyimpan: ${res?.stderr || res?.stdout || "Unknown error"}`, cx);
+          this.showNotice(`Failed to save: ${res?.stderr || res?.stdout || "Unknown error"}`, cx);
         }
       } catch (err) {
-        this.showNotice(`Gagal menyimpan persona: ${err.message || err}`, cx);
+        this.showNotice(`Failed to save persona: ${err.message || err}`, cx);
       }
     });
   }
@@ -508,8 +508,8 @@ export default class AgentManager extends View {
       try {
         const res = await exec("python3", [SCRIPT_PATH, "delete", id]);
         if (res && res.stdout && res.stdout.includes('"ok": true')) {
-          notify({ title: "Persona Dihapus", body: `Template ${id} telah dihapus`, level: "info", timeout: 2500 });
-          this.showNotice(`Template ${id} berhasil dihapus!`, cx);
+          notify({ title: "Persona Deleted", body: `Template ${id} has been deleted`, level: "info", timeout: 2500 });
+          this.showNotice(`Template ${id} deleted successfully!`, cx);
           this.personaConfirmDeleteId = null;
           await this.loadTemplates();
           if (this.selectedPersona === id) {
@@ -517,10 +517,10 @@ export default class AgentManager extends View {
           }
           cx.notify();
         } else {
-          this.showNotice(`Gagal menghapus: ${res?.stderr || res?.stdout || "Unknown error"}`, cx);
+          this.showNotice(`Failed to delete: ${res?.stderr || res?.stdout || "Unknown error"}`, cx);
         }
       } catch (err) {
-        this.showNotice(`Gagal menghapus persona: ${err.message || err}`, cx);
+        this.showNotice(`Failed to delete persona: ${err.message || err}`, cx);
       }
     });
   }
@@ -586,7 +586,7 @@ export default class AgentManager extends View {
                     .flex()
                     .items_center()
                     .cursor_pointer()
-                    .tooltip("Ada agent yang butuh keputusan Anda!")
+                    .tooltip("Agent needs your decision!")
                     .on_click((_e, cx) => {
                       this.tab = "cockpit";
                       this.filterStatus = "blocked";
@@ -902,7 +902,7 @@ export default class AgentManager extends View {
               .cursor_pointer()
               .hover((s) => s.bg(t.hover).text_color(t.foreground))
               .text_color(t.muted)
-              .tooltip("Buka dan fokus ke terminal pane")
+              .tooltip("Focus terminal pane")
               .on_click(() => {
                 if (agent.pane) {
                   try {
@@ -931,7 +931,7 @@ export default class AgentManager extends View {
               .cursor_pointer()
               .hover((s) => s.bg(t.hover).text_color(t.foreground))
               .text_color(t.muted)
-              .tooltip("Intip layar terminal tanpa berpindah pane")
+              .tooltip("Peek terminal screen without switching pane")
               .on_click(() => run("terminal.peek", { terminal: agent.address }))
               .child(svg(`${ICONS}/search.svg`).size(11))
               .child(div().text_size(10.5).child("Peek")),
@@ -948,7 +948,7 @@ export default class AgentManager extends View {
               .cursor_pointer()
               .hover((s) => s.bg(t.hover).text_color(t.foreground))
               .text_color(isMsgOpen ? (t.accent || t.foreground) : t.muted)
-              .tooltip("Kirim teks / feedback prompt ke agent ini")
+              .tooltip("Send prompt or input to this agent")
               .on_click((_e, cx) => {
                 this.activeMessageAgent = isMsgOpen ? null : agent.address;
                 this.msgInput.set_value("");
@@ -969,7 +969,7 @@ export default class AgentManager extends View {
               .cursor_pointer()
               .hover((s) => s.bg(t.hover).text_color(t.blocked || "#e06c75"))
               .text_color(t.dim)
-              .tooltip("Stop / Interrupt langkah agent saat ini")
+              .tooltip("Stop / Interrupt current agent action")
               .on_click((_e, cx) => this.handleInterrupt(agent.address, cx))
               .child(svg(`${ICONS}/stop.svg`).size(11)),
           )
@@ -984,7 +984,7 @@ export default class AgentManager extends View {
               .cursor_pointer()
               .hover((s) => s.bg(t.hover).text_color(t.foreground))
               .text_color(agent.pinned ? (t.accent || t.ansi4) : t.dim)
-              .tooltip(agent.pinned ? "Lepas pin" : "Pin ke paling atas")
+              .tooltip(agent.pinned ? "Unpin" : "Pin to top")
               .on_click((_e, cx) => {
                 run("terminal.pin", { terminal: agent.address, pinned: !agent.pinned });
                 cx.notify();
@@ -1002,7 +1002,7 @@ export default class AgentManager extends View {
               .cursor_pointer()
               .hover((s) => s.bg(t.hover).text_color(t.blocked || "#e06c75"))
               .text_color(t.dim)
-              .tooltip("Matikan dan tutup terminal agent")
+              .tooltip("Terminate and close agent terminal")
               .on_click((_e, cx) => this.handleKill(agent.address, cx))
               .child(svg(`${ICONS}/trash.svg`).size(11)),
           ),
@@ -1045,7 +1045,7 @@ export default class AgentManager extends View {
                       this.activeMessageAgent = null;
                       cx.notify();
                     })
-                    .child("Batal"),
+                    .child("Cancel"),
                 )
                 .child(
                   h_flex()
@@ -1062,7 +1062,7 @@ export default class AgentManager extends View {
                     .text_color(t.accent_foreground || "#ffffff")
                     .on_click((_e, cx) => this.handleSendMessage(agent.address, cx))
                     .child(svg(`${ICONS}/send.svg`).size(10))
-                    .child("Kirim"),
+                    .child("Send"),
                 ),
             ),
         ),
@@ -1235,7 +1235,7 @@ export default class AgentManager extends View {
                 .text_size(13)
                 .font_medium()
                 .text_color(t.muted)
-                .child(q || this.filterStatus !== "all" ? "Tidak ada agent yang cocok dengan filter" : "Belum ada agent aktif yang berjalan"),
+                .child(q || this.filterStatus !== "all" ? "No agents matching filter" : "No active agents running"),
             )
             .child(
               div()
@@ -1243,7 +1243,7 @@ export default class AgentManager extends View {
                 .text_color(t.dim)
                 .text_center()
                 .max_w(260)
-                .child("Luncurkan tugas baru dengan memilih salah satu Persona template tangguh."),
+                .child("Launch a new task by selecting a persona template."),
             )
             .child(
               h_flex()
@@ -1264,7 +1264,7 @@ export default class AgentManager extends View {
                   cx.notify();
                 })
                 .child(svg(`${ICONS}/play.svg`).size(11))
-                .child("Luncurkan Agent Baru"),
+                .child("Launch New Mission"),
             ),
         ),
       )
@@ -1315,7 +1315,7 @@ export default class AgentManager extends View {
             h_flex()
               .items_center()
               .justify_between()
-              .child(div().text_size(11).font_bold().text_color(t.foreground).child("1. PILIH PERSONA AGENT"))
+              .child(div().text_size(11).font_bold().text_color(t.foreground).child("1. SELECT AGENT PERSONA"))
               .child(
                 div()
                   .text_size(10.5)
@@ -1326,7 +1326,7 @@ export default class AgentManager extends View {
                     this.tab = "personas";
                     cx.notify();
                   })
-                  .child("Kelola Persona »"),
+                  .child("Manage Personas »"),
               ),
           )
           .child(
@@ -1394,12 +1394,12 @@ export default class AgentManager extends View {
       .child(
         v_flex()
           .gap(6)
-          .child(div().text_size(11).font_bold().text_color(t.foreground).child("2. WORKSPACE & MODE EKSEKUSI"))
+          .child(div().text_size(11).font_bold().text_color(t.foreground).child("2. WORKSPACE & EXECUTION MODE"))
           .child(
             h_flex()
               .gap(6)
               .items_center()
-              .child(modeChip("tab", "Tab Baru", "play.svg"))
+              .child(modeChip("tab", "New Tab", "play.svg"))
               .child(modeChip("split", "Split Pane", "terminal.svg"))
               .child(modeChip("bg", "Background Worker", "refresh.svg")),
           )
@@ -1422,7 +1422,7 @@ export default class AgentManager extends View {
                     .font_medium()
                     .text_color(t.foreground)
                     .truncate()
-                    .child(activeSpace?.name || "Workspace Aktif"),
+                    .child(activeSpace?.name || "Active Workspace"),
                 ),
             ),
           ),
@@ -1435,7 +1435,7 @@ export default class AgentManager extends View {
             h_flex()
               .justify_between()
               .items_center()
-              .child(div().text_size(11).font_bold().text_color(t.foreground).child("3. INSTRUKSI & PROMPT TUGAS"))
+              .child(div().text_size(11).font_bold().text_color(t.foreground).child("3. TASK INSTRUCTIONS & PROMPT"))
               .child(
                 div()
                   .text_size(10.5)
@@ -1463,7 +1463,7 @@ export default class AgentManager extends View {
           .child(
             v_flex()
               .gap(4)
-              .child(div().text_size(10).text_color(t.dim).child("Template Cepat:"))
+              .child(div().text_size(10).text_color(t.dim).child("Quick Suggestions:"))
               .children(
                 PROMPT_SUGGESTIONS.map((sug) =>
                   div()
@@ -1501,7 +1501,7 @@ export default class AgentManager extends View {
           .text_size(12)
           .on_click((_e, cx) => this.handleLaunch(cx))
           .child(svg(`${ICONS}/play.svg`).size(13))
-          .child(`Dispatch Mission ke ${personas.find((p) => p.id === this.selectedPersona)?.name || "Agent"}`),
+          .child(`Dispatch Mission to ${personas.find((p) => p.id === this.selectedPersona)?.name || "Agent"}`),
       );
   }
 
@@ -1540,14 +1540,14 @@ export default class AgentManager extends View {
                     this.closePersonaForm();
                     cx.notify();
                   })
-                  .child("« Kembali"),
+                  .child("« Back"),
               )
               .child(
                 div()
                   .font_bold()
                   .text_size(12.5)
                   .text_color(t.foreground)
-                  .child(isEdit ? `Edit Persona: ${this.personaEditingId}` : "Tambah Persona Baru"),
+                  .child(isEdit ? `Edit Persona: ${this.personaEditingId}` : "Add New Persona"),
               ),
           ),
       )
@@ -1568,8 +1568,8 @@ export default class AgentManager extends View {
                 h_flex()
                   .gap(4)
                   .items_center()
-                  .child(div().text_size(10.5).font_semibold().text_color(t.foreground).child("ID File Template"))
-                  .child(div().text_size(9.5).text_color(t.dim).child("(.md di ~/.config/herdr-core/templates/)")),
+                  .child(div().text_size(10.5).font_semibold().text_color(t.foreground).child("Template File ID"))
+                  .child(div().text_size(9.5).text_color(t.dim).child("(.md in ~/.config/herdr-core/templates/)")),
               )
               .child(
                 h_flex()
@@ -1587,7 +1587,7 @@ export default class AgentManager extends View {
           .child(
             v_flex()
               .gap(4)
-              .child(div().text_size(10.5).font_semibold().text_color(t.foreground).child("Nama Tampilan Agent"))
+              .child(div().text_size(10.5).font_semibold().text_color(t.foreground).child("Agent Display Name"))
               .child(
                 h_flex()
                   .h(28)
@@ -1608,7 +1608,7 @@ export default class AgentManager extends View {
                 h_flex()
                   .justify_between()
                   .items_center()
-                  .child(div().text_size(10.5).font_semibold().text_color(t.foreground).child("CLI Command yang Dijalankan"))
+                  .child(div().text_size(10.5).font_semibold().text_color(t.foreground).child("CLI Command"))
                   .child(
                     h_flex()
                       .gap(3)
@@ -1649,7 +1649,7 @@ export default class AgentManager extends View {
           .child(
             v_flex()
               .gap(4)
-              .child(div().text_size(10.5).font_semibold().text_color(t.foreground).child("Deskripsi Singkat Keahlian"))
+              .child(div().text_size(10.5).font_semibold().text_color(t.foreground).child("Short Description"))
               .child(
                 h_flex()
                   .h(28)
@@ -1666,7 +1666,7 @@ export default class AgentManager extends View {
           .child(
             v_flex()
               .gap(4)
-              .child(div().text_size(10.5).font_semibold().text_color(t.foreground).child("System Directives / Prompt Instruksi"))
+              .child(div().text_size(10.5).font_semibold().text_color(t.foreground).child("System Directives & Instructions"))
               .child(
                 div()
                   .p(6)
@@ -1699,7 +1699,7 @@ export default class AgentManager extends View {
                     this.closePersonaForm();
                     cx.notify();
                   })
-                  .child("Batal"),
+                  .child("Cancel"),
               )
               .child(
                 h_flex()
@@ -1716,7 +1716,7 @@ export default class AgentManager extends View {
                   .font_semibold()
                   .on_click((_e, cx) => this.savePersona(cx))
                   .child(svg(`${ICONS}/check.svg`).size(11))
-                  .child(isEdit ? "Perbarui Persona" : "Simpan Persona Baru"),
+                  .child(isEdit ? "Update Persona" : "Save Persona"),
               ),
           ),
       );
@@ -1762,7 +1762,7 @@ export default class AgentManager extends View {
                 div()
                   .text_size(10)
                   .text_color(t.dim)
-                  .child("Kelola, tambah, edit, atau hapus system prompt persona agent."),
+                  .child("Manage, create, edit, or delete agent persona system prompts."),
               ),
           )
           .child(
@@ -1781,7 +1781,7 @@ export default class AgentManager extends View {
                 cx.notify();
               })
               .child(svg(`${ICONS}/plus.svg`).size(11))
-              .child(div().text_size(11).font_medium().child("Tambah")),
+              .child(div().text_size(11).font_medium().child("New Persona")),
           ),
       )
       // Persona Cards List
@@ -1844,12 +1844,12 @@ export default class AgentManager extends View {
                         .child(div().text_size(10).text_color(t.dim).child(`· id: ${meta.id}`)),
                     ),
                 )
-                // Actions (Pakai, Edit, Hapus)
+                // Actions (Use, Edit, Delete)
                 .child(
                   h_flex()
                     .gap(3)
                     .items_center()
-                    // Pakai / Launch
+                    // Use / Launch
                     .child(
                       h_flex()
                         .h(22)
@@ -1862,14 +1862,14 @@ export default class AgentManager extends View {
                         .hover((s) => s.bg(t.hover).text_color(t.foreground))
                         .text_color(t.muted)
                         .text_size(10.5)
-                        .tooltip("Pilih persona ini di New Mission")
+                        .tooltip("Select this persona in New Mission")
                         .on_click((_e, cx) => {
                           this.selectedPersona = meta.id;
                           this.tab = "launch";
                           cx.notify();
                         })
                         .child(svg(`${ICONS}/play.svg`).size(9.5))
-                        .child("Pakai"),
+                        .child("Use"),
                     )
                     // Edit
                     .child(
@@ -1882,14 +1882,14 @@ export default class AgentManager extends View {
                         .cursor_pointer()
                         .hover((s) => s.bg(t.hover).text_color(t.foreground))
                         .text_color(t.dim)
-                        .tooltip("Edit direktif dan pengaturan persona")
+                        .tooltip("Edit persona directives and settings")
                         .on_click((_e, cx) => {
                           this.openEditPersonaForm(rawTpl);
                           cx.notify();
                         })
                         .child(svg(`${ICONS}/pencil.svg`).size(10.5)),
                     )
-                    // Hapus
+                    // Delete
                     .child(
                       h_flex()
                         .size(22)
@@ -1900,7 +1900,7 @@ export default class AgentManager extends View {
                         .cursor_pointer()
                         .hover((s) => s.bg(t.hover).text_color(t.blocked || "#e06c75"))
                         .text_color(t.dim)
-                        .tooltip("Hapus template persona ini")
+                        .tooltip("Delete this persona template")
                         .on_click((_e, cx) => {
                           this.personaConfirmDeleteId = isConfirmDelete ? null : meta.id;
                           cx.notify();
@@ -1910,7 +1910,7 @@ export default class AgentManager extends View {
                 ),
             )
             // Description
-            .child(div().text_size(11).text_color(t.muted).child(meta.desc || "Tidak ada deskripsi."))
+            .child(div().text_size(11).text_color(t.muted).child(meta.desc || "No description."))
             // Directives Toggle
             .child(
               h_flex()
@@ -1933,7 +1933,7 @@ export default class AgentManager extends View {
                     .font_medium()
                     .text_color(t.dim)
                     .hover((s) => s.text_color(t.foreground))
-                    .child(isExpanded ? "Tutup System Directives" : "Lihat System Directives"),
+                    .child(isExpanded ? "Hide System Directives" : "View System Directives"),
                 ),
             )
             // Expanded Directives Preview
@@ -1947,7 +1947,7 @@ export default class AgentManager extends View {
                   .border_color(t.border)
                   .text_size(10.5)
                   .text_color(t.dim)
-                  .child(meta.prompt || "Belum ada instruksi prompt tersimpan."),
+                  .child(meta.prompt || "No prompt instructions stored."),
               ),
             )
             // Confirm Delete Banner
@@ -1967,7 +1967,7 @@ export default class AgentManager extends View {
                       .text_size(10.5)
                       .font_medium()
                       .text_color(t.blocked || "#e06c75")
-                      .child(`Yakin hapus template "${meta.name}"?`),
+                      .child(`Delete persona template "${meta.name}"?`),
                   )
                   .child(
                     h_flex()
@@ -1987,7 +1987,7 @@ export default class AgentManager extends View {
                             this.personaConfirmDeleteId = null;
                             cx.notify();
                           })
-                          .child("Batal"),
+                          .child("Cancel"),
                       )
                       .child(
                         h_flex()
@@ -2002,7 +2002,7 @@ export default class AgentManager extends View {
                           .font_semibold()
                           .text_color("#ffffff")
                           .on_click((_e, cx) => this.deletePersona(meta.id, cx))
-                          .child("Hapus"),
+                          .child("Delete"),
                       ),
                   ),
               ),
@@ -2026,8 +2026,8 @@ export default class AgentManager extends View {
           .child(
             v_flex()
               .gap(1)
-              .child(div().font_bold().text_size(12).text_color(t.foreground).child("Riwayat Terminal Selesai"))
-              .child(div().text_size(10.5).text_color(t.dim).child(`${this.historyList.length} terminal finished`)),
+              .child(div().font_bold().text_size(12).text_color(t.foreground).child("Finished Terminal History"))
+              .child(div().text_size(10.5).text_color(t.dim).child(`${this.historyList.length} finished terminals`)),
           )
           .when(this.historyList.length > 0, (el) =>
             el.child(
@@ -2056,7 +2056,7 @@ export default class AgentManager extends View {
             .justify_center()
             .gap(8)
             .child(svg(`${ICONS}/terminal.svg`).size(32).text_color(t.dim))
-            .child(div().text_size(12).text_color(t.dim).child("Tidak ada riwayat terminal yang tersimpan")),
+            .child(div().text_size(12).text_color(t.dim).child("No finished terminals recorded")),
         ),
       )
       .children(
@@ -2099,7 +2099,7 @@ export default class AgentManager extends View {
                 .justify_center()
                 .text_color(t.dim)
                 .hover((s) => s.bg(t.hover).text_color(t.blocked || "#e06c75"))
-                .tooltip("Hapus terminal ini dari riwayat")
+                .tooltip("Remove this terminal from history")
                 .on_click((_e, cx) => this.handleRemoveHistory(hist.address, cx))
                 .child(svg(`${ICONS}/trash.svg`).size(11)),
             );
