@@ -25,7 +25,6 @@ function unescapeLsof(s) {
   return s.replace(/\\x([0-9a-fA-F]{2})/g, (_m, h) => String.fromCharCode(parseInt(h, 16)));
 }
 
-
 // ---- Tunnel providers -------------------------------------------------
 const TUNNEL_DIR = () => `${home()}/.config/herdr-app/tunnels`;
 const TUNNEL_STATE = () => `${home()}/.config/herdr-app/tunnels.json`;
@@ -33,35 +32,22 @@ const shq = (x) => `'${String(x).replace(/'/g, `'\\''`)}'`;
 
 const PROVIDERS = [
   {
-    id: "cloudflare", label: "Cloudflare", bin: "cloudflared", probe: ["region1.v2.argotunnel.com", 7844], hint: "brew install cloudflared",
+    id: "cloudflare", label: "Cloudflare", bin: "cloudflared", hint: "brew install cloudflared",
     args: (p) => ["tunnel", "--no-autoupdate", "--url", `http://localhost:${p}`],
     url: /(https:\/\/[a-z0-9-]+\.trycloudflare\.com)/i,
     err: /(ERR|failed|error)/i,
-    setup: {
-      note: "Quick tunnel: no account or login needed. URL is random and changes every run.",
-      steps: [["Install", "brew install cloudflared"], ["Optional: custom domain", "cloudflared tunnel login"]],
-    },
   },
   {
-    id: "ngrok", label: "ngrok", bin: "ngrok", probe: ["connect.ngrok-agent.com", 443], hint: "brew install ngrok && ngrok config add-authtoken <token>",
+    id: "ngrok", label: "ngrok", bin: "ngrok", hint: "brew install ngrok && ngrok config add-authtoken <token>",
     args: (p) => ["http", String(p), "--log=stdout", "--log-format=logfmt"],
     url: /\burl=(https:\/\/\S+)/i,
     err: /(ERR_NGROK_\d+|authentication failed|err=)/i,
-    needsAuth: true,
-    setup: {
-      note: "Needs a free account. Copy your authtoken from dashboard.ngrok.com/get-started/your-authtoken.",
-      steps: [["Install", "brew install ngrok"], ["Add authtoken (once)", "ngrok config add-authtoken <TOKEN>"]],
-    },
   },
   {
-    id: "localhostrun", label: "localhost.run", bin: "ssh", probe: ["localhost.run", 22], hint: "uses ssh (no install)",
+    id: "localhostrun", label: "localhost.run", bin: "ssh", hint: "uses ssh (no install)",
     args: (p) => ["-o", "StrictHostKeyChecking=accept-new", "-o", "ServerAliveInterval=30", "-o", "ExitOnForwardFailure=yes", "-R", `80:localhost:${p}`, "nokey@localhost.run"],
     url: /(https:\/\/[a-z0-9-]+\.lhr\.life)/i,
     err: /(denied|refused|failed|error)/i,
-    setup: {
-      note: "No install, no account. Uses plain ssh; URL changes every run.",
-      steps: [["Test connection", "ssh -R 80:localhost:3000 nokey@localhost.run"]],
-    },
   },
 ];
 
@@ -70,19 +56,6 @@ async function resolveBin(name) {
   const r = await exec("/bin/sh", ["-c", script]).catch(() => null);
   const out = String(r?.stdout || "").trim().split("\n")[0];
   return out || null;
-}
-
-async function reachable(host, port) {
-  const r = await exec("/usr/bin/nc", ["-z", "-w", "4", host, String(port)], { timeout: 8000 }).catch(() => null);
-  return r?.code === 0;
-}
-
-async function ngrokAuthed() {
-  const h = home();
-  const files = [`${h}/Library/Application Support/ngrok/ngrok.yml`, `${h}/.config/ngrok/ngrok.yml`, `${h}/.ngrok2/ngrok.yml`];
-  const script = `for f in "$@"; do grep -qs '^[[:space:]]*authtoken:' "$f" && exit 0; done; exit 1`;
-  const r = await exec("/bin/sh", ["-c", script, "sh", ...files]).catch(() => null);
-  return r?.code === 0;
 }
 
 async function loadTunnels() {
@@ -154,8 +127,8 @@ async function listPorts() {
   for (const r of rows) {
     const key = `${r.pid}:${r.port}`;
     const prev = seen.get(key);
-    if (!prev) seen.set(key, { ...r, local: /^(127\.|\[?::1\]?|localhost)/.test(r.addr) });
-    else if (!/^(127\.|\[?::1\]?)/.test(r.addr)) prev.local = false;
+    if (!prev) seen.set(key, { ...r, local: /^(127\.|[\[]?::1[\]]?|localhost)/.test(r.addr) });
+    else if (!/^(127\.|[\[]?::1[\]]?)/.test(r.addr)) prev.local = false;
   }
   const list = [...seen.values()].sort((a, b) => a.port - b.port);
 
@@ -186,10 +159,6 @@ export default class PortsMod extends View {
     this.bins = {};
     this.pickKey = null;
     this.starting = new Set();
-    this.ngrokAuth = false;
-    this.reach = {};
-    this.checking = false;
-    try { this.setupOpen = localStorage.getItem(`${NAME}.setup`); } catch { this.setupOpen = null; }
 
     this.search = InputState.new({ placeholder: "Filter port, process, command..." });
     this.search.on("change", (_e, cx) => {
@@ -198,38 +167,17 @@ export default class PortsMod extends View {
     });
 
     this.refresh(cx);
-    cx.timer.every(4000, () => { this.refresh(cx, true); this.pollTunnels(cx); });
+    cx.timer.every(4000, () => {
+      this.refresh(cx, true);
+      this.pollTunnels(cx);
+    });
 
     cx.spawn(async (cx) => {
       for (const p of PROVIDERS) this.bins[p.id] = await resolveBin(p.bin);
-      this.ngrokAuth = await ngrokAuthed();
-      cx.notify();
-      await this.checkProviders(cx);
       this.tunnels = await loadTunnels();
       await this.pollTunnels(cx);
       cx.notify();
     });
-  }
-
-  async checkProviders(cx) {
-    if (this.checking) return;
-    this.checking = true;
-    for (const p of PROVIDERS) this.reach[p.id] = null;
-    cx.notify();
-    try {
-      this.bins = {};
-      for (const p of PROVIDERS) this.bins[p.id] = await resolveBin(p.bin);
-      this.ngrokAuth = await ngrokAuthed();
-      await Promise.all(
-        PROVIDERS.map(async (p) => {
-          this.reach[p.id] = this.bins[p.id] ? await reachable(p.probe[0], p.probe[1]) : false;
-          cx.notify();
-        })
-      );
-    } finally {
-      this.checking = false;
-      cx.notify();
-    }
   }
 
   async pollTunnels(cx) {
@@ -313,8 +261,21 @@ export default class PortsMod extends View {
     notify({ title: "Public URL copied", body: t.url, level: "info", timeout: 1800 });
   }
 
-  openUrl(t, cx) {
-    if (t.url) cx.spawn(async () => { await exec("/usr/bin/open", [t.url]).catch(() => {}); });
+  openUrl(tun, cx) {
+    if (!tun.url) return;
+    notify({ title: "Opening Browser", body: tun.url, level: "info", timeout: 1500 });
+    const doOpen = async () => {
+      try {
+        await exec("/usr/bin/open", [tun.url]);
+      } catch {
+        await exec("open", [tun.url]).catch(() => {});
+      }
+    };
+    if (cx && typeof cx.spawn === "function") {
+      cx.spawn(async () => { await doOpen(); });
+    } else {
+      doOpen();
+    }
   }
 
   refresh(cx, quiet = false) {
@@ -374,9 +335,22 @@ export default class PortsMod extends View {
   }
 
   openBrowser(r, cx) {
-    cx.spawn(async () => {
-      await sh("open", [`http://localhost:${r.port}`]).catch(() => {});
-    });
+    const url = `http://localhost:${r.port}`;
+    notify({ title: "Opening Browser", body: url, level: "info", timeout: 1500 });
+    const doOpen = async () => {
+      try {
+        await exec("/usr/bin/open", [url]);
+      } catch (e) {
+        await exec("open", [url]).catch((err) => {
+          notify({ title: "Open failed", body: String(err?.message ?? err), level: "error" });
+        });
+      }
+    };
+    if (cx && typeof cx.spawn === "function") {
+      cx.spawn(async () => { await doOpen(); });
+    } else {
+      doOpen();
+    }
   }
 
   copyPort(r, cx) {
@@ -386,7 +360,7 @@ export default class PortsMod extends View {
 
   isDev(r) {
     if (KNOWN[r.port]) return true;
-    return r.port >= 3000 && r.port < 10000 || r.port >= 10000 && !!r.local && r.port < 65000 && /node|php|python|ruby|bun|deno|java|go|vite|docker|nginx|artisan/i.test(r.full || r.cmd);
+    return (r.port >= 3000 && r.port < 10000) || (r.port >= 10000 && !!r.local && r.port < 65000 && /node|php|python|ruby|bun|deno|java|go|vite|docker|nginx|artisan/i.test(r.full || r.cmd));
   }
 
   iconBtn(id, icon, tip, t, color, onClick) {
@@ -455,7 +429,7 @@ export default class PortsMod extends View {
             h_flex()
               .gap(2)
               .flex_none()
-              .child(this.iconBtn(`o-${key}`, "mods/ports/icons/open.svg", `Open http://localhost:${r.port}`, t, null, () => this.openBrowser(r, cx)))
+              .child(this.iconBtn(`o-${key}`, "mods/ports/icons/open.svg", `Open http://localhost:${r.port} in default browser`, t, null, (_e, cx) => this.openBrowser(r, cx)))
               .child(this.iconBtn(`c-${key}`, "mods/filetree/copy.svg", "Copy port", t, null, (_e, cx) => this.copyPort(r, cx)))
               .child(
                 this.iconBtn(
@@ -531,157 +505,6 @@ export default class PortsMod extends View {
             .text_color(t.dim)
             .truncate()
             .child(r.full)
-        )
-      );
-  }
-
-  providerState(p) {
-    const live = this.tunnels.filter((x) => x.provider === p.id && x.status === "live");
-    if (live.length) return { key: "connected", label: `Connected${live.length > 1 ? ` (${live.length})` : ` :${live[0].port}`}`, ok: true, live: true };
-    if (!this.bins[p.id]) return { key: "missing", label: "Not installed", ok: false };
-    if (p.needsAuth && !this.ngrokAuth) return { key: "auth", label: "Needs authtoken", ok: false };
-    if (this.tunnels.some((x) => x.provider === p.id && x.status === "starting")) return { key: "starting", label: "Connecting...", ok: true };
-    const r = this.reach[p.id];
-    if (r === null || r === undefined) return { key: "checking", label: "Checking...", ok: true };
-    if (r === false) return { key: "offline", label: "Unreachable", ok: false };
-    return { key: "ready", label: "Ready, not connected", ok: true };
-  }
-
-  isSetupOpen() {
-    if (this.setupOpen === "1") return true;
-    return this.setupOpen !== "0";
-  }
-
-  renderSetup(t, cx) {
-    const open = this.isSetupOpen();
-    const good = t.done ?? "#74BBA2";
-    const warn = t.accent2 ?? "#d9a441";
-    const head = h_flex()
-      .id("setup-head")
-      .items_center()
-      .justify_between()
-      .px(8)
-      .py(6)
-      .cursor_pointer()
-      .rounded(6)
-      .hover((s) => s.bg(t.hover))
-      .on_click((_e, cx) => {
-        this.setupOpen = open ? "0" : "1";
-        try { localStorage.setItem(`${NAME}.setup`, this.setupOpen); } catch {}
-        cx.notify();
-      })
-      .child(
-        h_flex()
-          .gap(6)
-          .items_center()
-          .child(div().text_size(11).text_color(t.dim).child(open ? "▾" : "▸"))
-          .child(div().text_size(11.5).font_medium().text_color(t.foreground).child("Tunnel setup"))
-      )
-      .child(
-        h_flex()
-          .gap(8)
-          .children(
-            PROVIDERS.map((p) => {
-              const st = this.providerState(p);
-              const c = st.live ? good : st.ok ? t.dim : warn;
-              return div().text_size(10).text_color(c).child(`${st.live ? "●" : "○"} ${p.label}`);
-            })
-          )
-      );
-
-    const cmd = (id, label, command) =>
-      v_flex()
-        .gap(2)
-        .child(div().text_size(10.5).text_color(t.dim).child(label))
-        .child(
-          h_flex()
-            .id(id)
-            .items_center()
-            .gap(6)
-            .rounded(5)
-            .px(8)
-            .py(4)
-            .bg(t.chrome)
-            .border(1)
-            .border_color(t.border)
-            .cursor_pointer()
-            .hover((s) => s.bg(t.hover))
-            .tooltip("Click to copy")
-            .on_click((_e, cx) => {
-              cx.write_to_clipboard(command);
-              notify({ title: "Copied", body: command, level: "info", timeout: 1500 });
-            })
-            .child(div().flex_1().min_w(0).truncate().text_size(11).font_family(monoFont()).text_color(t.foreground).child(command))
-            .child(svg("mods/filetree/copy.svg").size(12).text_color(t.dim))
-        );
-
-    return v_flex()
-      .rounded(8)
-      .border(1)
-      .border_color(t.border)
-      .bg(t.surface ?? t.chrome)
-      .child(head)
-      .when(open, (el) =>
-        el.child(
-          v_flex()
-            .px(8)
-            .pb(8)
-            .gap(10)
-            .child(
-              v_flex()
-                .gap(6)
-                .child(div().text_size(10.5).text_color(t.dim).child("Press the globe icon on a port to share it."))
-                .child(div().text_size(10.5).text_color(t.dim).child("● green = tunnel connected   ○ = not connected"))
-                .child(
-                  div()
-                    .id("setup-recheck")
-                    .px(8)
-                    .py(3)
-                    .w(86)
-                    .flex()
-                    .justify_center()
-                    .rounded(6)
-                    .border(1)
-                    .border_color(t.border)
-                    .cursor_pointer()
-                    .text_size(11)
-                    .text_color(t.foreground)
-                    .hover((s) => s.bg(t.hover))
-                    .tooltip("Re-check installs, authtoken and network reachability")
-                    .on_click((_e, cx) => cx.spawn(async (cx) => { await this.checkProviders(cx); }))
-                    .child(this.checking ? "Checking..." : "Re-check")
-                )
-            )
-            .children(
-              PROVIDERS.map((p) => {
-                const st = this.providerState(p);
-                return v_flex()
-                  .gap(5)
-                  .child(
-                    h_flex()
-                      .items_center()
-                      .gap(6)
-                      .child(div().text_size(11.5).font_semibold().text_color(t.foreground).child(p.label))
-                      .child(
-                        div()
-                          .px(5)
-                          .py(1)
-                          .rounded(4)
-                          .bg(t.selected)
-                          .text_size(10)
-                          .text_color(st.live ? good : st.ok ? t.dim : warn)
-                          .child(st.label)
-                      )
-                  )
-                  .child(div().text_size(10.5).text_color(t.dim).child(p.setup.note))
-                  .children(
-                    p.setup.steps
-                      .filter(([label]) => !(st.key !== "missing" && st.key !== "auth" && /^Install|Add authtoken/.test(label)))
-                      .filter(([label]) => !(st.key === "auth" && /^Install/.test(label)))
-                      .map(([label, command], i) => cmd(`setup-${p.id}-${i}`, label, command))
-                  );
-              })
-            )
         )
       );
   }
@@ -777,7 +600,6 @@ export default class PortsMod extends View {
         v_flex()
           .p(10)
           .gap(8)
-          .child(this.renderSetup(t, cx))
           .child(Input.new(this.search).h(28).text_size(12).text_color(t.foreground))
           .child(
             h_flex()
