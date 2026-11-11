@@ -315,12 +315,15 @@ export class Agents {
   subRow(t, s, shown, compact) {
     const k = s.t;
     const st = kidStatus(k, this.listed);
-    const pic = icon(k.program, 11, t.dim, k);
+    const rawSt = this.listed?.get(k.address) ?? k.status;
     const on = k.address === shown;
-    const isWorking = st === "working";
-    const isDone = st === "done";
+    const isWorking = st === "working" || rawSt === "working";
+    const isDone = st === "done" || rawSt === "done";
     const activeColor = t.accent ?? t.working ?? "#E6A854";
     const doneColor = t.done ?? t.ansi2 ?? "#74BBA2";
+    const iconColor = isWorking ? activeColor : (isDone ? doneColor : t.dim);
+    const pic = icon(k.program, 11, iconColor, k);
+    const textColor = isWorking ? activeColor : (isDone ? doneColor : (on ? t.foreground : t.muted));
     return h_flex()
       .id(`sub-${k.address}`)
       .pl(39)
@@ -378,15 +381,23 @@ export class Agents {
           return cell;
         }),
       )
-      .when(Boolean(pic), (el) => el.child(div().mr(8).child(pic)))
+      .when(Boolean(pic), (el) =>
+        el.child(
+          div()
+            .mr(8)
+            .when(isWorking, (d) => d.loop("opacity", { from: 0.45, to: 1, period: 2200 }))
+            .child(pic),
+        ),
+      )
       .child(
         div()
           .flex_1()
           .truncate()
-          .text_color(isWorking ? activeColor : (on ? t.foreground : t.muted))
+          .text_color(textColor)
+          .when(isWorking, (d) => d.loop("opacity", { from: 0.45, to: 1, period: 2200 }))
           .child(k.name || k.template || k.program?.name || k.address),
       )
-      .child(this.status(t, { status: st }, compact));
+      .child(this.status(t, { status: isDone ? "done" : (isWorking ? "working" : st) }, compact));
   }
 
   // compact: a ! for blocked where a header already says "Needs you".
@@ -394,7 +405,9 @@ export class Agents {
     const color = t[a.status] ?? t.dim;
     if (a.status === "working") {
       const activeColor = t.accent ?? t.working ?? "#E6A854";
-      return Icon("spinner").size(12).mx(1).flex_none().text_color(activeColor).spin(900);
+      return div()
+        .loop("opacity", { from: 0.45, to: 1, period: 2200 })
+        .child(Icon("spinner").size(12).mx(1).flex_none().text_color(activeColor).spin(900));
     }
     if (a.status === "blocked" && compact)
       return div()
@@ -423,19 +436,21 @@ export class Agents {
         .items_center()
         .child("Needs you");
     // Done: badge check icon
-    if (a.status === "done")
+    if (a.status === "done") {
+      const doneColor = t.done ?? t.ansi2 ?? "#74BBA2";
       return div()
         .size(14)
         .flex_none()
         .rounded(4)
-        .bg((t.done ?? color) + "26")
+        .bg(doneColor + "26")
         .text_size(10)
         .font_bold()
-        .text_color(t.done ?? color)
+        .text_color(doneColor)
         .flex()
         .items_center()
         .justify_center()
         .child("✓");
+    }
     // Idle: a ring
     if (a.status === "idle")
       return div()
@@ -664,7 +679,12 @@ export class Agents {
   }
 
   agentRow(a, subs, view, t) {
-    const pic = icon(a.program, 12, t.dim, a);
+    const isWorking = a.status === "working" || this.listed?.get(a.address) === "working";
+    const isDone = a.status === "done" || this.listed?.get(a.address) === "done";
+    const activeColor = t.accent ?? t.working ?? "#E6A854";
+    const doneColor = t.done ?? t.ansi2 ?? "#74BBA2";
+    const iconColor = isWorking ? activeColor : (isDone ? doneColor : t.dim);
+    const pic = icon(a.program, 12, iconColor, a);
     const hovered = this.hovered === a.address;
     const when = this.since(a);
     // An agent on another machine (`vps/t7`) says which.
@@ -686,7 +706,7 @@ export class Agents {
         cx.notify();
       })
       .on_click(() => run("pane.focus", { pane: a.pane }))
-      .when(Boolean(pic), (el) => el.child(this.agentIcon(a, pic, subs)))
+      .when(Boolean(pic), (el) => el.child(this.agentIcon(a, pic, subs, isWorking)))
       .child(this.agentName(a, view, t))
       .when(Boolean(machine), (el) =>
         el.child(div().text_size(TEXT.badge).text_color(t.dim).child(machine)),
@@ -763,9 +783,10 @@ export class Agents {
   }
 
   // With sub-agents, clicking the icon folds them.
-  agentIcon(a, pic, subs) {
+  agentIcon(a, pic, subs, isWorking = false) {
     return div()
       .id(`agent-fold-${a.address}`)
+      .when(isWorking, (el) => el.loop("opacity", { from: 0.45, to: 1, period: 2200 }))
       .when(subs.length > 0, (el) =>
         el.on_click((_e, cx) => {
           cx.stop_propagation();
@@ -784,11 +805,15 @@ export class Agents {
     const prog = a.program?.name;
     const idle = a.status === "idle" && !a.focused;
     const isWorking = a.status === "working" || this.listed?.get(a.address) === "working";
+    const isDone = a.status === "done" || this.listed?.get(a.address) === "done";
     const activeColor = t.accent ?? t.working ?? "#E6A854";
+    const doneColor = t.done ?? t.ansi2 ?? "#74BBA2";
 
     const match = /^(\d+)(?:\s+(.*))?$/.exec(rawName.trim());
     let rest = match ? (match[2] ?? "") : rawName;
     if (!rest || /^\d+$/.test(rest)) rest = prog || rawName;
+
+    const textColor = isWorking ? activeColor : (isDone ? doneColor : (idle ? t.muted : t.foreground));
 
     return h_flex()
       .flex_1()
@@ -801,7 +826,8 @@ export class Agents {
             .min_w(0)
             .max_w(namesSpace ? 140 : 200)
             .truncate()
-            .text_color(isWorking ? activeColor : (idle ? t.muted : t.foreground))
+            .text_color(textColor)
+            .when(isWorking, (d) => d.loop("opacity", { from: 0.45, to: 1, period: 2200 }))
             .child(rest),
         ),
       )
