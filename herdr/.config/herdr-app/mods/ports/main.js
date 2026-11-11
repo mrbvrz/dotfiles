@@ -3,6 +3,7 @@ import { v_flex, h_flex, Input, InputState } from "gpui-base";
 import { theme, settings, exec, notify, home, readTextFile, writeTextFile } from "herdr";
 
 const NAME = "ports";
+const monoFont = () => String(settings()?.font ?? settings()?.font_family ?? "CommitMono Nerd Font");
 const uiSize = () => Number(settings()?.ui_font_size) || 13;
 
 // Well-known dev ports -> friendly label
@@ -36,18 +37,31 @@ const PROVIDERS = [
     args: (p) => ["tunnel", "--no-autoupdate", "--url", `http://localhost:${p}`],
     url: /(https:\/\/[a-z0-9-]+\.trycloudflare\.com)/i,
     err: /(ERR|failed|error)/i,
+    setup: {
+      note: "Quick tunnel: no account or login needed. URL is random and changes every run.",
+      steps: [["Install", "brew install cloudflared"], ["Optional: custom domain", "cloudflared tunnel login"]],
+    },
   },
   {
     id: "ngrok", label: "ngrok", bin: "ngrok", hint: "brew install ngrok && ngrok config add-authtoken <token>",
     args: (p) => ["http", String(p), "--log=stdout", "--log-format=logfmt"],
     url: /\burl=(https:\/\/\S+)/i,
     err: /(ERR_NGROK_\d+|authentication failed|err=)/i,
+    needsAuth: true,
+    setup: {
+      note: "Needs a free account. Copy your authtoken from dashboard.ngrok.com/get-started/your-authtoken.",
+      steps: [["Install", "brew install ngrok"], ["Add authtoken (once)", "ngrok config add-authtoken <TOKEN>"]],
+    },
   },
   {
     id: "localhostrun", label: "localhost.run", bin: "ssh", hint: "uses ssh (no install)",
     args: (p) => ["-o", "StrictHostKeyChecking=accept-new", "-o", "ServerAliveInterval=30", "-o", "ExitOnForwardFailure=yes", "-R", `80:localhost:${p}`, "nokey@localhost.run"],
     url: /(https:\/\/[a-z0-9-]+\.lhr\.life)/i,
     err: /(denied|refused|failed|error)/i,
+    setup: {
+      note: "No install, no account. Uses plain ssh; URL changes every run.",
+      steps: [["Test connection", "ssh -R 80:localhost:3000 nokey@localhost.run"]],
+    },
   },
 ];
 
@@ -56,6 +70,14 @@ async function resolveBin(name) {
   const r = await exec("/bin/sh", ["-c", script]).catch(() => null);
   const out = String(r?.stdout || "").trim().split("\n")[0];
   return out || null;
+}
+
+async function ngrokAuthed() {
+  const h = home();
+  const files = [`${h}/Library/Application Support/ngrok/ngrok.yml`, `${h}/.config/ngrok/ngrok.yml`, `${h}/.ngrok2/ngrok.yml`];
+  const script = `for f in "$@"; do grep -qs '^[[:space:]]*authtoken:' "$f" && exit 0; done; exit 1`;
+  const r = await exec("/bin/sh", ["-c", script, "sh", ...files]).catch(() => null);
+  return r?.code === 0;
 }
 
 async function loadTunnels() {
@@ -68,8 +90,14 @@ async function loadTunnels() {
   }
 }
 
+// writeTextFile(path, text, null) only creates; replacing needs the current text as `expected`.
+async function replaceTextFile(path, text) {
+  const current = await readTextFile(path).catch(() => null);
+  await writeTextFile(path, text, current ?? null);
+}
+
 function saveTunnels(list) {
-  return writeTextFile(TUNNEL_STATE(), JSON.stringify(list, null, 2), null).catch(() => {});
+  return replaceTextFile(TUNNEL_STATE(), JSON.stringify(list, null, 2)).catch((e) => console.error("save tunnels:", e));
 }
 
 async function startTunnel(provider, bin, port) {
@@ -148,12 +176,13 @@ export default class PortsMod extends View {
     this.query = "";
     this.devOnly = true;
     this.confirmKey = null;
-    this.confirmTimer = null;
     this.updatedAt = 0;
     this.tunnels = [];
     this.bins = {};
     this.pickKey = null;
     this.starting = new Set();
+    this.ngrokAuth = false;
+    try { this.setupOpen = localStorage.getItem(`${NAME}.setup`); } catch { this.setupOpen = null; }
 
     this.search = InputState.new({ placeholder: "Filter port, process, command..." });
     this.search.on("change", (_e, cx) => {
@@ -166,6 +195,7 @@ export default class PortsMod extends View {
 
     cx.spawn(async (cx) => {
       for (const p of PROVIDERS) this.bins[p.id] = await resolveBin(p.bin);
+      this.ngrokAuth = await ngrokAuthed();
       this.tunnels = await loadTunnels();
       await this.pollTunnels(cx);
       cx.notify();
@@ -226,8 +256,9 @@ export default class PortsMod extends View {
         this.tunnels.unshift(t);
         await saveTunnels(this.tunnels);
         notify({ title: `Starting ${provider.label}`, body: `localhost:${r.port}`, level: "info", timeout: 1800 });
-        setTimeout(() => this.pollTunnels(cx), 1500);
-        setTimeout(() => this.pollTunnels(cx), 3500);
+        cx.timer.after(1500, (cx) => this.pollTunnels(cx));
+        cx.timer.after(3500, (cx) => this.pollTunnels(cx));
+        cx.timer.after(7000, (cx) => this.pollTunnels(cx));
       } catch (e) {
         notify({ title: "Tunnel failed", body: String(e?.message ?? e), level: "error" });
       } finally {
@@ -286,12 +317,14 @@ export default class PortsMod extends View {
   }
 
   ask(key, cx) {
-    if (this.confirmTimer) clearTimeout(this.confirmTimer);
+    const gen = (this.confirmGen = (this.confirmGen ?? 0) + 1);
     this.confirmKey = key;
-    this.confirmTimer = setTimeout(() => {
-      this.confirmKey = null;
-      cx.notify();
-    }, 3000);
+    cx.timer.after(3000, (cx) => {
+      if (this.confirmGen === gen) {
+        this.confirmKey = null;
+        cx.notify();
+      }
+    });
     cx.notify();
   }
 
@@ -305,7 +338,7 @@ export default class PortsMod extends View {
       } catch (e) {
         notify({ title: "Kill failed", body: String(e?.message ?? e), level: "error" });
       }
-      setTimeout(() => this.refresh(cx, true), 400);
+      cx.timer.after(400, (cx) => this.refresh(cx, true));
     });
     cx.notify();
   }
@@ -472,6 +505,131 @@ export default class PortsMod extends View {
       );
   }
 
+  providerState(p) {
+    if (!this.bins[p.id]) return { key: "missing", label: "Not installed", ok: false };
+    if (p.needsAuth && !this.ngrokAuth) return { key: "auth", label: "Needs authtoken", ok: false };
+    return { key: "ready", label: "Ready", ok: true };
+  }
+
+  isSetupOpen() {
+    if (this.setupOpen === "1") return true;
+    return this.setupOpen !== "0";
+  }
+
+  renderSetup(t, cx) {
+    const open = this.isSetupOpen();
+    const good = t.done ?? "#74BBA2";
+    const warn = t.accent2 ?? "#d9a441";
+    const head = h_flex()
+      .id("setup-head")
+      .items_center()
+      .justify_between()
+      .px(8)
+      .py(6)
+      .cursor_pointer()
+      .rounded(6)
+      .hover((s) => s.bg(t.hover))
+      .on_click((_e, cx) => {
+        this.setupOpen = open ? "0" : "1";
+        try { localStorage.setItem(`${NAME}.setup`, this.setupOpen); } catch {}
+        cx.notify();
+      })
+      .child(
+        h_flex()
+          .gap(6)
+          .items_center()
+          .child(div().text_size(11).text_color(t.dim).child(open ? "▾" : "▸"))
+          .child(div().text_size(11.5).font_medium().text_color(t.foreground).child("Tunnel setup"))
+      )
+      .child(
+        h_flex()
+          .gap(8)
+          .children(
+            PROVIDERS.map((p) => {
+              const st = this.providerState(p);
+              return div().text_size(10).text_color(st.ok ? good : warn).child(`${st.ok ? "●" : "○"} ${p.label}`);
+            })
+          )
+      );
+
+    const cmd = (id, label, command) =>
+      v_flex()
+        .gap(2)
+        .child(div().text_size(10.5).text_color(t.dim).child(label))
+        .child(
+          h_flex()
+            .id(id)
+            .items_center()
+            .gap(6)
+            .rounded(5)
+            .px(8)
+            .py(4)
+            .bg(t.chrome)
+            .border(1)
+            .border_color(t.border)
+            .cursor_pointer()
+            .hover((s) => s.bg(t.hover))
+            .tooltip("Click to copy")
+            .on_click((_e, cx) => {
+              cx.write_to_clipboard(command);
+              notify({ title: "Copied", body: command, level: "info", timeout: 1500 });
+            })
+            .child(div().flex_1().min_w(0).truncate().text_size(11).font_family(monoFont()).text_color(t.foreground).child(command))
+            .child(svg("mods/filetree/copy.svg").size(12).text_color(t.dim))
+        );
+
+    return v_flex()
+      .rounded(8)
+      .border(1)
+      .border_color(t.border)
+      .bg(t.surface ?? t.chrome)
+      .child(head)
+      .when(open, (el) =>
+        el.child(
+          v_flex()
+            .px(8)
+            .pb(8)
+            .gap(10)
+            .child(
+              div()
+                .text_size(10.5)
+                .text_color(t.dim)
+                .child("Pick a port below, press the globe icon, then choose a provider. First-time setup:")
+            )
+            .children(
+              PROVIDERS.map((p) => {
+                const st = this.providerState(p);
+                return v_flex()
+                  .gap(5)
+                  .child(
+                    h_flex()
+                      .items_center()
+                      .gap(6)
+                      .child(div().text_size(11.5).font_semibold().text_color(t.foreground).child(p.label))
+                      .child(
+                        div()
+                          .px(5)
+                          .py(1)
+                          .rounded(4)
+                          .bg(t.selected)
+                          .text_size(10)
+                          .text_color(st.ok ? good : warn)
+                          .child(st.label)
+                      )
+                  )
+                  .child(div().text_size(10.5).text_color(t.dim).child(p.setup.note))
+                  .children(
+                    p.setup.steps
+                      .filter(([label]) => !(st.key === "ready" && /^Install|Add authtoken/.test(label)) )
+                      .filter(([label]) => !(st.key === "auth" && /^Install/.test(label)))
+                      .map(([label, command], i) => cmd(`setup-${p.id}-${i}`, label, command))
+                  );
+              })
+            )
+        )
+      );
+  }
+
   renderTunnel(tun, t, cx, inline = false) {
     const prov = PROVIDERS.find((p) => p.id === tun.provider);
     const live = tun.status === "live";
@@ -563,6 +721,7 @@ export default class PortsMod extends View {
         v_flex()
           .p(10)
           .gap(8)
+          .child(this.renderSetup(t, cx))
           .child(Input.new(this.search).h(28).text_size(12).text_color(t.foreground))
           .child(
             h_flex()

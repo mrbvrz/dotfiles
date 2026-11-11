@@ -2,6 +2,12 @@ import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex, Input, InputState, Editor, EditorState } from "gpui-base";
 import { theme, settings, home, readTextFile, writeTextFile, run, notify } from "herdr";
 
+// writeTextFile(path, text, null) only creates; replacing needs the current text as `expected`.
+async function replaceTextFile(path, text) {
+  const current = await readTextFile(path).catch(() => null);
+  await writeTextFile(path, text, current ?? null);
+}
+
 const NAME = "snippets";
 const STORE_PATH = () => `${home()}/.config/herdr-app/snippets.json`;
 
@@ -153,7 +159,7 @@ export default class SnippetsMod extends View {
     const text = JSON.stringify(this.snippets, null, 2);
     cx.spawn(async () => {
       try {
-        await writeTextFile(STORE_PATH(), text, null);
+        await replaceTextFile(STORE_PATH(), text);
       } catch (e) {
         console.error("Failed to save snippets:", e);
       }
