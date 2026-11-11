@@ -1,5 +1,5 @@
 import { View, div, svg } from "gpui-kit";
-import { v_flex, h_flex, Input, InputState, Editor, EditorState } from "gpui-base";
+import { v_flex, h_flex, Input, InputState, Editor, EditorState, Textarea, TextareaState } from "gpui-base";
 import { theme, settings, home, exec, readTextFile, writeTextFile, run, notify } from "herdr";
 
 // writeTextFile(path, text, null) only creates; replacing needs the current text as `expected`.
@@ -68,6 +68,52 @@ const STORE_PATH = () => `${home()}/.config/herdr-app/snippets.json`;
 const uiSize = () => Number(settings()?.ui_font_size) || 13;
 const codeSize = () => Number(settings()?.font_size) || 12;
 const monoFont = () => String(settings()?.font ?? settings()?.font_family ?? "CommitMono Nerd Font");
+
+function renderMarkdownInline(text, t) {
+  if (!text) return [];
+  const lines = String(text).split("\n");
+  return lines.map((line) => {
+    if (!line.trim()) return div().h(4);
+    const isBullet = line.startsWith("- ") || line.startsWith("* ");
+    const isQuote = line.startsWith("> ");
+    const isHeading = line.startsWith("#");
+    const rawContent = isBullet ? line.slice(2) : isQuote ? line.slice(2) : isHeading ? line.replace(/^#+\s*/, "") : line;
+
+    // Tokenize for bold (**text**), italic (*text*), inline code (`code`)
+    const parts = rawContent.split(/(\?\?\?[^*]+?\?\?\?|\*\*[^*]+?\*\*|\*[^*]+?\*|`[^`]+?`)/g);
+    const elements = parts.map((part) => {
+      if (!part) return null;
+      if (part.startsWith("**") && part.endsWith("**") && part.length >= 4) {
+        return div().font_bold().text_color(t.foreground).child(part.slice(2, -2));
+      }
+      if (part.startsWith("*") && part.endsWith("*") && part.length >= 2) {
+        return div().italic().text_color(t.foreground).child(part.slice(1, -1));
+      }
+      if (part.startsWith("`") && part.endsWith("`") && part.length >= 2) {
+        return div()
+          .px(4)
+          .py(0.5)
+          .rounded(3)
+          .bg(t.selected)
+          .font_family(monoFont())
+          .text_size(10.5)
+          .text_color(t.done ?? "#74BBA2")
+          .child(part.slice(1, -1));
+      }
+      return div().text_color(isQuote ? t.dim : t.muted).child(part);
+    }).filter(Boolean);
+
+    return h_flex()
+      .gap(2)
+      .flex_wrap()
+      .items_center()
+      .text_size(isHeading ? 12 : 11.5)
+      .when(isHeading, (el) => el.font_semibold().text_color(t.foreground))
+      .when(isBullet, (el) => el.child(div().text_color(t.done ?? "#74BBA2").child("• ")))
+      .when(isQuote, (el) => el.pl(6).border_l(2).border_color(t.border).italic())
+      .children(elements);
+  });
+}
 
 const DEFAULT_SNIPPETS = [
   {
@@ -170,7 +216,10 @@ export default class SnippetsMod extends View {
     this.formTags = InputState.new({ placeholder: "Tags (comma separated)..." });
     this.formTags.on("change", (_e, cx) => cx.notify());
 
-    this.formDesc = InputState.new({ placeholder: "Description / Usage notes (optional)..." });
+    this.formDesc = TextareaState.new({
+      placeholder: "Description / Usage notes (Markdown supported: **bold**, *italic*, `code`, lists)...",
+      rows: 3,
+    });
     this.formDesc.on("change", (_e, cx) => cx.notify());
 
     this.formEditor = null;
@@ -614,8 +663,20 @@ export default class SnippetsMod extends View {
     if (cx) cx.notify();
   }
 
+  insertMarkdown(prefix, suffix = "", sample = "text", cx) {
+    if (!this.formDesc) return;
+    try {
+      this.formDesc.replace(`${prefix}${sample}${suffix}`);
+    } catch {
+      const cur = this.formDesc.value() || "";
+      const sep = cur && !cur.endsWith("\n") && !cur.endsWith(" ") ? " " : "";
+      this.formDesc.set_value(`${cur}${sep}${prefix}${sample}${suffix}`);
+    }
+    if (cx) cx.notify();
+  }
+
   closeForm(cx) {
-    this.isFormOpen = false;
+    this.isFormOpen = true;
     this.editingId = null;
     this.formEditor = null;
     if (cx) cx.notify();
@@ -1070,21 +1131,173 @@ export default class SnippetsMod extends View {
                   )
               )
           )
-          // Description Field
+          // Description Field (Multi-line Textarea with Markdown Toolbar)
           .child(
             v_flex()
-              .gap(4)
-              .child(div().text_size(11.5).font_medium().text_color(t.muted).child("Description / Usage tip (optional)"))
+              .gap(5)
               .child(
                 h_flex()
-                  .h(30)
-                  .px(8)
+                  .justify_between()
                   .items_center()
+                  .child(
+                    h_flex()
+                      .gap(5)
+                      .items_center()
+                      .child(div().text_size(11.5).font_medium().text_color(t.muted).child("Description / Usage tip"))
+                      .child(div().text_size(10).text_color(t.dim).child("(optional)"))
+                  )
+                  .child(div().text_size(10).text_color(t.dim).child("Markdown supported"))
+              )
+              // Dedicated Markdown Formatting Toolbar
+              .child(
+                h_flex()
+                  .gap(3)
+                  .items_center()
+                  .flex_wrap()
+                  .child(
+                    div()
+                      .id("fmt-bold")
+                      .px(7)
+                      .h(22)
+                      .flex()
+                      .items_center()
+                      .justify_center()
+                      .rounded(4)
+                      .border(1)
+                      .border_color(t.border)
+                      .bg(t.surface ?? t.chrome)
+                      .cursor_pointer()
+                      .text_color(t.foreground)
+                      .hover((s) => s.bg(t.hover))
+                      .tooltip("Bold: **text**")
+                      .on_click((_e, cx) => this.insertMarkdown("**", "**", "bold text", cx))
+                      .child(div().font_bold().text_size(11).child("B"))
+                  )
+                  .child(
+                    div()
+                      .id("fmt-italic")
+                      .px(7)
+                      .h(22)
+                      .flex()
+                      .items_center()
+                      .justify_center()
+                      .rounded(4)
+                      .border(1)
+                      .border_color(t.border)
+                      .bg(t.surface ?? t.chrome)
+                      .cursor_pointer()
+                      .text_color(t.foreground)
+                      .hover((s) => s.bg(t.hover))
+                      .tooltip("Italic: *text*")
+                      .on_click((_e, cx) => this.insertMarkdown("*", "*", "italic text", cx))
+                      .child(div().italic().text_size(11).child("I"))
+                  )
+                  .child(
+                    div()
+                      .id("fmt-code")
+                      .px(6)
+                      .h(22)
+                      .flex()
+                      .items_center()
+                      .justify_center()
+                      .rounded(4)
+                      .border(1)
+                      .border_color(t.border)
+                      .bg(t.surface ?? t.chrome)
+                      .cursor_pointer()
+                      .text_color(t.done ?? "#74BBA2")
+                      .hover((s) => s.bg(t.hover))
+                      .tooltip("Inline code: `code`")
+                      .on_click((_e, cx) => this.insertMarkdown("`", "`", "code", cx))
+                      .child(div().font_family(monoFont()).text_size(10.5).child("`c`"))
+                  )
+                  .child(
+                    div()
+                      .id("fmt-heading")
+                      .px(6)
+                      .h(22)
+                      .flex()
+                      .items_center()
+                      .justify_center()
+                      .rounded(4)
+                      .border(1)
+                      .border_color(t.border)
+                      .bg(t.surface ?? t.chrome)
+                      .cursor_pointer()
+                      .text_color(t.foreground)
+                      .hover((s) => s.bg(t.hover))
+                      .tooltip("Heading: ### Title")
+                      .on_click((_e, cx) => this.insertMarkdown("### ", "", "Heading", cx))
+                      .child(div().font_semibold().text_size(10.5).child("H3"))
+                  )
+                  .child(
+                    div()
+                      .id("fmt-list")
+                      .px(6)
+                      .h(22)
+                      .flex()
+                      .items_center()
+                      .justify_center()
+                      .rounded(4)
+                      .border(1)
+                      .border_color(t.border)
+                      .bg(t.surface ?? t.chrome)
+                      .cursor_pointer()
+                      .text_color(t.foreground)
+                      .hover((s) => s.bg(t.hover))
+                      .tooltip("Bullet list: - Item")
+                      .on_click((_e, cx) => this.insertMarkdown("- ", "", "item", cx))
+                      .child(div().text_size(10.5).child("• List"))
+                  )
+                  .child(
+                    div()
+                      .id("fmt-quote")
+                      .px(6)
+                      .h(22)
+                      .flex()
+                      .items_center()
+                      .justify_center()
+                      .rounded(4)
+                      .border(1)
+                      .border_color(t.border)
+                      .bg(t.surface ?? t.chrome)
+                      .cursor_pointer()
+                      .text_color(t.foreground)
+                      .hover((s) => s.bg(t.hover))
+                      .tooltip("Quote: > Text")
+                      .on_click((_e, cx) => this.insertMarkdown("> ", "", "quote", cx))
+                      .child(div().text_size(11).child("” Quote"))
+                  )
+                  .child(
+                    div()
+                      .id("fmt-link")
+                      .px(6)
+                      .h(22)
+                      .flex()
+                      .items_center()
+                      .justify_center()
+                      .rounded(4)
+                      .border(1)
+                      .border_color(t.border)
+                      .bg(t.surface ?? t.chrome)
+                      .cursor_pointer()
+                      .text_color(t.foreground)
+                      .hover((s) => s.bg(t.hover))
+                      .tooltip("Link: [Title](url)")
+                      .on_click((_e, cx) => this.insertMarkdown("[", "](url)", "link", cx))
+                      .child(div().text_size(10.5).child("🔗 Link"))
+                  )
+              )
+              // Textarea Box
+              .child(
+                v_flex()
+                  .h(76)
+                  .p(6)
                   .rounded(6)
                   .border(1)
                   .border_color(t.border)
                   .bg(t.input ?? t.background)
-                  .child(Input.new(this.formDesc).flex_1().h_full().text_size(12).text_color(t.foreground))
+                  .child(Textarea.new(this.formDesc).size_full().text_size(12).text_color(t.foreground))
               )
           )
           // Code Editor Area
@@ -1240,9 +1453,13 @@ export default class SnippetsMod extends View {
               )
           )
       )
-      // Description (if present)
+      // Description (if present, rendered with markdown support)
       .when(Boolean(snippet.description), (e) =>
-        e.child(div().text_size(11.5).text_color(t.muted).child(snippet.description))
+        e.child(
+          v_flex()
+            .gap(2)
+            .children(renderMarkdownInline(snippet.description, t))
+        )
       )
       // Code Box Preview
       .child(
