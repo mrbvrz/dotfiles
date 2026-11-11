@@ -94,11 +94,11 @@ export default class DockerMod extends View {
     this.tab = "containers"; // "containers" | "images" | "volumes"
     this.statusFilter = "all"; // "all" | "running" | "paused" | "stopped"
 
-    let savedGroupBy = "network";
+    let savedGroupBy = "none";
     try {
-      savedGroupBy = localStorage.getItem("docker.groupBy") || "network";
+      savedGroupBy = localStorage.getItem("docker.groupBy.v2") || "none";
     } catch {}
-    this.groupBy = ["network", "project", "none"].includes(savedGroupBy) ? savedGroupBy : "network";
+    this.groupBy = ["none", "project", "network"].includes(savedGroupBy) ? savedGroupBy : "none";
 
     this.groupFolded = new Set();
     try {
@@ -820,6 +820,7 @@ export default class DockerMod extends View {
           this.groupBy = id;
           try {
             localStorage.setItem("docker.groupBy", id);
+            localStorage.setItem("docker.groupBy.v2", id);
           } catch {}
           cx.notify();
         })
@@ -913,30 +914,27 @@ export default class DockerMod extends View {
             .gap(4)
             .items_center()
             .child(div().text_size(10.5).text_color(t.dim).child("Group by:"))
-            .child(groupChip("network", "Network"))
+            .child(groupChip("none", "None"))
             .child(groupChip("project", "Project"))
-            .child(groupChip("none", "Flat")),
+            .child(groupChip("network", "Network")),
         ),
       );
   }
 
   // ── Containers List & Grouping ───────────────────────────────────────────────
 
-  renderGroupHeader(groupName, groupContainers, t, cx) {
-    const isFolded = this.groupFolded.has(groupName);
+  renderGroupHeader(groupName, groupContainers, isFolded, t, cx) {
+    const isRunning = groupContainers.some((c) => c.state === "running");
     const running = groupContainers.filter((c) => c.state === "running").length;
     const total = groupContainers.length;
 
     return h_flex()
-      .h(28)
+      .h(32)
       .flex_none()
-      .px(8)
-      .gap(6)
+      .px(10)
+      .gap(7)
       .items_center()
-      .rounded(6)
       .bg(t.chrome)
-      .border_1()
-      .border_color(t.border)
       .cursor_pointer()
       .hover((s) => s.bg(t.hover))
       .on_click((_e, cx) => {
@@ -949,7 +947,7 @@ export default class DockerMod extends View {
       })
       .child(
         svg(`${ICONS}/${this.groupBy === "network" ? "server" : "layers"}.svg`)
-          .size(12)
+          .size(12.5)
           .text_color(t.accent || t.ansi4),
       )
       .child(
@@ -977,7 +975,6 @@ export default class DockerMod extends View {
         h_flex()
           .gap(4)
           .items_center()
-          .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
           // Group Start Button
           .when(running < total, (el) =>
             el.child(
@@ -1039,6 +1036,29 @@ export default class DockerMod extends View {
               .size(11)
               .text_color(t.dim),
           ),
+      );
+  }
+
+  renderGroupCard(groupKey, groupContainers, t, cx) {
+    const isFolded = this.groupFolded.has(groupKey);
+    return v_flex()
+      .id(`group-card-${groupKey}`)
+      .rounded(8)
+      .border_1()
+      .border_color(t.border)
+      .bg(t.chrome)
+      .overflow_hidden()
+      .child(this.renderGroupHeader(groupKey, groupContainers, isFolded, t, cx))
+      .when(!isFolded, (el) =>
+        el.child(
+          v_flex()
+            .p(8)
+            .gap(8)
+            .bg(t.background)
+            .border_t(1)
+            .border_color(t.border)
+            .children(groupContainers.map((c) => this.renderContainerCard(c, t, cx))),
+        ),
       );
   }
 
@@ -1130,13 +1150,9 @@ export default class DockerMod extends View {
       .p(10)
       .gap(10)
       .children(
-        sortedGroupKeys.flatMap((groupKey) => {
+        sortedGroupKeys.map((groupKey) => {
           const groupContainers = groups.get(groupKey);
-          const isFolded = this.groupFolded.has(groupKey);
-          return [
-            this.renderGroupHeader(groupKey, groupContainers, t, cx),
-            ...(!isFolded ? groupContainers.map((c) => this.renderContainerCard(c, t, cx)) : []),
-          ];
+          return this.renderGroupCard(groupKey, groupContainers, t, cx);
         }),
       );
   }
