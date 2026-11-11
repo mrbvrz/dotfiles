@@ -205,6 +205,13 @@
                       }
                     },
                     {
+                      "id": "agents",
+                      "type": "block",
+                      "content": {
+                        "mod": "agent-manager"
+                      }
+                    },
+                    {
                       "id": "docker",
                       "type": "block",
                       "content": {

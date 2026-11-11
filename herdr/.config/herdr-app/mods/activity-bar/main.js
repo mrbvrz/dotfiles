@@ -1,6 +1,6 @@
 import { View, div, svg } from "gpui-kit";
 import { v_flex } from "gpui-base";
-import { spaces, layout, run, theme, shared, nextCommand } from "herdr";
+import { spaces, layout, run, theme, shared, nextCommand, agents } from "herdr";
 
 function find(node, id) {
   if (node?.id === id) return node;
@@ -51,6 +51,7 @@ export default class ActivityBar extends View {
 
     const items = [
       { id: "files", label: "Files", tooltip: "Files (Explorer)", icon: "mods/workspace-chrome/files.svg" },
+      { id: "agents", label: "Agents", tooltip: "Agent Management", icon: "icons/agent.svg" },
       { id: "graph", label: "Git", tooltip: "Git Graph", icon: "mods/git-graph/icons/graph.svg" },
       { id: "ci", label: "CI", tooltip: "CI Dashboard", icon: "mods/ci-dash/ci.svg" },
       { id: "pr-flow", label: "PRs", tooltip: "Pull Requests", icon: "mods/pr-flow/merge.svg" },
@@ -65,8 +66,26 @@ export default class ActivityBar extends View {
 
     const renderItem = (item) => {
       const on = activeId === item.id;
-      const bVal = badges[item.id];
-      const badgeCount = typeof bVal === "number" ? bVal : bVal && typeof bVal === "object" ? bVal[space?.id] : 0;
+      let badgeCount = 0;
+      let badgeColor = t.done ?? "#74BBA2";
+
+      if (item.id === "agents") {
+        try {
+          const liveList = typeof agents === "function" ? agents() : [];
+          const blocked = liveList.filter((a) => a.status === "blocked").length;
+          const working = liveList.filter((a) => a.status === "working").length;
+          if (blocked > 0) {
+            badgeCount = blocked;
+            badgeColor = t.blocked ?? "#e5534b";
+          } else if (working > 0) {
+            badgeCount = working;
+            badgeColor = t.working ?? "#61afef";
+          }
+        } catch {}
+      } else {
+        const bVal = badges[item.id];
+        badgeCount = typeof bVal === "number" ? bVal : bVal && typeof bVal === "object" ? bVal[space?.id] : 0;
+      }
       const hasBadge = Number.isFinite(badgeCount) && badgeCount > 0;
 
       return div()
@@ -97,7 +116,7 @@ export default class ActivityBar extends View {
               .items_center()
               .justify_center()
               .rounded(7)
-              .bg(t.done ?? "#74BBA2")
+              .bg(badgeColor)
               .text_color(t.background ?? "#131718")
               .text_size(9)
               .font_bold()
