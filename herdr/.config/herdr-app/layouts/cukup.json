@@ -217,6 +217,13 @@
                       "content": {
                         "mod": "docker"
                       }
+                    },
+                    {
+                      "id": "snippets",
+                      "type": "block",
+                      "content": {
+                        "mod": "snippets"
+                      }
                     }
                   ],
                   "active": "files"
