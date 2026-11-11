@@ -113,7 +113,7 @@ export default class Tabs extends View {
       ? Math.max(10, (root.traffic_lights[0] + 64) / settings().zoom - (sidebar?.hidden ? 0 : sidebar?.size?.px ?? 0))
       : 10;
     const panel = find(root, "panel"), body = find(root, "panel-body");
-    const enabled = [...(shared("workspace.panels") ?? ["files"]), "graph", "ci", "pr-flow", "todo", "docker", "snippets"];
+    const enabled = [...(shared("workspace.panels") ?? ["files"]), "graph", "ci", "pr-flow", "todo", "docker", "snippets", "ports"];
     this.syncPanel(space, panel, body, enabled);
     return h_flex().size_full().min_w(0).px(10).pl(lightsPadding).gap(3).items_center().bg(t.chrome).border_b(1).border_color(t.border)
       .on_mouse_up("left", () => { this.pressed = null; })

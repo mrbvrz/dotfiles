@@ -1,0 +1,6 @@
+{
+  "name": "ports",
+  "title": "Ports",
+  "version": "1.0.0",
+  "description": "Ports & Process Manager: live listening ports, open in browser, kill process"
+}

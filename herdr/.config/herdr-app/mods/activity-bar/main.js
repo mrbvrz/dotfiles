@@ -57,6 +57,7 @@ export default class ActivityBar extends View {
       { id: "todo", label: "Agenda", tooltip: "Agenda & Tasks", icon: "mods/todo/todo.svg" },
       { id: "docker", label: "Docker", tooltip: "Docker Containers", icon: "mods/docker/icons/docker.svg" },
       { id: "snippets", label: "Snippets", tooltip: "Code Snippets", icon: "mods/snippets/icons/code.svg" },
+      { id: "ports", label: "Ports", tooltip: "Ports & Processes", icon: "mods/ports/icons/ports.svg" },
     ];
 
     const badges = shared("mod-badges") ?? {};

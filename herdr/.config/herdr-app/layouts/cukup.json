@@ -217,6 +217,13 @@
                       "content": {
                         "mod": "snippets"
                       }
+                    },
+                    {
+                      "id": "ports",
+                      "type": "block",
+                      "content": {
+                        "mod": "ports"
+                      }
                     }
                   ],
                   "active": "files"
@@ -263,6 +270,16 @@
         "px": 44
       },
       "resizable": false
+    },
+    {
+      "id": "b73509157d5b72adb2240ca1558c6635b",
+      "type": "block",
+      "content": {
+        "mod": "ports"
+      },
+      "size": {
+        "px": 320
+      }
     }
   ],
   "background": "canvas",
