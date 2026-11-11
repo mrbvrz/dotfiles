@@ -1,12 +1,66 @@
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex, Input, InputState, Editor, EditorState } from "gpui-base";
-import { theme, settings, home, readTextFile, writeTextFile, run, notify } from "herdr";
+import { theme, settings, home, exec, readTextFile, writeTextFile, run, notify } from "herdr";
 
 // writeTextFile(path, text, null) only creates; replacing needs the current text as `expected`.
 async function replaceTextFile(path, text) {
   const current = await readTextFile(path).catch(() => null);
   await writeTextFile(path, text, current ?? null);
 }
+
+
+// ---- Backup / export / import ------------------------------------------
+const BACKUP_DIR = () => `${home()}/.config/herdr-app/snippets-backups`;
+const BACKUP_KEEP = 30;
+const BACKUP_RE = /^snippets-(\d{8})-(\d{6})-n(\d+)\.json$/;
+const pad2 = (n) => String(n).padStart(2, "0");
+const stamp = (d = new Date()) =>
+  `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}-${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}`;
+const prettyStamp = (day, time) =>
+  `${day.slice(0, 4)}-${day.slice(4, 6)}-${day.slice(6)}  ${time.slice(0, 2)}:${time.slice(2, 4)}:${time.slice(4)}`;
+const expandPath = (p) => String(p || "").trim().replace(/^~(?=\/|$)/, home());
+
+function normalizeSnippets(list) {
+  const out = [];
+  for (const x of Array.isArray(list) ? list : []) {
+    if (!x || typeof x !== "object") continue;
+    const code = x.code == null ? "" : String(x.code);
+    if (!code.trim()) continue;
+    const title = String(x.title ?? "").trim() || code.trim().split("\n")[0].slice(0, 60);
+    const tags = Array.isArray(x.tags)
+      ? x.tags.map((t) => String(t).trim().toLowerCase()).filter(Boolean)
+      : String(x.tags ?? "").split(",").map((t) => t.trim().toLowerCase()).filter(Boolean);
+    out.push({
+      id: typeof x.id === "string" && x.id ? x.id : `snip_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      title,
+      language: String(x.language ?? "bash").trim().toLowerCase() || "bash",
+      tags,
+      description: String(x.description ?? ""),
+      code,
+      createdAt: Number(x.createdAt) || Date.now(),
+      ...(x.updatedAt ? { updatedAt: Number(x.updatedAt) } : {}),
+    });
+  }
+  return out;
+}
+
+// Accepts a bare array or a { snippets: [...] } bundle. Returns { list } or { error }.
+function parseSnippetsText(text) {
+  let data;
+  try {
+    data = JSON.parse(String(text ?? "").trim());
+  } catch {
+    return { error: "Not valid JSON" };
+  }
+  const raw = Array.isArray(data) ? data : data?.snippets;
+  if (!Array.isArray(raw)) return { error: "No snippets array found" };
+  const list = normalizeSnippets(raw);
+  if (!list.length) return { error: "No valid snippets in file" };
+  return { list };
+}
+
+const bundleText = (snippets) =>
+  JSON.stringify({ app: "herdr-snippets", version: 1, exportedAt: new Date().toISOString(), count: snippets.length, snippets }, null, 2);
 
 const NAME = "snippets";
 const STORE_PATH = () => `${home()}/.config/herdr-app/snippets.json`;
@@ -121,33 +175,63 @@ export default class SnippetsMod extends View {
 
     this.formEditor = null;
 
+    // Backup / import view
+    this.isBackupOpen = false;
+    this.importMode = "merge";
+    this.backups = [];
+    this.lastBackupText = null;
+    this.backupGen = 0;
+    this.lastExport = "";
+    this.importPath = InputState.new({ placeholder: "File to import, e.g. ~/Downloads/herdr-snippets-....json" });
+    this.importPath.on("change", (_e, cx) => cx.notify());
+
     this.load(cx);
   }
 
   async load(cx) {
+    let fileText = null;
     try {
-      const raw = await readTextFile(STORE_PATH());
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          this.snippets = parsed;
-        } else {
-          this.snippets = DEFAULT_SNIPPETS;
-          this.save(cx);
-        }
+      fileText = await readTextFile(STORE_PATH());
+    } catch {}
+
+    let loaded = null;
+    if (fileText && fileText.trim()) {
+      const parsed = parseSnippetsText(fileText);
+      if (parsed.list) {
+        loaded = parsed.list;
       } else {
-        const local = localStorage.getItem(`${NAME}.data`);
-        if (local) {
-          this.snippets = JSON.parse(local) || DEFAULT_SNIPPETS;
-        } else {
-          this.snippets = DEFAULT_SNIPPETS;
-          this.save(cx);
-        }
+        // Never overwrite a file we can't read: keep a copy and fall back to the newest backup.
+        await exec("/bin/cp", [STORE_PATH(), `${STORE_PATH()}.corrupt-${stamp()}`]).catch(() => {});
+        notify({ title: "snippets.json unreadable", body: "Saved a .corrupt copy, restoring the latest backup", level: "warning", timeout: 5000 });
       }
-    } catch {
-      this.snippets = DEFAULT_SNIPPETS;
-      this.save(cx);
     }
+
+    if (!loaded) {
+      const backups = await this.listBackups();
+      for (const b of backups) {
+        try {
+          const parsed = parseSnippetsText(await readTextFile(b.path));
+          if (parsed.list) {
+            loaded = parsed.list;
+            if (!fileText) notify({ title: "Snippets restored", body: `From backup ${b.label}`, level: "info", timeout: 3500 });
+            break;
+          }
+        } catch {}
+      }
+    }
+
+    if (!loaded) {
+      try {
+        const local = localStorage.getItem(`${NAME}.data`);
+        if (local) loaded = normalizeSnippets(JSON.parse(local));
+      } catch {}
+    }
+
+    const seeded = !loaded || !loaded.length;
+    this.snippets = seeded ? DEFAULT_SNIPPETS : loaded;
+    if (seeded || !fileText) this.save(cx);
+    else this.scheduleBackup(cx);
+    this.backups = await this.listBackups();
     cx.notify();
   }
 
@@ -162,8 +246,332 @@ export default class SnippetsMod extends View {
         await replaceTextFile(STORE_PATH(), text);
       } catch (e) {
         console.error("Failed to save snippets:", e);
+        notify({ title: "Could not save snippets", body: String(e?.message ?? e), level: "error" });
       }
     });
+    this.scheduleBackup(cx);
+  }
+
+  // ---- automatic backups: debounced, deduplicated, newest BACKUP_KEEP kept ----
+  scheduleBackup(cx) {
+    const gen = ++this.backupGen;
+    cx.timer.after(4000, (cx) => {
+      if (gen !== this.backupGen) return;
+      this.writeBackup(cx, false).catch((e) => console.error("snippets backup:", e));
+    });
+  }
+
+  async listBackups() {
+    const r = await exec("/bin/ls", ["-1", BACKUP_DIR()]).catch(() => null);
+    return String(r?.stdout || "")
+      .split("\n")
+      .map((n) => n.trim())
+      .map((name) => ({ name, m: name.match(BACKUP_RE) }))
+      .filter((x) => x.m)
+      .map((x) => ({ name: x.name, path: `${BACKUP_DIR()}/${x.name}`, label: prettyStamp(x.m[1], x.m[2]), count: Number(x.m[3]) }))
+      .sort((a, b) => (a.name < b.name ? 1 : -1));
+  }
+
+  async writeBackup(cx, force) {
+    const text = JSON.stringify(this.snippets, null, 2);
+    if (!force) {
+      if (this.lastBackupText == null) {
+        const newest = (await this.listBackups())[0];
+        this.lastBackupText = newest ? ((await readTextFile(newest.path).catch(() => null)) ?? "") : "";
+      }
+      if (this.lastBackupText === text) return null;
+    }
+    await exec("/bin/mkdir", ["-p", BACKUP_DIR()]);
+    const path = `${BACKUP_DIR()}/snippets-${stamp()}-n${this.snippets.length}.json`;
+    await replaceTextFile(path, text);
+    this.lastBackupText = text;
+    const all = await this.listBackups();
+    for (const old of all.slice(BACKUP_KEEP)) await exec("/bin/rm", ["-f", old.path]).catch(() => {});
+    this.backups = all.slice(0, BACKUP_KEEP);
+    cx.notify();
+    return path;
+  }
+
+  openBackupView(cx) {
+    this.isBackupOpen = true;
+    cx.notify();
+    cx.spawn(async (cx) => {
+      this.backups = await this.listBackups();
+      cx.notify();
+    });
+  }
+
+  closeBackupView(cx) {
+    this.isBackupOpen = false;
+    cx.notify();
+  }
+
+  backupNow(cx) {
+    cx.spawn(async (cx) => {
+      try {
+        await this.writeBackup(cx, true);
+        notify({ title: "Backup saved", body: `${this.snippets.length} snippets`, level: "info", timeout: 2000 });
+      } catch (e) {
+        notify({ title: "Backup failed", body: String(e?.message ?? e), level: "error" });
+      }
+    });
+  }
+
+  exportToFile(cx) {
+    const path = `${home()}/Downloads/herdr-snippets-${stamp()}.json`;
+    const text = bundleText(this.snippets);
+    cx.spawn(async (cx) => {
+      try {
+        await writeTextFile(path, text, null);
+        this.lastExport = path;
+        this.importPath.set_value(path);
+        notify({ title: "Snippets exported", body: path, level: "info", timeout: 4000 });
+      } catch (e) {
+        notify({ title: "Export failed", body: String(e?.message ?? e), level: "error" });
+      }
+      cx.notify();
+    });
+  }
+
+  copyJson(cx) {
+    cx.write_to_clipboard(bundleText(this.snippets));
+    notify({ title: "Copied as JSON", body: `${this.snippets.length} snippets`, level: "info", timeout: 2000 });
+  }
+
+  async applyImport(list, mode, cx) {
+    await this.writeBackup(cx, true).catch(() => {}); // safety copy of the current state first
+    if (mode === "replace") {
+      this.snippets = list;
+      this.save(cx);
+      notify({ title: "Snippets replaced", body: `${list.length} imported`, level: "info", timeout: 3000 });
+      return;
+    }
+    const sig = (x) => `${x.title}\u0000${x.code}`;
+    const known = new Set(this.snippets.map(sig));
+    const ids = new Set(this.snippets.map((x) => x.id));
+    let added = 0;
+    let skipped = 0;
+    for (const x of list) {
+      if (known.has(sig(x))) { skipped++; continue; }
+      const item = ids.has(x.id) ? { ...x, id: `snip_${Date.now()}_${Math.random().toString(36).slice(2, 7)}` } : x;
+      this.snippets.unshift(item);
+      known.add(sig(item));
+      ids.add(item.id);
+      added++;
+    }
+    this.save(cx);
+    notify({ title: "Snippets merged", body: `${added} added, ${skipped} already present`, level: "info", timeout: 3000 });
+  }
+
+  importFromClipboard(cx) {
+    const parsed = parseSnippetsText(cx.read_from_clipboard());
+    if (!parsed.list) {
+      notify({ title: "Import failed", body: `Clipboard: ${parsed.error}`, level: "warning" });
+      return;
+    }
+    cx.spawn(async (cx) => { await this.applyImport(parsed.list, this.importMode, cx); cx.notify(); });
+  }
+
+  importFromFile(cx) {
+    const path = expandPath(this.importPath.value());
+    if (!path) {
+      notify({ title: "Import failed", body: "Enter a file path first", level: "warning" });
+      return;
+    }
+    cx.spawn(async (cx) => {
+      const text = await readTextFile(path).catch(() => null);
+      if (text == null) {
+        notify({ title: "Import failed", body: `Cannot read ${path}`, level: "error" });
+        return;
+      }
+      const parsed = parseSnippetsText(text);
+      if (!parsed.list) {
+        notify({ title: "Import failed", body: parsed.error, level: "warning" });
+        return;
+      }
+      await this.applyImport(parsed.list, this.importMode, cx);
+      cx.notify();
+    });
+  }
+
+  restoreBackup(b, cx) {
+    cx.spawn(async (cx) => {
+      const parsed = parseSnippetsText(await readTextFile(b.path).catch(() => null));
+      if (!parsed.list) {
+        notify({ title: "Restore failed", body: parsed.error ?? "Backup unreadable", level: "error" });
+        return;
+      }
+      await this.applyImport(parsed.list, "replace", cx);
+      notify({ title: "Backup restored", body: b.label, level: "info", timeout: 3000 });
+      cx.notify();
+    });
+  }
+
+  openBackupFolder(cx) {
+    cx.spawn(async () => {
+      await exec("/bin/mkdir", ["-p", BACKUP_DIR()]).catch(() => {});
+      await exec("/usr/bin/open", [BACKUP_DIR()]).catch(() => {});
+    });
+  }
+
+  renderBackup(t, cx) {
+    const good = t.done ?? "#74BBA2";
+    const btn = (id, label, onClick, primary = false, tip = "") =>
+      div()
+        .id(id)
+        .h(28)
+        .px(10)
+        .flex()
+        .items_center()
+        .justify_center()
+        .rounded(6)
+        .cursor_pointer()
+        .border(1)
+        .border_color(t.border)
+        .text_size(11.5)
+        .when(primary, (el) => el.bg(t.selected).font_medium().text_color(t.foreground))
+        .when(!primary, (el) => el.text_color(t.muted))
+        .hover((s) => s.bg(t.hover).text_color(t.foreground))
+        .tooltip(tip)
+        .on_click(onClick)
+        .child(label);
+    const card = (title, hint, ...children) =>
+      v_flex()
+        .rounded(8)
+        .border(1)
+        .border_color(t.border)
+        .bg(t.surface ?? t.chrome)
+        .p(10)
+        .gap(8)
+        .child(div().text_size(12.5).font_semibold().text_color(t.foreground).child(title))
+        .child(div().text_size(10.5).text_color(t.dim).child(hint))
+        .children(children);
+    const pill = (id, label, on, onClick) =>
+      div()
+        .id(id)
+        .px(8)
+        .py(2)
+        .rounded(10)
+        .cursor_pointer()
+        .text_size(11)
+        .when(on, (el) => el.bg(t.selected).text_color(t.foreground))
+        .when(!on, (el) => el.text_color(t.dim).hover((s) => s.bg(t.hover)))
+        .on_click(onClick)
+        .child(label);
+
+    return v_flex()
+      .id("snippets-backup")
+      .size_full()
+      .bg(t.chrome)
+      .text_color(t.foreground)
+      .child(
+        h_flex()
+          .h(38)
+          .px(10)
+          .gap(8)
+          .items_center()
+          .border_b(1)
+          .border_color(t.border)
+          .child(
+            div()
+              .id("backup-back")
+              .h(26)
+              .px(8)
+              .flex()
+              .items_center()
+              .rounded(6)
+              .cursor_pointer()
+              .text_size(12)
+              .text_color(t.muted)
+              .hover((s) => s.bg(t.hover).text_color(t.foreground))
+              .on_click((_e, cx) => this.closeBackupView(cx))
+              .child("← Back")
+          )
+          .child(div().font_semibold().text_size(13).child("Backup, export & import"))
+      )
+      .child(
+        v_flex()
+          .id("backup-body")
+          .flex_1()
+          .min_h(0)
+          .overflow_y_scroll()
+          .p(10)
+          .gap(10)
+          .child(
+            card(
+              "Export",
+              `${this.snippets.length} snippets. Saved to ~/Downloads as JSON, or copied to the clipboard.`,
+              h_flex()
+                .gap(6)
+                .child(btn("exp-file", "Export to file", (_e, cx) => this.exportToFile(cx), true, "Write ~/Downloads/herdr-snippets-<time>.json"))
+                .child(btn("exp-copy", "Copy as JSON", (_e, cx) => this.copyJson(cx), false, "Copy all snippets as JSON"))
+            )
+          )
+          .child(
+            card(
+              "Import",
+              "Merge adds missing snippets and skips ones you already have. Replace swaps everything. A backup of the current set is saved first either way.",
+              h_flex()
+                .gap(4)
+                .child(pill("mode-merge", "Merge", this.importMode === "merge", (_e, cx) => { this.importMode = "merge"; cx.notify(); }))
+                .child(pill("mode-replace", "Replace", this.importMode === "replace", (_e, cx) => { this.importMode = "replace"; cx.notify(); })),
+              h_flex()
+                .h(28)
+                .px(8)
+                .items_center()
+                .rounded(6)
+                .border(1)
+                .border_color(t.border)
+                .bg(t.background)
+                .child(Input.new(this.importPath).flex_1().h_full().text_size(12).text_color(t.foreground)),
+              h_flex()
+                .gap(6)
+                .child(btn("imp-file", "Import from file", (_e, cx) => this.importFromFile(cx), true, "Read the JSON file at the path above"))
+                .child(btn("imp-clip", "Import from clipboard", (_e, cx) => this.importFromClipboard(cx), false, "Paste a JSON export from the clipboard"))
+            )
+          )
+          .child(
+            card(
+              "Automatic backups",
+              `A copy is saved a few seconds after every change (newest ${BACKUP_KEEP} kept) in ~/.config/herdr-app/snippets-backups. Updating or reloading the mod never touches them.`,
+              h_flex()
+                .gap(6)
+                .child(btn("bk-now", "Back up now", (_e, cx) => this.backupNow(cx), true))
+                .child(btn("bk-open", "Open folder", (_e, cx) => this.openBackupFolder(cx))),
+              v_flex()
+                .gap(4)
+                .when(!this.backups.length, (el) => el.child(div().text_size(11).text_color(t.dim).child("No backups yet")))
+                .children(
+                  this.backups.map((b) =>
+                    h_flex()
+                      .id(`bk-${b.name}`)
+                      .items_center()
+                      .gap(8)
+                      .px(8)
+                      .py(4)
+                      .rounded(6)
+                      .bg(t.background)
+                      .child(div().flex_1().min_w(0).truncate().text_size(11).font_family(String(settings()?.font ?? settings()?.font_family ?? "CommitMono Nerd Font")).text_color(t.foreground).child(b.label))
+                      .child(div().text_size(10.5).text_color(t.dim).flex_none().child(`${b.count} snippets`))
+                      .child(
+                        div()
+                          .id(`bk-restore-${b.name}`)
+                          .px(8)
+                          .py(2)
+                          .rounded(5)
+                          .cursor_pointer()
+                          .text_size(11)
+                          .text_color(good)
+                          .hover((s) => s.bg(t.hover))
+                          .tooltip("Replace current snippets with this backup (current set is backed up first)")
+                          .on_click((_e, cx) => this.restoreBackup(b, cx))
+                          .child("Restore")
+                      )
+                  )
+                )
+            )
+          )
+      );
   }
 
   openCreateForm(initialCode = "", cx) {
@@ -296,6 +704,9 @@ export default class SnippetsMod extends View {
     if (this.isFormOpen) {
       return this.renderForm(t, cx);
     }
+    if (this.isBackupOpen) {
+      return this.renderBackup(t, cx);
+    }
 
     // Filter snippets
     const filtered = this.snippets.filter((s) => {
@@ -354,6 +765,22 @@ export default class SnippetsMod extends View {
             h_flex()
               .gap(4)
               .items_center()
+              .child(
+                div()
+                  .id("btn-backup")
+                  .size(26)
+                  .flex()
+                  .items_center()
+                  .justify_center()
+                  .rounded(6)
+                  .cursor_pointer()
+                  .bg(t.surface ?? t.chrome)
+                  .text_color(t.muted)
+                  .hover((s) => s.bg(t.hover).text_color(t.foreground))
+                  .tooltip("Backup, export & import")
+                  .on_click((_e, cx) => this.openBackupView(cx))
+                  .child(svg("mods/snippets/icons/backup.svg").size(13))
+              )
               .child(
                 h_flex()
                   .id("btn-paste-clip")
