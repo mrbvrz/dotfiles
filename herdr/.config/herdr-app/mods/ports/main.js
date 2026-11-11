@@ -160,7 +160,7 @@ export default class PortsMod extends View {
     this.pickKey = null;
     this.starting = new Set();
 
-    this.search = InputState.new({ placeholder: "Filter port, process, command..." });
+    this.search = InputState.new({ placeholder: "Filter port (e.g. 3000), app, PID..." });
     this.search.on("change", (_e, cx) => {
       this.query = this.search.value().trim().toLowerCase();
       cx.notify();
@@ -546,11 +546,12 @@ export default class PortsMod extends View {
   render(cx) {
     const t = theme();
     const q = this.query;
+    const cleanQ = q.startsWith(":") ? q.slice(1) : q;
     const filtered = this.ports.filter((r) => {
       if (this.devOnly && !this.isDev(r)) return false;
       if (!q) return true;
       return (
-        String(r.port).includes(q) ||
+        String(r.port).includes(cleanQ) ||
         String(r.pid).includes(q) ||
         r.cmd.toLowerCase().includes(q) ||
         (r.full || "").toLowerCase().includes(q) ||
@@ -596,16 +597,63 @@ export default class PortsMod extends View {
             this.iconBtn("refresh", "mods/filetree/refresh.svg", "Refresh now", t, null, (_e, cx) => this.refresh(cx))
           )
       )
+      // Search and Filter Bar
       .child(
         v_flex()
-          .p(10)
-          .gap(8)
-          .child(Input.new(this.search).h(28).text_size(12).text_color(t.foreground))
+          .p(8)
+          .gap(6)
+          .border_b(1)
+          .border_color(t.border)
+          .bg(t.background)
           .child(
             h_flex()
-              .gap(4)
-              .child(pill("f-dev", "Dev", this.devOnly, (_e, cx) => { this.devOnly = true; cx.notify(); }))
-              .child(pill("f-all", "All", !this.devOnly, (_e, cx) => { this.devOnly = false; cx.notify(); }))
+              .h(28)
+              .px(8)
+              .gap(6)
+              .items_center()
+              .rounded(6)
+              .border(1)
+              .border_color(t.border)
+              .bg(t.surface ?? t.chrome)
+              .child(svg("mods/workspace-chrome/search.svg").size(13).text_color(t.dim))
+              .child(Input.new(this.search).flex_1().h_full().text_size(12).text_color(t.foreground))
+              .when(Boolean(this.query), (e) =>
+                e.child(
+                  div()
+                    .size(16)
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .rounded(4)
+                    .cursor_pointer()
+                    .text_color(t.dim)
+                    .hover((s) => s.text_color(t.foreground).bg(t.hover))
+                    .tooltip("Clear filter")
+                    .on_click((_e, cx) => {
+                      this.search.set_value("");
+                      this.query = "";
+                      cx.notify();
+                    })
+                    .child("×")
+                )
+              )
+          )
+          .child(
+            h_flex()
+              .items_center()
+              .justify_between()
+              .child(
+                h_flex()
+                  .gap(4)
+                  .child(pill("f-dev", "Dev Ports", this.devOnly, (_e, cx) => { this.devOnly = true; cx.notify(); }))
+                  .child(pill("f-all", "All Ports", !this.devOnly, (_e, cx) => { this.devOnly = false; cx.notify(); }))
+              )
+              .child(
+                div()
+                  .text_size(10.5)
+                  .text_color(t.dim)
+                  .child(`${filtered.length} visible`)
+              )
           )
       )
       .child(
