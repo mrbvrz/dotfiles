@@ -90,7 +90,36 @@ const PROMPT_SUGGESTIONS = [
   "Optimize slow database queries and inspect missing indexes",
 ];
 
-const QUICK_COMMANDS = ["agy", "claude", "opencode", "codex", "gemini"];
+const AI_ENGINES = [
+  { id: "agy", name: "Antigravity", cmd: "agy", icon: `${ICONS}/agy.svg`, color: "#ef7d3b", tooltip: "Antigravity CLI (agy)" },
+  { id: "claude", name: "Claude Code", cmd: "claude", icon: `${ICONS}/claude.svg`, color: "#d97757", tooltip: "Claude Code CLI (claude)" },
+  { id: "opencode", name: "OpenCode", cmd: "opencode", icon: `${ICONS}/opencode.svg`, color: "#2ea44f", tooltip: "OpenCode CLI (opencode)" },
+  { id: "codex", name: "Codex", cmd: "codex", icon: `${ICONS}/codex.svg`, color: "#10a37f", tooltip: "Codex CLI (codex)" },
+  { id: "gemini", name: "Gemini", cmd: "gemini", icon: `${ICONS}/gemini.svg`, color: "#4285f4", tooltip: "Google Gemini CLI (gemini)" },
+  { id: "grok", name: "Grok", cmd: "grok", icon: `${ICONS}/grok.svg`, color: "#ffffff", tooltip: "xAI Grok CLI (grok)" },
+  { id: "cursor", name: "Cursor", cmd: "cursor-agent", icon: `${ICONS}/cursor.svg`, color: "#7a88cf", tooltip: "Cursor Agent CLI (cursor-agent)" },
+  { id: "copilot", name: "Copilot", cmd: "copilot", icon: `${ICONS}/copilot.svg`, color: "#2ba0ff", tooltip: "GitHub Copilot CLI (copilot)" },
+  { id: "ollama", name: "Ollama", cmd: "ollama", icon: `${ICONS}/ollama.svg`, color: "#d1d5db", tooltip: "Ollama Local Models (ollama)" },
+  { id: "custom", name: "Custom", cmd: "", icon: `${ICONS}/terminal.svg`, color: "#8c949e", tooltip: "Custom CLI Command or Script" },
+];
+
+function resolveAiEngine(cmdStr = "") {
+  const trimmed = (cmdStr || "").trim();
+  const baseCmd = trimmed.split(/\s+/)[0].toLowerCase();
+  if (!baseCmd) return AI_ENGINES.find((e) => e.id === "agy");
+  const found = AI_ENGINES.find((e) => e.cmd && (baseCmd === e.cmd.toLowerCase() || e.id === baseCmd));
+  if (found) return found;
+  return AI_ENGINES.find((e) => e.id === "custom");
+}
+
+function getPersonaIcon(id, cmd) {
+  const personaIcons = ["basing", "begu", "bodat", "datu", "ipos", "pangulubalang", "parhata", "tombak"];
+  if (personaIcons.includes(id)) {
+    return `${ICONS}/${id}.svg`;
+  }
+  const engine = resolveAiEngine(cmd);
+  return engine.icon;
+}
 
 function duration(ms) {
   const m = Math.floor(ms / 60000);
@@ -245,14 +274,15 @@ export default class AgentManager extends View {
       return this.templatesList.map((tpl) => {
         const id = tpl.name.toLowerCase();
         const meta = PERSONAS_META[id] || {};
+        const cmd = tpl.command || meta.cmd || "agy";
         return {
           id: id,
           name: tpl.displayName || meta.name || tpl.name,
-          cmd: tpl.command || meta.cmd || "agy",
+          cmd: cmd,
           desc: tpl.description || meta.desc || "",
-          icon: meta.icon || "bot.svg",
+          icon: getPersonaIcon(id, cmd),
           color: meta.color || "#61afef",
-          badge: meta.badge || tpl.command || "Agent",
+          badge: meta.badge || resolveAiEngine(cmd).name || "Agent",
           prompt: tpl.prompt || "",
         };
       });
@@ -263,7 +293,7 @@ export default class AgentManager extends View {
       name: meta.name,
       cmd: meta.cmd,
       desc: meta.desc,
-      icon: "bot.svg",
+      icon: getPersonaIcon(id, meta.cmd),
       color: meta.color,
       badge: meta.badge,
       prompt: "",
@@ -673,6 +703,8 @@ export default class AgentManager extends View {
     const isMsgOpen = this.activeMessageAgent === agent.address;
 
     const personaMeta = Object.values(PERSONAS_META).find((p) => (agent.title || "").toLowerCase().includes(p.name.toLowerCase())) || null;
+    const personaId = Object.keys(PERSONAS_META).find((k) => PERSONAS_META[k] === personaMeta) || null;
+    const cardIcon = personaId ? getPersonaIcon(personaId, personaMeta?.cmd) : `${ICONS}/bot.svg`;
     const agentColor = personaMeta?.color || (agent.status === "working" ? t.working : agent.status === "blocked" ? t.blocked : t.accent || t.ansi4);
 
     return v_flex()
@@ -697,7 +729,7 @@ export default class AgentManager extends View {
               .flex()
               .items_center()
               .justify_center()
-              .child(svg(`${ICONS}/bot.svg`).size(14).text_color(agentColor)),
+              .child(svg(cardIcon).size(14).text_color(agentColor)),
           )
           .child(
             v_flex()
@@ -1357,7 +1389,7 @@ export default class AgentManager extends View {
                         .flex()
                         .items_center()
                         .justify_center()
-                        .child(svg(`${ICONS}/bot.svg`).size(13).text_color(meta.color)),
+                        .child(svg(meta.icon).size(13).text_color(meta.color)),
                     )
                     .child(
                       v_flex()
@@ -1379,6 +1411,13 @@ export default class AgentManager extends View {
                                 .text_size(9)
                                 .font_bold()
                                 .child(meta.badge),
+                            )
+                            .child(
+                              h_flex()
+                                .gap(3)
+                                .items_center()
+                                .child(svg(resolveAiEngine(meta.cmd).icon).size(10).text_color(resolveAiEngine(meta.cmd).color || t.dim))
+                                .child(div().text_size(9.5).text_color(t.dim).child(resolveAiEngine(meta.cmd).name)),
                             ),
                         )
                         .child(div().text_size(10.5).text_color(t.dim).truncate().child(meta.desc)),
@@ -1509,6 +1548,8 @@ export default class AgentManager extends View {
 
   renderPersonaForm(t) {
     const isEdit = this.personaFormMode === "edit";
+    const currentCmd = this.formCmdInput.value().trim();
+    const activeEngine = resolveAiEngine(currentCmd);
 
     return v_flex()
       .flex_1()
@@ -1600,49 +1641,122 @@ export default class AgentManager extends View {
                   .child(Input.new(this.formNameInput).flex_1().h_full().text_size(11.5).text_color(t.foreground)),
               ),
           )
-          // 3. CLI Command
+          // 3. AI CLI Engine Selector (Icons)
           .child(
             v_flex()
-              .gap(4)
+              .gap(6)
               .child(
                 h_flex()
                   .justify_between()
                   .items_center()
-                  .child(div().text_size(10.5).font_semibold().text_color(t.foreground).child("CLI Command"))
                   .child(
                     h_flex()
-                      .gap(3)
+                      .gap(5)
                       .items_center()
-                      .children(
-                        QUICK_COMMANDS.map((qc) =>
+                      .child(div().text_size(10.5).font_semibold().text_color(t.foreground).child("AI CLI Engine"))
+                      .child(div().text_size(9.5).text_color(t.dim).child("Select AI runner")),
+                  )
+                  .child(
+                    h_flex()
+                      .gap(4)
+                      .items_center()
+                      .px(6)
+                      .h(18)
+                      .rounded(4)
+                      .bg(t.raised)
+                      .child(svg(activeEngine.icon).size(11).text_color(activeEngine.color || t.foreground))
+                      .child(
+                        div()
+                          .text_size(9.5)
+                          .font_semibold()
+                          .text_color(t.foreground)
+                          .child(activeEngine.name),
+                      )
+                      .when(Boolean(currentCmd && currentCmd !== activeEngine.cmd), (el) =>
+                        el.child(
                           div()
-                            .px(4.5)
-                            .h(16)
-                            .rounded(3)
-                            .bg(t.raised)
-                            .cursor_pointer()
                             .text_size(9)
+                            .font_family("monospace")
                             .text_color(t.dim)
-                            .hover((s) => s.bg(t.hover).text_color(t.foreground))
-                            .on_click((_e, cx) => {
-                              this.formCmdInput.set_value(qc);
-                              cx.notify();
-                            })
-                            .child(qc),
+                            .child(`(${currentCmd})`),
                         ),
                       ),
                   ),
               )
+              // AI Choices Grid of Icon Buttons
+              .child(
+                h_flex()
+                  .flex_wrap()
+                  .gap(5)
+                  .children(
+                    AI_ENGINES.map((eng) => {
+                      const isSelected = activeEngine.id === eng.id;
+                      return h_flex()
+                        .h(28)
+                        .px(7)
+                        .gap(5)
+                        .items_center()
+                        .rounded(6)
+                        .border_1()
+                        .border_color(isSelected ? (eng.color || t.accent) : t.border)
+                        .bg(isSelected ? t.raised : t.background)
+                        .cursor_pointer()
+                        .hover((s) => s.bg(t.hover).text_color(t.foreground))
+                        .tooltip(eng.tooltip || `${eng.name} (${eng.cmd})`)
+                        .on_click((_e, cx) => {
+                          if (eng.id === "custom") {
+                            if (activeEngine.id !== "custom") {
+                              this.formCmdInput.set_value("");
+                            }
+                          } else {
+                            this.formCmdInput.set_value(eng.cmd);
+                          }
+                          cx.notify();
+                        })
+                        .child(svg(eng.icon).size(13).text_color(isSelected ? (eng.color || t.foreground) : t.dim))
+                        .child(
+                          div()
+                            .text_size(10.5)
+                            .font_medium()
+                            .text_color(isSelected ? t.foreground : t.muted)
+                            .child(eng.name),
+                        )
+                        .when(isSelected, (el) =>
+                          el.child(
+                            div()
+                              .size(5)
+                              .rounded(2.5)
+                              .bg(eng.color || t.accent),
+                          ),
+                        );
+                    }),
+                  ),
+              )
+              // Command Line Preview & Arguments Editor
               .child(
                 h_flex()
                   .h(28)
                   .px(8)
+                  .gap(6)
                   .items_center()
                   .rounded(6)
                   .border_1()
                   .border_color(t.border)
                   .bg(t.background)
-                  .child(Input.new(this.formCmdInput).flex_1().h_full().text_size(11.5).text_color(t.foreground)),
+                  .child(
+                    h_flex()
+                      .gap(4)
+                      .items_center()
+                      .child(svg(activeEngine.icon).size(12).text_color(activeEngine.color || t.dim))
+                      .child(div().text_size(9.5).font_family("monospace").text_color(t.dim).child(">_")),
+                  )
+                  .child(
+                    Input.new(this.formCmdInput)
+                      .flex_1()
+                      .h_full()
+                      .text_size(11)
+                      .text_color(t.foreground),
+                  ),
               ),
           )
           // 4. Description
@@ -1812,7 +1926,7 @@ export default class AgentManager extends View {
                     .flex()
                     .items_center()
                     .justify_center()
-                    .child(svg(`${ICONS}/bot.svg`).size(15).text_color(meta.color)),
+                    .child(svg(meta.icon).size(15).text_color(meta.color)),
                 )
                 .child(
                   v_flex()
@@ -1840,8 +1954,9 @@ export default class AgentManager extends View {
                       h_flex()
                         .gap(4)
                         .items_center()
-                        .child(div().text_size(10).text_color(t.dim).child(`CLI: ${meta.cmd}`))
-                        .child(div().text_size(10).text_color(t.dim).child(`· id: ${meta.id}`)),
+                        .child(svg(resolveAiEngine(meta.cmd).icon).size(10.5).text_color(resolveAiEngine(meta.cmd).color || t.foreground))
+                        .child(div().text_size(10).font_medium().text_color(t.dim).child(resolveAiEngine(meta.cmd).name))
+                        .child(div().text_size(9.5).text_color(t.dim).child(`(${meta.cmd}) · id: ${meta.id}`)),
                     ),
                 )
                 // Actions (Use, Edit, Delete)
