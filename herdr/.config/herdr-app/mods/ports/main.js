@@ -33,7 +33,7 @@ const shq = (x) => `'${String(x).replace(/'/g, `'\\''`)}'`;
 
 const PROVIDERS = [
   {
-    id: "cloudflare", label: "Cloudflare", bin: "cloudflared", hint: "brew install cloudflared",
+    id: "cloudflare", label: "Cloudflare", bin: "cloudflared", probe: ["region1.v2.argotunnel.com", 7844], hint: "brew install cloudflared",
     args: (p) => ["tunnel", "--no-autoupdate", "--url", `http://localhost:${p}`],
     url: /(https:\/\/[a-z0-9-]+\.trycloudflare\.com)/i,
     err: /(ERR|failed|error)/i,
@@ -43,7 +43,7 @@ const PROVIDERS = [
     },
   },
   {
-    id: "ngrok", label: "ngrok", bin: "ngrok", hint: "brew install ngrok && ngrok config add-authtoken <token>",
+    id: "ngrok", label: "ngrok", bin: "ngrok", probe: ["connect.ngrok-agent.com", 443], hint: "brew install ngrok && ngrok config add-authtoken <token>",
     args: (p) => ["http", String(p), "--log=stdout", "--log-format=logfmt"],
     url: /\burl=(https:\/\/\S+)/i,
     err: /(ERR_NGROK_\d+|authentication failed|err=)/i,
@@ -54,7 +54,7 @@ const PROVIDERS = [
     },
   },
   {
-    id: "localhostrun", label: "localhost.run", bin: "ssh", hint: "uses ssh (no install)",
+    id: "localhostrun", label: "localhost.run", bin: "ssh", probe: ["localhost.run", 22], hint: "uses ssh (no install)",
     args: (p) => ["-o", "StrictHostKeyChecking=accept-new", "-o", "ServerAliveInterval=30", "-o", "ExitOnForwardFailure=yes", "-R", `80:localhost:${p}`, "nokey@localhost.run"],
     url: /(https:\/\/[a-z0-9-]+\.lhr\.life)/i,
     err: /(denied|refused|failed|error)/i,
@@ -70,6 +70,11 @@ async function resolveBin(name) {
   const r = await exec("/bin/sh", ["-c", script]).catch(() => null);
   const out = String(r?.stdout || "").trim().split("\n")[0];
   return out || null;
+}
+
+async function reachable(host, port) {
+  const r = await exec("/usr/bin/nc", ["-z", "-w", "4", host, String(port)], { timeout: 8000 }).catch(() => null);
+  return r?.code === 0;
 }
 
 async function ngrokAuthed() {
@@ -182,6 +187,8 @@ export default class PortsMod extends View {
     this.pickKey = null;
     this.starting = new Set();
     this.ngrokAuth = false;
+    this.reach = {};
+    this.checking = false;
     try { this.setupOpen = localStorage.getItem(`${NAME}.setup`); } catch { this.setupOpen = null; }
 
     this.search = InputState.new({ placeholder: "Filter port, process, command..." });
@@ -196,10 +203,33 @@ export default class PortsMod extends View {
     cx.spawn(async (cx) => {
       for (const p of PROVIDERS) this.bins[p.id] = await resolveBin(p.bin);
       this.ngrokAuth = await ngrokAuthed();
+      cx.notify();
+      await this.checkProviders(cx);
       this.tunnels = await loadTunnels();
       await this.pollTunnels(cx);
       cx.notify();
     });
+  }
+
+  async checkProviders(cx) {
+    if (this.checking) return;
+    this.checking = true;
+    for (const p of PROVIDERS) this.reach[p.id] = null;
+    cx.notify();
+    try {
+      this.bins = {};
+      for (const p of PROVIDERS) this.bins[p.id] = await resolveBin(p.bin);
+      this.ngrokAuth = await ngrokAuthed();
+      await Promise.all(
+        PROVIDERS.map(async (p) => {
+          this.reach[p.id] = this.bins[p.id] ? await reachable(p.probe[0], p.probe[1]) : false;
+          cx.notify();
+        })
+      );
+    } finally {
+      this.checking = false;
+      cx.notify();
+    }
   }
 
   async pollTunnels(cx) {
@@ -506,9 +536,15 @@ export default class PortsMod extends View {
   }
 
   providerState(p) {
+    const live = this.tunnels.filter((x) => x.provider === p.id && x.status === "live");
+    if (live.length) return { key: "connected", label: `Connected${live.length > 1 ? ` (${live.length})` : ` :${live[0].port}`}`, ok: true, live: true };
     if (!this.bins[p.id]) return { key: "missing", label: "Not installed", ok: false };
     if (p.needsAuth && !this.ngrokAuth) return { key: "auth", label: "Needs authtoken", ok: false };
-    return { key: "ready", label: "Ready", ok: true };
+    if (this.tunnels.some((x) => x.provider === p.id && x.status === "starting")) return { key: "starting", label: "Connecting...", ok: true };
+    const r = this.reach[p.id];
+    if (r === null || r === undefined) return { key: "checking", label: "Checking...", ok: true };
+    if (r === false) return { key: "offline", label: "Unreachable", ok: false };
+    return { key: "ready", label: "Ready, not connected", ok: true };
   }
 
   isSetupOpen() {
@@ -547,7 +583,8 @@ export default class PortsMod extends View {
           .children(
             PROVIDERS.map((p) => {
               const st = this.providerState(p);
-              return div().text_size(10).text_color(st.ok ? good : warn).child(`${st.ok ? "●" : "○"} ${p.label}`);
+              const c = st.live ? good : st.ok ? t.dim : warn;
+              return div().text_size(10).text_color(c).child(`${st.live ? "●" : "○"} ${p.label}`);
             })
           )
       );
@@ -591,10 +628,29 @@ export default class PortsMod extends View {
             .pb(8)
             .gap(10)
             .child(
-              div()
-                .text_size(10.5)
-                .text_color(t.dim)
-                .child("Pick a port below, press the globe icon, then choose a provider. First-time setup:")
+              v_flex()
+                .gap(6)
+                .child(div().text_size(10.5).text_color(t.dim).child("Press the globe icon on a port to share it."))
+                .child(div().text_size(10.5).text_color(t.dim).child("● green = tunnel connected   ○ = not connected"))
+                .child(
+                  div()
+                    .id("setup-recheck")
+                    .px(8)
+                    .py(3)
+                    .w(86)
+                    .flex()
+                    .justify_center()
+                    .rounded(6)
+                    .border(1)
+                    .border_color(t.border)
+                    .cursor_pointer()
+                    .text_size(11)
+                    .text_color(t.foreground)
+                    .hover((s) => s.bg(t.hover))
+                    .tooltip("Re-check installs, authtoken and network reachability")
+                    .on_click((_e, cx) => cx.spawn(async (cx) => { await this.checkProviders(cx); }))
+                    .child(this.checking ? "Checking..." : "Re-check")
+                )
             )
             .children(
               PROVIDERS.map((p) => {
@@ -613,14 +669,14 @@ export default class PortsMod extends View {
                           .rounded(4)
                           .bg(t.selected)
                           .text_size(10)
-                          .text_color(st.ok ? good : warn)
+                          .text_color(st.live ? good : st.ok ? t.dim : warn)
                           .child(st.label)
                       )
                   )
                   .child(div().text_size(10.5).text_color(t.dim).child(p.setup.note))
                   .children(
                     p.setup.steps
-                      .filter(([label]) => !(st.key === "ready" && /^Install|Add authtoken/.test(label)) )
+                      .filter(([label]) => !(st.key !== "missing" && st.key !== "auth" && /^Install|Add authtoken/.test(label)))
                       .filter(([label]) => !(st.key === "auth" && /^Install/.test(label)))
                       .map(([label, command], i) => cmd(`setup-${p.id}-${i}`, label, command))
                   );
