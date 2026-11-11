@@ -1134,8 +1134,9 @@ echo "$DEST"
 
   // ── drawing ──────────────────────────────────────────────────────────────────────────
   button(id, label, tip, on, onClick, t, R) {
-    return div().id(id).h(20).min_w(20).px(4).flex_none().flex().items_center().justify_center().rounded(R).cursor_pointer()
-      .text_size(12).text_color(on ? t.foreground : t.dim).hover((s) => s.bg(t.hover).text_color(t.foreground)).tooltip(tip)
+    const isIcon = typeof label !== "string";
+    return div().id(id).h(22).min_w(22).px(isIcon ? 3 : 6).flex_none().flex().items_center().justify_center().rounded(R).cursor_pointer()
+      .text_size(12).text_color(on ? (t.accent ?? t.foreground) : t.dim).hover((s) => s.bg(t.hover).text_color(t.foreground)).tooltip(tip)
       .on_mouse_down("left", (_e, cx) => cx.stop_propagation())
       .on_click((_e, cx) => { onClick(cx); cx.notify(); })
       .child(label);
@@ -1323,25 +1324,26 @@ echo "$DEST"
       else if (!this.pending.size && !this.loading) this.scrollTo = null;
     }
     const btn = (id, label, tip, on, fn) => this.button(id, label, tip, on, fn, t, R);
+    const ico = (name, size = 13) => svg(ICON(name)).size(size).flex_none();
 
     // Tools sit beside the filter box and change with the view.
     const tools = this.view === "tree" ? [
-      btn("ft-new-file", "+📄", "New file in root", false, () => {
+      btn("ft-new-file", ico("file-plus"), "New file in root", false, () => {
         if (!this.root) return;
         openOverlay({ mod: NAME, kind: "dialog", width: 380, height: 175, props: { dialog: { action: "new-file", targetDir: this.root, root: this.root } } });
       }),
-      btn("ft-new-folder", "+📁", "New folder in root", false, () => {
+      btn("ft-new-folder", ico("folder-plus"), "New folder in root", false, () => {
         if (!this.root) return;
         openOverlay({ mod: NAME, kind: "dialog", width: 380, height: 175, props: { dialog: { action: "new-folder", targetDir: this.root, root: this.root } } });
       }),
-      btn("ft-refresh", "↻", "Refresh files", false, (cx) => this.refresh(cx)),
-      btn("ft-up", "↑", "Up a folder", false, () => { if (!this.root) return; this.follow = false; this.pinned = this.root.replace(/[\\/][^\\/]+[\\/]?$/, "") || "/"; this.pinnedOn = this.on; }),
-      btn("ft-home", "⌂", this.follow ? "Following the focused pane" : "Back to the focused pane's folder", this.follow, () => { this.follow = true; this.pinned = null; }),
-      btn("ft-hidden", this.showHidden ? "◉" : "○", this.showHidden ? "Hide dotfiles (.)" : "Show dotfiles (.)", this.showHidden, () => { this.showHidden = !this.showHidden; this.savePrefs(); }),
-      btn("ft-size", "Σ", this.showSize ? "Show dates" : "Show sizes", Boolean(this.showSize), () => { this.showSize = !this.showSize; this.savePrefs(); }),
-      btn("ft-collapse", "⊟", "Collapse all", false, (cx) => this.collapseAll(cx)),
+      btn("ft-refresh", ico("refresh"), "Refresh files", false, (cx) => this.refresh(cx)),
+      btn("ft-up", ico("arrow-up"), "Up a folder", false, () => { if (!this.root) return; this.follow = false; this.pinned = this.root.replace(/[\\/][^\\/]+[\\/]?$/, "") || "/"; this.pinnedOn = this.on; }),
+      btn("ft-home", ico("locate"), this.follow ? "Following the focused pane" : "Back to the focused pane's folder", this.follow, () => { this.follow = true; this.pinned = null; }),
+      btn("ft-hidden", ico(this.showHidden ? "eye" : "eye-off"), this.showHidden ? "Hide dotfiles (.)" : "Show dotfiles (.)", this.showHidden, () => { this.showHidden = !this.showHidden; this.savePrefs(); }),
+      btn("ft-size", ico(this.showSize ? "database" : "calendar"), this.showSize ? "Show dates" : "Show sizes", Boolean(this.showSize), () => { this.showSize = !this.showSize; this.savePrefs(); }),
+      btn("ft-collapse", ico("collapse"), "Collapse all", false, (cx) => this.collapseAll(cx)),
     ] : [
-      btn("ft-forget", "⊘", "Clear the list", false, () => { this.history = []; try { localStorage.setItem("history", "[]"); } catch {} }),
+      btn("ft-forget", ico("trash"), "Clear the list", false, () => { this.history = []; try { localStorage.setItem("history", "[]"); } catch {} }),
     ];
 
     const q = this.query.trim();
@@ -1403,9 +1405,17 @@ echo "$DEST"
       const editorHeader = h_flex().h(look.header).flex_none().px(10).gap(8).items_center().bg(t.chrome).border_b(1).border_color(t.border).text_size(uiSize() - 1)
         .child(zedIcon(this.file, false, false, t))
         .child(div().flex_1().min_w(0).truncate().font_medium().text_color(t.foreground).child(this.file))
-        .child(btn("ft-copy", "⧉", "Copy path", false, (cx) => copy(cx, this.file)))
-        .child(btn("ft-ext", "↗ Zed", "Open in Zed", false, () => openExternal(join(this.root, this.file)).catch(() => {})))
-        .child(btn("ft-close", "✕", "Close preview (Esc)", false, (cx) => this.closePreview(cx)));
+        .child(btn("ft-copy", ico("copy"), "Copy path", false, (cx) => copy(cx, this.file)))
+        .child(
+          btn(
+            "ft-ext",
+            h_flex().gap(4).items_center().child(ico("external-link", 11)).child(div().text_size(11).child("Zed")),
+            "Open in Zed",
+            false,
+            () => openExternal(join(this.root, this.file)).catch(() => {}),
+          ),
+        )
+        .child(btn("ft-close", ico("x"), "Close preview (Esc)", false, (cx) => this.closePreview(cx)));
 
       const availWidth = Math.max(180, (this.width || 760) - 260 - 32);
       const editorContent = this.code ? Editor.new(this.code).flex_1().min_h(0)
