@@ -51,7 +51,6 @@ export default class ActivityBar extends View {
 
     const items = [
       { id: "files", label: "Files", tooltip: "Files (Explorer)", icon: "mods/workspace-chrome/files.svg" },
-      { id: "changes", label: "Changes", tooltip: "Changes (Source Control)", icon: "mods/changes/changes.svg" },
       { id: "graph", label: "Git", tooltip: "Git Graph", icon: "mods/git-graph/icons/graph.svg" },
       { id: "ci", label: "CI", tooltip: "CI Dashboard", icon: "mods/ci-dash/ci.svg" },
       { id: "pr-flow", label: "PRs", tooltip: "Pull Requests", icon: "mods/pr-flow/merge.svg" },

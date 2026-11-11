@@ -153,13 +153,6 @@
                       }
                     },
                     {
-                      "id": "changes",
-                      "type": "block",
-                      "content": {
-                        "mod": "better-changes"
-                      }
-                    },
-                    {
                       "id": "graph",
                       "type": "block",
                       "content": {
